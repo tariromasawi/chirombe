@@ -1,1 +1,2 @@
-setInterval(()=>postMessage({type:"WATCH",msg:"local watch tick"}),15000);
+let n=0; setInterval(()=>{n++; postMessage({type:"WATCH",msg:"watch "+n})},15000);
+postMessage({type:"WATCH",msg:"watch online"});
