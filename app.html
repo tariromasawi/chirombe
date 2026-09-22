@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>CHIROMBE · Survivable Core</title>
+<link rel="stylesheet" href="css/zcca.css"/>
+<link rel="manifest" href="manifest.json"/>
+</head>
+<body style="margin:0;background:#020307;color:#b8f5ff;font-family:system-ui">
+<header style="padding:14px 18px;border-bottom:1px solid #1c2a3a">
+  <strong>CHIROMBE-2.0</strong>
+  <span id="cb-auto">AUTO UNKNOWN</span>
+  · <a href="./" style="color:#ffe8a4">legacy index</a>
+  · <a href="./zcca.html" style="color:#ffe8a4">zcca</a>
+</header>
+<section id="zcca-core">
+  <div class="zcca-header"><div><div class="zcca-eyebrow">STATIC COMMAND SHELL</div><h1>FAMILY COVER COMMAND CORE</h1></div>
+  <div class="zcca-master-state"><span id="zcca-pulse"></span><span id="zcca-master-status">LOADING</span></div></div>
+  <div class="zcca-master">
+    <div class="zcca-master-cell"><span>SYSTEM</span><strong id="zcca-system-state">BOOT</strong></div>
+    <div class="zcca-master-cell"><span>FAMILY</span><strong id="zcca-family-count">0</strong></div>
+    <div class="zcca-master-cell"><span>WORKERS</span><strong id="zcca-worker-count">0</strong></div>
+    <div class="zcca-master-cell"><span>DECLARATION</span><strong id="zcca-wave-state">DORMANT</strong></div>
+    <div class="zcca-master-cell"><span>MATRIX</span><strong id="zcca-matrix-state">STATIC</strong></div>
+    <div class="zcca-master-cell"><span>AUTO</span><strong id="zcca-auto">UNKNOWN</strong></div>
+  </div>
+  <div class="zcca-panel"><div class="zcca-panel-title">COMMAND AI</div>
+    <div id="zcca-chat" class="zcca-chat"></div>
+    <div class="zcca-suggestions">
+      <button data-command="activate system">ACTIVATE SYSTEM</button>
+      <button data-command="protect family">PROTECT FAMILY</button>
+      <button data-command="system status">STATUS</button>
+      <button data-command="show lineage">LINEAGE</button>
+    </div>
+    <div class="zcca-input-row"><input id="zcca-input" placeholder="command"/><button id="zcca-send">SEND</button></div>
+  </div>
+  <div class="zcca-panel"><div id="zcca-wave" class="zcca-wave"><div class="zcca-wave-core"><strong>MWARI NDI MWARI</strong></div></div>
+    <p id="zcca-declaration-text">Declaration dormant until activated.</p>
+    <button id="zcca-declare" class="zcca-primary">ACTIVATE DECLARATION</button>
+  </div>
+  <div class="zcca-panel"><div id="zcca-family-grid" class="zcca-family-grid"></div></div>
+  <div class="zcca-panel"><div class="zcca-worker-summary"><div><strong id="zcca-running-workers">0</strong><span>ACTIVE</span></div><div><strong id="zcca-worker-tasks">0</strong><span>TASKS</span></div><div><strong id="zcca-completed">0</strong><span>DONE</span></div><div><strong id="zcca-errors">0</strong><span>ERR</span></div></div><div id="zcca-worker-feed" class="zcca-worker-feed"></div></div>
+  <div class="zcca-panel"><div id="zcca-events" class="zcca-events"></div></div>
+</section>
+<script src="js/boot.js"></script>
+<script src="js/command-bus.js"></script>
+<script src="js/state-store.js"></script>
+<script src="js/audit-chain.js"></script>
+<script src="js/health.js"></script>
+<script src="js/watchdog.js"></script>
+<script src="js/zcca.js"></script>
+<script src="js/chirombe-core.js"></script>
+<script>
+if("serviceWorker"in navigator) navigator.serviceWorker.register("./sw.js");
+</script>
+</body></html>

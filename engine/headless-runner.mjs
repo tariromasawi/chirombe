@@ -1,0 +1,11 @@
+import fs from "fs";
+import crypto from "crypto";
+const now=new Date().toISOString();
+const family=JSON.parse(fs.readFileSync("data/family.json","utf8"));
+const runtime={generatedAt:now,protocol:"CHIROMBE-2.0",schemaVersion:2,status:"ok",tickId:Date.now(),source:"headless",familyCount:(family.members||[]).length,cycle:"OBSERVE-ANALYSE-MODEL-SIMULATE-PROTECT-VERIFY-LEARN-IMPROVE"};
+const health={generatedAt:now,protocol:"CHIROMBE-2.0",schemaVersion:2,status:"ok",automation:"FRESH",pages:"not-checked-here"};
+const audit={generatedAt:now,protocol:"CHIROMBE-2.0",schemaVersion:2,head:crypto.createHash("sha256").update(now).digest("hex").slice(0,40),sequence:1};
+fs.writeFileSync("data/runtime.json",JSON.stringify(runtime,null,2));
+fs.writeFileSync("data/health.json",JSON.stringify(health,null,2));
+fs.writeFileSync("data/audit-head.json",JSON.stringify(audit,null,2));
+console.log("engine ok", runtime.familyCount);
