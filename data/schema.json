@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 2,
+  "protocol": "CHIROMBE-2.0",
+  "canonical": ["family.json", "nodes.json"],
+  "derived": ["runtime.json", "health.json", "audit-head.json", "state.json"],
+  "migrations": ["v1-v2"]
+}

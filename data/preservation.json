@@ -1,0 +1,10 @@
+{
+  "project": "CHIROMBE",
+  "version": "2.0.0",
+  "schemaVersion": 2,
+  "repository": "https://github.com/tariromasawi/chirombe",
+  "site": "https://tariromasawi.github.io/chirombe/",
+  "createdAt": "2026-09-22T16:30:00Z",
+  "principle": "Repository is the reconstruction blueprint. Actions are optional.",
+  "canonical": ["data/family.json", "data/nodes.json", "docs/", "js/", "index.html", "app.html"]
+}

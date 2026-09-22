@@ -1,0 +1,15 @@
+{
+  "generatedAt": "2026-09-22T16:30:00Z",
+  "protocol": "CHIROMBE-2.0",
+  "schemaVersion": 2,
+  "features": {
+    "webWorkers": "detect",
+    "serviceWorker": "detect",
+    "indexedDB": "detect",
+    "cacheAPI": "detect",
+    "broadcastChannel": "detect",
+    "webGPU": "detect",
+    "backgroundSync": "detect",
+    "periodicSync": "detect"
+  }
+}

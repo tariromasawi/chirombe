@@ -1,0 +1,7 @@
+{
+  "generatedAt": "2026-09-22T16:30:00Z",
+  "protocol": "CHIROMBE-2.0",
+  "entry": ["index.html", "app.html", "zcca.html"],
+  "workers": ["sw.js"],
+  "state": ["data/family.json", "data/runtime.json", "data/health.json"]
+}

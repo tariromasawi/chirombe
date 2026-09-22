@@ -1,0 +1,9 @@
+{
+  "generatedAt": "2026-09-22T16:30:00Z",
+  "protocol": "CHIROMBE-2.0",
+  "schemaVersion": 2,
+  "status": "ok",
+  "tickId": 1,
+  "source": "repository-seed",
+  "note": "Derived snapshot. Rebuildable from canonical data if automation stops."
+}
