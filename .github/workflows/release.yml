@@ -1,0 +1,17 @@
+name: release
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "tag such as v2.0.0"
+        required: true
+permissions:
+  contents: write
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          git tag "${{ github.event.inputs.tag }}" || true
+          git push origin "${{ github.event.inputs.tag }}" || true

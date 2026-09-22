@@ -1,23 +1,41 @@
-# Chirombe
+# CHIROMBE
 
-Paste-ready matrix page. Existing ZionCore repos were not modified.
+Survivable House command system.
 
-## Page
-https://tariromasawi.github.io/chirombe/
+## Public surface
+- Legacy live page: https://tariromasawi.github.io/chirombe/
+- Survivable core (static ZCCA in source): https://tariromasawi.github.io/chirombe/app.html
+- Command page: https://tariromasawi.github.io/chirombe/zcca.html
+- Source: https://github.com/tariromasawi/chirombe
 
-If that 404s: repo Settings → Pages → Source = GitHub Actions.
+## Principle
+The repository is the reconstruction blueprint.
+GitHub Actions is optional automation. If schedules stop after 60 days of inactivity, Pages can still serve the last deploy and the browser core still runs.
 
-## Where to paste your script
-1. Open `js/user-script.js` and paste there (preferred for large scripts), or
-2. Paste inside the marked block at the bottom of `index.html`.
+Automation states: FRESH / AGING / STALE / CRITICAL_STALE / UNKNOWN.
+The UI must not say “24/7 guaranteed.”
 
-Then tell me to tighten it.
+## Layers
+1. Git source of truth
+2. GitHub Pages static app
+3. Browser runtime (JS, workers, one service worker)
+4. Headless engine (`engine/headless-runner.mjs`)
+5. Versioned JSON state
+6. Audit / schema
+7. Recovery scripts
+8. Releases/tags (create when you freeze a version)
+9. Optional future scheduler adapter (not required now)
 
-## Layout
-- `index.html` — command surface + node map
-- `js/chirombe.js` — graph, health, local store
-- `js/user-script.js` — **your** script slot
-- `sw.js` + `sw-cache.js` — service workers
-- `workers/` — discovery, watch, graph, pulse workers
-- `.github/workflows/` — Pages + 6-hour watch tick
-- `data/state.json` — scheduled backend snapshot
+## Recover from a clean checkout
+```
+git clone https://github.com/tariromasawi/chirombe
+cd chirombe
+node scripts/bootstrap.mjs
+```
+
+## Commands
+`window.ChirombeBus.executeCommand("status")`
+`window.ZCCA.command("activate system")`
+
+## Docs
+See `docs/`.
