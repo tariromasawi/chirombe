@@ -13,14 +13,17 @@ jobs:
       - run: |
           python3 - << 'PY'
           import json, datetime
+          names = ["Chirombe","Makwengura","Masawi","Masarura","Sabastian Karumekangu Masawi","Risto Kasirori Masawi","HRH Saint Tariro Masawi","HRH Tarry Kupakwashe Masawi","Tenderayi","Silent","Trymore","Charles","Tatenda","Rhoda","Abigail","Corinna","House of Masawi","Descendants"]
           p='data/state.json'
           try: d=json.load(open(p))
           except: d={}
           d['ok']=True
           d['ticks']=int(d.get('ticks') or 0)+1
           d['updated']=datetime.datetime.utcnow().isoformat()+'Z'
+          d['prayer_for']=names[d['ticks']%len(names)]
+          d['line']='Mwari ndi Mwari. Remembrance and peace over '+d['prayer_for']+'.'
           open(p,'w').write(json.dumps(d,indent=2))
           PY
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chirombe watch tick"
+          commit_message: "chirombe house watch tick"
