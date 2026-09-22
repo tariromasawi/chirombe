@@ -1,0 +1,26 @@
+name: watch
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          python3 - << 'PY'
+          import json, datetime
+          p='data/state.json'
+          try: d=json.load(open(p))
+          except: d={}
+          d['ok']=True
+          d['ticks']=int(d.get('ticks') or 0)+1
+          d['updated']=datetime.datetime.utcnow().isoformat()+'Z'
+          open(p,'w').write(json.dumps(d,indent=2))
+          PY
+      - uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chirombe watch tick"

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="theme-color" content="#070b08"/>
+<title>CHIROMBE</title>
+<link rel="manifest" href="manifest.json"/>
+<style>
+:root{--bg:#070b08;--ink:#e7f4ea;--dim:#8aa392;--line:#1d3324;--gold:#d4b36a;--mint:#7ee0a8}
+*{box-sizing:border-box}html,body{margin:0;background:radial-gradient(circle at 20% 0,#12301c,var(--bg) 42%);color:var(--ink);font-family:Georgia,serif}
+header{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:18px 20px;border-bottom:1px solid var(--line)}
+header b{letter-spacing:.18em}
+nav a{color:var(--gold);margin-left:12px;font-size:.9rem}
+main{display:grid;grid-template-columns:1.2fr .8fr;gap:14px;padding:16px}
+.card{border:1px solid var(--line);border-radius:16px;padding:14px;background:rgba(8,14,10,.86)}
+#map{width:100%;height:420px;background:#050806;border-radius:12px}
+#log{height:220px;overflow:auto;font:12px/1.5 ui-monospace,monospace;background:#050806;padding:10px;border-radius:10px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.kpis div{border:1px solid var(--line);border-radius:10px;padding:8px}
+.kpis span{display:block;color:var(--dim);font-size:.7rem;letter-spacing:.12em}
+textarea{width:100%;min-height:140px;background:#050806;color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px}
+button{background:#14231a;color:var(--ink);border:1px solid #2a4633;border-radius:8px;padding:8px 10px;cursor:pointer}
+footer{padding:12px 20px;color:var(--dim);font-size:.8rem}
+@media(max-width:900px){main,.kpis{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <div><b>CHIROMBE</b><div style="color:var(--mint);font-size:.8rem">MATRIX // PASTE SLOT OPEN</div></div>
+  <nav>
+    <a href="./js/user-script.js">user-script.js</a>
+    <a href="./data/nodes.json">nodes</a>
+    <a href="./data/state.json">watch</a>
+  </nav>
+</header>
+<main>
+  <section class="card">
+    <h2>Node fabric</h2>
+    <svg id="map" viewBox="0 0 900 420"></svg>
+    <div class="kpis">
+      <div><span>NODES</span><strong id="kNodes">0</strong></div>
+      <div><span>EDGES</span><strong id="kEdges">0</strong></div>
+      <div><span>WORKERS</span><strong id="kWorkers">0</strong></div>
+      <div><span>WATCH</span><strong id="kWatch">—</strong></div>
+    </div>
+  </section>
+  <section class="card">
+    <h2>Paste / notes</h2>
+    <p style="color:var(--dim)">Large scripts belong in <code>js/user-script.js</code>. This box is a local scratch pad.</p>
+    <textarea id="scratch" placeholder="Scratch notes only. The durable slot is js/user-script.js"></textarea>
+    <p><button id="saveScratch">Save scratch locally</button> <button id="tick">Pulse</button></p>
+    <div id="log"></div>
+  </section>
+</main>
+<footer>Chirombe is a new matrix. ZionCore pages were left untouched. Mwari ndi Mwari.</footer>
+<script src="js/chirombe.js"></script>
+<script src="js/user-script.js"></script>
+<!-- PASTE BLOCK: optional extra snippet. Prefer js/user-script.js for big scripts.
+<script>
+</script>
+-->
+</body>
+</html>
