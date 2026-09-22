@@ -1,63 +1,38 @@
 (function(){
-  const logEl=document.getElementById("log");
-  function log(type,msg){
-    if(!logEl)return;
-    const row=document.createElement("div");
+  if(window.__chirombeBoot)return;window.__chirombeBoot=true;
+  function set(id,t){var e=document.getElementById(id);if(e)e.textContent=t}
+  function note(type,msg){
+    var feed=document.getElementById("feed")||document.getElementById("log");
+    if(!feed)return;
+    var row=document.createElement("div");
     row.textContent=new Date().toLocaleTimeString()+"  "+type+"  "+msg;
-    logEl.prepend(row);
-    while(logEl.children.length>80)logEl.lastChild.remove();
+    feed.prepend(row);
+    while(feed.children.length>120)feed.lastChild.remove();
   }
-  window.Chirombe={log,version:"1.0"};
-
-  function draw(graph){
-    const svg=document.getElementById("map");
-    if(!svg)return;
-    svg.innerHTML="";
-    const nodes=graph.nodes||[];
-    const edges=graph.edges||[];
-    const pos={};
-    nodes.forEach((n,i)=>{
-      const a=(i/nodes.length)*Math.PI*2;
-      pos[n.id]={x:450+Math.cos(a)*280,y:210+Math.sin(a)*140,n};
-    });
-    edges.forEach(e=>{
-      const a=pos[e[0]],b=pos[e[1]]; if(!a||!b)return;
-      const l=document.createElementNS("http://www.w3.org/2000/svg","line");
-      l.setAttribute("x1",a.x);l.setAttribute("y1",a.y);
-      l.setAttribute("x2",b.x);l.setAttribute("y2",b.y);
-      l.setAttribute("stroke","#2a4633");
-      svg.appendChild(l);
-    });
-    Object.values(pos).forEach(p=>{
-      const c=document.createElementNS("http://www.w3.org/2000/svg","circle");
-      c.setAttribute("cx",p.x);c.setAttribute("cy",p.y);c.setAttribute("r",8);
-      c.setAttribute("fill",p.n.kind==="core"?"#d4b36a":"#7ee0a8");
-      svg.appendChild(c);
-      const t=document.createElementNS("http://www.w3.org/2000/svg","text");
-      t.setAttribute("x",p.x+10);t.setAttribute("y",p.y+4);
-      t.setAttribute("fill","#e7f4ea");t.setAttribute("font-size","11");
-      t.textContent=p.n.name; svg.appendChild(t);
-    });
-    document.getElementById("kNodes").textContent=nodes.length;
-    document.getElementById("kEdges").textContent=edges.length;
+  window.Chirombe={log:note,version:"1.2"};
+  if(!document.getElementById("chirombe-dock")){
+    var dock=document.createElement("div");
+    dock.id="chirombe-dock";
+    dock.style.cssText="position:sticky;top:0;z-index:50;display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:10px 16px;border-bottom:1px solid #1c2a3a;background:#070b12;font:12px/1.3 ui-sans-serif,system-ui;letter-spacing:.08em;color:#e9f2ff";
+    dock.innerHTML='<strong style="color:#e5c46a">CHIROMBE</strong><span id="cb-sw">SW —</span><span id="cb-pulse">PULSE —</span><span id="cb-watch">WATCH —</span><span id="cb-graph">GRAPH —</span><span id="cb-disc">DISC —</span><span id="cb-tick">TICK —</span>';
+    document.body.insertBefore(dock,document.body.firstChild);
   }
-
-  fetch("./data/nodes.json").then(r=>r.json()).then(g=>{draw(g);log("GRAPH",g.nodes.length+" nodes / "+g.edges.length+" edges")}).catch(()=>log("GRAPH","nodes.json missing"));
-  fetch("./data/state.json").then(r=>r.json()).then(s=>{document.getElementById("kWatch").textContent=s.ticks||s.watch||"ok";log("WATCH","scheduled file "+(s.updated||""))}).catch(()=>{});
-
-  let workers=0;
+  function boot(src,label,slot){
+    try{
+      var w=new Worker(src);
+      w.onmessage=function(e){var d=e.data||{};set(slot,(d.msg||label).slice(0,32));note(d.type||label,d.msg||"tick")};
+    }catch(err){set(slot,"blocked")}
+  }
   if(window.Worker){
-    ["workers/pulse-worker.js","workers/watch-worker.js"].forEach(src=>{
-      try{const w=new Worker(src);w.onmessage=e=>log(e.data.type||"W",e.data.msg||"tick");workers++}catch(e){}
-    });
+    boot("./workers/pulse-worker.js","PULSE","cb-pulse");
+    boot("./workers/watch-worker.js","WATCH","cb-watch");
+    boot("./workers/graph-worker.js","GRAPH","cb-graph");
+    boot("./workers/discovery-worker.js","DISC","cb-disc");
   }
-  document.getElementById("kWorkers").textContent=workers;
   if("serviceWorker"in navigator){
-    navigator.serviceWorker.register("./sw.js").then(()=>log("SW","sw.js registered")).catch(()=>log("SW","blocked"));
-    navigator.serviceWorker.register("./sw-cache.js").then(()=>log("SW","sw-cache.js registered")).catch(()=>{});
+    navigator.serviceWorker.register("./sw.js").then(function(){set("cb-sw","SW ON")}).catch(function(){set("cb-sw","SW BLOCKED")});
+    navigator.serviceWorker.register("./sw-cache.js").catch(function(){});
   }
-  const scratch=document.getElementById("scratch");
-  scratch.value=localStorage.getItem("chirombe.scratch")||"";
-  document.getElementById("saveScratch").onclick=()=>{localStorage.setItem("chirombe.scratch",scratch.value);log("SAVE","scratch stored locally")};
-  document.getElementById("tick").onclick=()=>log("PULSE","manual pulse");
+  fetch("./data/state.json").then(function(r){return r.ok?r.json():null}).then(function(s){if(s){set("cb-tick","TICK "+(s.ticks||1));note("WATCH","scheduled "+(s.updated||""))}}).catch(function(){});
+  note("BOOT","workers attached to pasted command centre");
 })();
