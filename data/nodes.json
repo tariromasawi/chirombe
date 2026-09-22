@@ -1,0 +1,22 @@
+{
+  "protocol": "CHIROMBE-1.0",
+  "nodes": [
+    {"id":"N01","name":"Chirombe Core","kind":"core"},
+    {"id":"N02","name":"House Gate","kind":"gate"},
+    {"id":"N03","name":"Watch","kind":"worker"},
+    {"id":"N04","name":"Pulse","kind":"worker"},
+    {"id":"N05","name":"Graph","kind":"worker"},
+    {"id":"N06","name":"Discovery","kind":"worker"},
+    {"id":"N07","name":"Cache","kind":"worker"},
+    {"id":"N08","name":"User Slot","kind":"script"},
+    {"id":"N09","name":"Pages","kind":"host"},
+    {"id":"N10","name":"Actions","kind":"host"},
+    {"id":"N11","name":"Archive","kind":"store"},
+    {"id":"N12","name":"Circle","kind":"protect"}
+  ],
+  "edges": [
+    ["N01","N02"],["N01","N03"],["N01","N04"],["N01","N05"],["N01","N08"],
+    ["N02","N12"],["N03","N10"],["N04","N07"],["N05","N06"],["N06","N09"],
+    ["N07","N11"],["N08","N05"],["N09","N01"],["N10","N03"],["N12","N01"]
+  ]
+}
