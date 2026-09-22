@@ -1,9 +1,8 @@
 {
-  "generatedAt": "2026-09-22T16:30:00Z",
+  "generatedAt": "2026-09-22T20:36:56.646Z",
   "protocol": "CHIROMBE-2.0",
   "schemaVersion": 2,
-  "status": "UNKNOWN",
-  "automation": "UNKNOWN",
-  "pages": "expected-live",
-  "note": "Browser health.js recalculates live. This file is the last committed snapshot."
+  "status": "ok",
+  "automation": "FRESH",
+  "pages": "not-checked-here"
 }

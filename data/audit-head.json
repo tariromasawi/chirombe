@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-09-22T16:30:00Z",
+  "generatedAt": "2026-09-22T20:36:56.646Z",
   "protocol": "CHIROMBE-2.0",
   "schemaVersion": 2,
-  "head": "GENESIS",
-  "sequence": 0
+  "head": "02952eaeb409368a028cd1fe4da403aaa8e5a2c3",
+  "sequence": 1
 }

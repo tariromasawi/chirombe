@@ -1,9 +1,10 @@
 {
-  "generatedAt": "2026-09-22T16:30:00Z",
+  "generatedAt": "2026-09-22T20:36:56.646Z",
   "protocol": "CHIROMBE-2.0",
   "schemaVersion": 2,
   "status": "ok",
-  "tickId": 1,
-  "source": "repository-seed",
-  "note": "Derived snapshot. Rebuildable from canonical data if automation stops."
+  "tickId": 1790109416651,
+  "source": "headless",
+  "familyCount": 18,
+  "cycle": "OBSERVE-ANALYSE-MODEL-SIMULATE-PROTECT-VERIFY-LEARN-IMPROVE"
 }
