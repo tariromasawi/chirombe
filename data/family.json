@@ -1,0 +1,9 @@
+{
+  "circle": "House of Masawi",
+  "scope": "authorised-protection-only",
+  "members": [
+    {"name":"HRH Saint Tariro Masawi","role":"CORE","relation":"Self","protect":true},
+    {"name":"HRH Tarry Kupakwashe Masawi","role":"CORE","relation":"Spouse","protect":true},
+    {"name":"House of Masawi","role":"HOUSE","relation":"Lineage","protect":true}
+  ]
+}
