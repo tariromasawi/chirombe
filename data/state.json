@@ -1,7 +1,9 @@
 {
   "ok": true,
   "name": "chirombe",
-  "ticks": 1,
-  "updated": "2026-09-22T14:26:00Z",
-  "watch": "scheduled"
+  "ticks": 2,
+  "updated": "2026-09-22T21:06:44.291740Z",
+  "watch": "scheduled",
+  "prayer_for": "Masawi",
+  "line": "Mwari ndi Mwari. Remembrance and peace over Masawi."
 }
