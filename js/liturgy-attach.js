@@ -6,4 +6,7 @@
   add("./js/liturgy-matrix.js");
   add("./js/guardian-matrix.js");
   add("./js/pioneer-brain.js");
+  add("./js/chirombe-pioneer-bus.js");
+  add("./js/chirombe-pioneer-adapters.js");
+  add("./js/pioneer-integration.js");
 })();

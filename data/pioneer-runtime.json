@@ -1,0 +1,12 @@
+{
+  "version": "1.0",
+  "cycle": 0,
+  "timestamp": "2026-09-23T11:00:00.000Z",
+  "health": { "phase": "OBSERVE_ONLY" },
+  "hypotheses": [],
+  "strategies": [],
+  "latestDiscovery": null,
+  "simulation": {},
+  "knowledge": {},
+  "integrity": { "currentHash": "GENESIS" }
+}
