@@ -1,0 +1,23 @@
+window.CHIROMBE_LITURGY_SEEDS=[
+{id:"S01",tradition:"Masowe / Shona",language:"Shona",text:"Mwari ndi Mwari.",translation:"God is God.",generationAllowed:true,historicalStatus:"modern devotional phrase"},
+{id:"S02",tradition:"Masowe / Shona",text:"Mudzimu Unoyera, titungamirire muchokwadi.",translation:"Holy Spirit, guide us in truth.",generationAllowed:true,historicalStatus:"original"},
+{id:"S03",tradition:"Masowe / Shona",text:"Rugare, huchenjeri nesimba rezvakanaka ngazvigare paImba yeMasawi.",translation:"Peace, wisdom and good strength for the House of Masawi.",generationAllowed:true,historicalStatus:"original"},
+{id:"S04",tradition:"Shona",text:"Mwari chengetai mhuri yedu.",translation:"God, protect our family.",generationAllowed:true,historicalStatus:"original"},
+{id:"S05",tradition:"Shona",text:"Chokwadi ngachikunde kutya; rudo ngaruve nesimba kupfuura ruvengo.",translation:"May truth overcome fear.",generationAllowed:true,historicalStatus:"original"},
+{id:"S11",tradition:"Islam",language:"Arabic",text:"بِسْمِ اللَّهِ",transliteration:"Bismillāh",translation:"In the name of Allah.",generationAllowed:true,historicalStatus:"established Islamic formula"},
+{id:"S14",tradition:"Islam",text:"حَسْبُنَا اللَّهُ",transliteration:"Hasbunallāh",translation:"Allah is sufficient for us.",generationAllowed:true,historicalStatus:"traditional"},
+{id:"S16",tradition:"Christianity",language:"Latin",text:"Pax vobiscum.",translation:"Peace be with you.",generationAllowed:true,historicalStatus:"established liturgical formula"},
+{id:"S19",tradition:"Christianity",text:"Dona nobis pacem.",translation:"Grant us peace.",generationAllowed:true,historicalStatus:"established"},
+{id:"S20",tradition:"Christianity",text:"Sub tuum praesidium confugimus.",translation:"Under your protection we seek refuge.",generationAllowed:false,historicalStatus:"established ancient prayer tradition"},
+{id:"S21",tradition:"Swahili",text:"Mungu ndiye Mungu.",translation:"God is God.",generationAllowed:true,historicalStatus:"original"},
+{id:"S26",tradition:"Hindu",text:"ॐ",translation:"Om",generationAllowed:false,historicalStatus:"established"},
+{id:"S27",tradition:"Hindu",text:"सर्वे भवन्तु सुखिनः",transliteration:"Sarve bhavantu sukhinah",translation:"May all beings be happy.",generationAllowed:false,historicalStatus:"established"},
+{id:"S31",tradition:"Buddhism",text:"Sabbe sattā sukhitā hontu.",translation:"May all beings be happy.",generationAllowed:false,historicalStatus:"traditional"},
+{id:"S33",tradition:"Buddhism",text:"ॐ मणि पद्मे हूँ",transliteration:"Om mani padme hum",generationAllowed:false,historicalStatus:"established"},
+{id:"S36",tradition:"Egyptological",text:"Dua Re",translation:"Praise/Revere Ra.",generationAllowed:false,historicalStatus:"Egyptological reconstruction",languageStatus:"historically reconstructed"},
+{id:"S41",tradition:"Judaism",text:"שלום",transliteration:"Shalom",translation:"Peace.",generationAllowed:true,historicalStatus:"established"},
+{id:"S42",tradition:"Judaism",text:"יהי אור",transliteration:"Yehi or",translation:"Let there be light.",generationAllowed:false,historicalStatus:"canonical biblical phrase"},
+{id:"S44",tradition:"Wicca-inspired modern devotional",text:"May the circle hold peace, wisdom and protection.",generationAllowed:true,historicalStatus:"original modern"},
+{id:"S47",tradition:"African-inspired universal",text:"May the wisdom of those who came before us guide those who come after us.",generationAllowed:true,historicalStatus:"original"},
+{id:"S50",tradition:"universal",text:"May fear lose its power, may wisdom increase, and may every protected branch flourish in peace.",generationAllowed:true,historicalStatus:"original"}
+];
