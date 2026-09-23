@@ -11,9 +11,9 @@
   load("./js/index-hmac-nim-addition.js");
   load("./js/liturgy-attach.js");
   function note(type,msg){var feed=document.getElementById("feed")||document.getElementById("log");if(!feed)return;var row=document.createElement("div");row.textContent=new Date().toLocaleTimeString()+"  "+type+"  "+msg;feed.prepend(row);}
-  window.Chirombe={log:note,version:"2.2.0"};
+  window.Chirombe={log:note,version:"2.3.0"};
   if(!document.getElementById("chirombe-dock")){
-    var d=document.createElement("div");d.id="chirombe-dock";d.style.cssText="position:sticky;top:0;z-index:80;display:flex;gap:8px;flex-wrap:wrap;padding:10px 16px;background:#070b12;color:#e9f2ff;font:11px ui-sans-serif";d.innerHTML='<strong style="color:#e5c46a">CHIROMBE-2.2</strong><a href="./liturgy.html" style="color:#ffe8a4">liturgy</a><a href="./guardian.html" style="color:#ffe8a4">guardian</a><a href="./app.html" style="color:#ffe8a4">core</a>';document.body.insertBefore(d,document.body.firstChild);
+    var d=document.createElement("div");d.id="chirombe-dock";d.style.cssText="position:sticky;top:0;z-index:80;display:flex;gap:8px;flex-wrap:wrap;padding:10px 16px;background:#070b12;color:#e9f2ff;font:11px ui-sans-serif";d.innerHTML='<strong style="color:#e5c46a">CHIROMBE-2.3</strong><a href="./pioneer.html" style="color:#ffe8a4">pioneer</a><a href="./liturgy.html" style="color:#ffe8a4">liturgy</a><a href="./guardian.html" style="color:#ffe8a4">guardian</a><a href="./app.html" style="color:#ffe8a4">core</a>';document.body.insertBefore(d,document.body.firstChild);
   }
   if("serviceWorker"in navigator) navigator.serviceWorker.register("./sw.js").catch(function(){});
   load("./js/zcca-attach.js");
