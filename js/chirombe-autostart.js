@@ -1,0 +1,103 @@
+/* CHIROMBE MASTER AUTOSTART CAO-1.0.0 — orchestration only */
+(function (g) {
+  "use strict";
+  if (g.__CHIROMBE_MASTER_AUTOSTART__) return;
+  g.__CHIROMBE_MASTER_AUTOSTART__ = true;
+  var VERSION = "CAO-1.0.0";
+  var state = { version: VERSION, booted: false, running: true, cycle: 0, subsystemCycles: 0, recoveries: 0, errors: 0, startedAt: new Date().toISOString(), modules: {}, lastFullCycle: null, lastPioneer: null, lastSimulation: null, lastZCCA: null, lastGuardian: null, lastLiturgy: null, hardware: { microphone: "READY_FOR_PERMISSION", camera: "READY_FOR_PERMISSION", location: "READY_FOR_PERMISSION", motion: "READY_FOR_PERMISSION", audio: "GESTURE_REQUIRED" } };
+  function log(type, message) {
+    try { if (g.Chirombe && typeof g.Chirombe.log === "function") g.Chirombe.log("AUTOSTART." + type, message); } catch (e) {}
+    var feed = document.getElementById("liveFeed") || document.getElementById("feed") || document.getElementById("zcca-events") || document.getElementById("cpb-log");
+    if (!feed) return;
+    try { var row = document.createElement("div"); row.textContent = new Date().toLocaleTimeString() + "  AUTOSTART." + type + "  " + message; feed.prepend(row); while (feed.children.length > 100) feed.lastElementChild.remove(); } catch (e) {}
+  }
+  function safe(name, fn) {
+    try { if (typeof fn !== "function") { state.modules[name] = "UNAVAILABLE"; return null; } var result = fn(); state.modules[name] = "ACTIVE"; return result; }
+    catch (error) { state.errors++; state.modules[name] = "ERROR: " + String(error); log("ERROR", name + " :: " + String(error)); return null; }
+  }
+  function status() { return { version: VERSION, running: state.running, booted: state.booted, cycle: state.cycle, modules: Object.assign({}, state.modules), hardware: Object.assign({}, state.hardware), errors: state.errors, recoveries: state.recoveries, startedAt: state.startedAt, lastFullCycle: state.lastFullCycle, lastPioneer: state.lastPioneer, lastSimulation: state.lastSimulation }; }
+  function activateZCCA() { if (g.ZCCA && typeof g.ZCCA.activate === "function") { safe("ZCCA", function () { var r = g.ZCCA.activate(); state.lastZCCA = new Date().toISOString(); log("ZCCA", "activated"); return r; }); return true; } state.modules.ZCCA = "WAITING_FOR_MODULE"; return false; }
+  function activateGuardian() { if (g.CHIROMBE_GUARDIAN) { safe("GUARDIAN", function () { if (typeof g.CHIROMBE_GUARDIAN.start === "function") g.CHIROMBE_GUARDIAN.start(); state.lastGuardian = new Date().toISOString(); log("GUARDIAN", "activated"); }); return true; } state.modules.GUARDIAN = "WAITING_FOR_MODULE"; return false; }
+  function activatePioneer() { if (g.CHIROMBE_PIONEER_BRAIN) { safe("PIONEER", function () { if (typeof g.CHIROMBE_PIONEER_BRAIN.resume === "function") g.CHIROMBE_PIONEER_BRAIN.resume(); state.lastPioneer = new Date().toISOString(); log("PIONEER", "resumed"); }); return true; } state.modules.PIONEER = "WAITING_FOR_MODULE"; return false; }
+  function activateZCSM() { if (g.ZCSM) { state.modules.ZCSM = "ACTIVE"; safe("ZCSM", function () { if (typeof g.ZCSM.evolve === "function") g.ZCSM.evolve(); log("ZCSM", "connected"); }); return true; } state.modules.ZCSM = "WAITING_FOR_MODULE"; return false; }
+  function activateLiturgy() { if (g.CHIROMBE_LITURGY) { safe("LITURGY", function () { if (typeof g.CHIROMBE_LITURGY.next === "function") g.CHIROMBE_LITURGY.next(); state.lastLiturgy = new Date().toISOString(); log("LITURGY", "started"); }); return true; } state.modules.LITURGY = "WAITING_FOR_MODULE"; return false; }
+  function activateProtectionCore() { if (g.ZionProtect) { state.modules.PROTECTION_CORE = "ACTIVE"; safe("PROTECTION_CORE", function () { if (typeof g.ZionProtect.initializeCore === "function") return g.ZionProtect.initializeCore(); }); return true; } state.modules.PROTECTION_CORE = "WAITING_FOR_MODULE"; return false; }
+  async function runSQIECycle() {
+    if (!state.running) return;
+    state.cycle++;
+    log("CYCLE", "FULL SQIE cycle " + state.cycle + " initiated.");
+    var observation = null;
+    if (typeof g.sense === "function") observation = safe("SENSE", function () { return g.sense(); });
+    if (typeof g.translate === "function") safe("TRANSLATE", function () { return g.translate(observation); });
+    if (typeof g.runNIM === "function") safe("NIM", function () { return g.runNIM(); });
+    if (typeof g.runEEA === "function") safe("EEA", function () { return g.runEEA(); });
+    if (typeof g.runPPM === "function") safe("PPM", function () { return g.runPPM(); });
+    if (typeof g.generateStrategies === "function") safe("ISG", function () { return g.generateStrategies(); });
+    if (typeof g.reprogram === "function") safe("REPROGRAM", function () { return g.reprogram(); });
+    if (typeof g.runSimulation === "function") safe("SIMULATION", function () { state.lastSimulation = new Date().toISOString(); return g.runSimulation(500); });
+    if (typeof g.feedback === "function") safe("FEEDBACK", function () { return g.feedback(); });
+    if (g.CHIROMBE_PIONEER_BRAIN && typeof g.CHIROMBE_PIONEER_BRAIN.cycle === "function") safe("PIONEER", function () { return g.CHIROMBE_PIONEER_BRAIN.cycle(); });
+    else if (typeof g.generatePioneer === "function") safe("PIONEER", function () { return g.generatePioneer(); });
+    if (g.CHIROMBE_GUARDIAN && typeof g.CHIROMBE_GUARDIAN.simulate === "function") safe("GUARDIAN", function () { return g.CHIROMBE_GUARDIAN.simulate(); });
+    if (g.ZionProtect && typeof g.ZionProtect.snapshot === "function") safe("PROTECTION_CORE", function () { return g.ZionProtect.snapshot(); });
+    if (typeof g.renderAll === "function") safe("RENDER", function () { return g.renderAll(); });
+    state.lastFullCycle = new Date().toISOString();
+    state.subsystemCycles++;
+    log("CYCLE", "FULL SQIE cycle " + state.cycle + " completed.");
+  }
+  function detectHardware() {
+    state.hardware.microphone = navigator.mediaDevices && navigator.mediaDevices.getUserMedia ? "READY_FOR_PERMISSION" : "UNAVAILABLE";
+    state.hardware.camera = navigator.mediaDevices && navigator.mediaDevices.getUserMedia ? "READY_FOR_PERMISSION" : "UNAVAILABLE";
+    state.hardware.location = navigator.geolocation ? "READY_FOR_PERMISSION" : "UNAVAILABLE";
+    state.hardware.motion = typeof DeviceMotionEvent !== "undefined" ? "READY_FOR_PERMISSION" : "UNAVAILABLE";
+    if (g.ChirombeResonance && typeof g.ChirombeResonance.status === "function") { try { state.hardware.audio = g.ChirombeResonance.status().audio; } catch (e) {} }
+  }
+  function discoverModules() {
+    ["ZCCA","ZCSM","GUARDIAN","PIONEER","LITURGY","RESONANCE","PROTECTION_CORE","CORE","BUS","HEALTH"].forEach(function () {});
+    var known = { ZCCA: !!g.ZCCA, ZCSM: !!g.ZCSM, GUARDIAN: !!g.CHIROMBE_GUARDIAN, PIONEER: !!g.CHIROMBE_PIONEER_BRAIN, LITURGY: !!g.CHIROMBE_LITURGY, RESONANCE: !!g.ChirombeResonance, PROTECTION_CORE: !!g.ZionProtect, CORE: !!g.ChirombeCore, BUS: !!g.ChirombeBus, HEALTH: !!g.ChirombeHealth };
+    Object.keys(known).forEach(function (name) { if (known[name] && state.modules[name] !== "ACTIVE") state.modules[name] = "DISCOVERED"; });
+  }
+  function recoverySweep() {
+    discoverModules();
+    try { if (g.CHIROMBE_GUARDIAN && typeof g.CHIROMBE_GUARDIAN.status === "function") { var gs = g.CHIROMBE_GUARDIAN.status(); if (gs && gs.running === false && typeof g.CHIROMBE_GUARDIAN.start === "function") { g.CHIROMBE_GUARDIAN.start(); state.recoveries++; log("RECOVERY", "Guardian restarted"); } } } catch (e) {}
+    try { if (g.CHIROMBE_PIONEER_BRAIN && typeof g.CHIROMBE_PIONEER_BRAIN.resume === "function") { var ps = g.CHIROMBE_PIONEER_BRAIN.status(); if (ps && ps.paused) { g.CHIROMBE_PIONEER_BRAIN.resume(); state.recoveries++; log("RECOVERY", "Pioneer resumed"); } } } catch (e) {}
+  }
+  function fixNavSelector() {
+    var buttons = document.querySelectorAll("button.nav, .nav[data-view]");
+    buttons.forEach(function (btn) {
+      if (btn.dataset.autostartNav) return;
+      btn.dataset.autostartNav = "1";
+      btn.addEventListener("click", function () {
+        var view = btn.getAttribute("data-view");
+        if (!view) return;
+        var target = document.getElementById(view) || document.querySelector('[data-view-panel="' + view + '"]');
+        if (target && target.scrollIntoView) target.scrollIntoView({ behavior: "smooth", block: "start" });
+        log("NAV", "view " + view);
+      });
+    });
+    if (buttons.length) log("NAV", "patched button.nav (" + buttons.length + ")");
+  }
+  function boot() {
+    if (state.booted) return;
+    state.booted = true;
+    log("BOOT", "master discovery");
+    detectHardware(); discoverModules(); fixNavSelector();
+    activateProtectionCore(); activateZCCA(); activateGuardian(); activatePioneer(); activateZCSM(); activateLiturgy();
+    setTimeout(function () {
+      discoverModules(); activateProtectionCore(); activateZCCA(); activateGuardian(); activatePioneer(); activateZCSM(); activateLiturgy(); fixNavSelector();
+      setTimeout(function () { runSQIECycle(); }, 1500);
+    }, 1200);
+    setInterval(runSQIECycle, 12000);
+    setInterval(recoverySweep, 5000);
+    setInterval(detectHardware, 10000);
+    setInterval(function () { try { localStorage.setItem("CHIROMBE_MASTER_AUTOSTART", JSON.stringify(state)); } catch (e) {} }, 7000);
+    log("BOOT", "Master orchestration online.");
+  }
+  g.CHIROMBE_AUTOSTART = { version: VERSION, start: function () { state.running = true; boot(); return status(); }, stop: function () { state.running = false; log("SYSTEM", "paused"); }, cycle: runSQIECycle, discover: discoverModules, recover: recoverySweep, status: status, hardware: function () { detectHardware(); return state.hardware; } };
+  if (g.ChirombeBus && typeof g.ChirombeBus.registerCommand === "function") {
+    g.ChirombeBus.registerCommand("autostart.status", function () { return status(); }, { subsystem: "master" });
+    g.ChirombeBus.registerCommand("autostart.cycle", function () { return runSQIECycle(); }, { subsystem: "master" });
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot, { once: true });
+  else boot();
+})(typeof window !== "undefined" ? window : globalThis);
