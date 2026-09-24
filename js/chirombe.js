@@ -25,12 +25,8 @@
   load("./js/cm90-family-matrix.js");
   load("./js/cm90-tonal-continuous.js");
   load("./js/celestial-support.js");
+  load("./js/celestial-autostart-on-index.js");
   function note(type,msg){var feed=document.getElementById("feed")||document.getElementById("log")||document.getElementById("liveFeed");if(!feed)return;var row=document.createElement("div");row.textContent=new Date().toLocaleTimeString()+"  "+type+"  "+msg;feed.prepend(row);}
-  window.Chirombe={log:note,version:"2.6.4"};
-  if(!document.getElementById("chirombe-dock")){
-    var d=document.createElement("div");d.id="chirombe-dock";d.style.cssText="position:sticky;top:0;z-index:80;display:flex;gap:8px;flex-wrap:wrap;padding:10px 16px;background:#070b12;color:#e9f2ff;font:11px ui-sans-serif";d.innerHTML='<strong style="color:#e5c46a">CHIROMBE-2.6</strong><a href="./chirombe-celestial-protection.html" style="color:#5de8ff">celestial twin</a><a href="./pioneer.html" style="color:#ffe8a4">pioneer</a><a href="./app.html" style="color:#ffe8a4">core</a>';document.body.insertBefore(d,document.body.firstChild);
-  } else if(!document.getElementById("chirombe-celestial-link")){
-    var a=document.createElement("a");a.id="chirombe-celestial-link";a.href="./chirombe-celestial-protection.html";a.textContent="celestial twin";a.style.color="#5de8ff";document.getElementById("chirombe-dock").appendChild(a);
-  }
+  window.Chirombe={log:note,version:"2.6.5"};
   if("serviceWorker"in navigator) navigator.serviceWorker.register("./sw.js").catch(function(){});
 })();
