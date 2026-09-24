@@ -1,4 +1,6868 @@
-/*
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#05070d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description"
+      content="CHIROMBE Celestial Protection — local-first family matrix, defensive boundary and integrity engine.">
+
+<title>CHIROMBE · Celestial Protection</title>
+
+<style>
+:root{
+  --bg:#03050a;
+  --bg2:#070b14;
+  --panel:rgba(9,14,25,.86);
+  --panel2:rgba(13,20,34,.78);
+  --line:rgba(133,178,255,.20);
+  --line2:rgba(255,255,255,.08);
+  --text:#eaf3ff;
+  --muted:#8da1bb;
+  --cyan:#5de8ff;
+  --blue:#6f8cff;
+  --violet:#b77cff;
+  --gold:#ffd86b;
+  --green:#58efac;
+  --red:#ff647c;
+  --orange:#ffad5c;
+  --shadow:0 18px 70px rgba(0,0,0,.45);
+  --radius:18px;
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+}
+
+*{
+  box-sizing:border-box;
+  -webkit-tap-highlight-color:transparent;
+}
+
+html,body{
+  margin:0;
+  width:100%;
+  min-height:100%;
+  background:
+    radial-gradient(circle at 50% -10%,rgba(100,120,255,.15),transparent 35%),
+    radial-gradient(circle at 10% 90%,rgba(0,220,255,.07),transparent 30%),
+    var(--bg);
+  color:var(--text);
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+}
+
+body{
+  overflow-x:hidden;
+}
+
+button,
+input,
+select{
+  font:inherit;
+}
+
+button{
+  cursor:pointer;
+}
+
+button:disabled{
+  cursor:not-allowed;
+  opacity:.45;
+}
+
+#app{
+  min-height:100vh;
+  position:relative;
+  isolation:isolate;
+}
+
+#celestialCanvas{
+  position:fixed;
+  inset:0;
+  width:100%;
+  height:100%;
+  z-index:-3;
+  pointer-events:none;
+}
+
+#gridCanvas{
+  position:fixed;
+  inset:0;
+  width:100%;
+  height:100%;
+  z-index:-2;
+  pointer-events:none;
+  opacity:.35;
+}
+
+.scanlines{
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  z-index:50;
+  opacity:.06;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent 3px,
+      rgba(255,255,255,.8) 4px
+    );
+  mix-blend-mode:screen;
+}
+
+.vignette{
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  z-index:49;
+  background:
+    radial-gradient(circle at center,
+      transparent 30%,
+      rgba(0,0,0,.20) 70%,
+      rgba(0,0,0,.62) 100%);
+}
+
+.shell{
+  width:min(1600px,100%);
+  margin:auto;
+  padding:
+    max(14px,env(safe-area-inset-top))
+    14px
+    calc(30px + var(--safe-bottom));
+}
+
+header{
+  position:sticky;
+  top:0;
+  z-index:30;
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  background:rgba(3,5,10,.76);
+  border-bottom:1px solid var(--line2);
+}
+
+.header-inner{
+  width:min(1600px,100%);
+  margin:auto;
+  padding:12px 14px;
+  display:flex;
+  gap:12px;
+  align-items:center;
+  justify-content:space-between;
+}
+
+.brand{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  min-width:0;
+}
+
+.emblem{
+  width:42px;
+  height:42px;
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  border:1px solid rgba(93,232,255,.55);
+  box-shadow:
+    0 0 22px rgba(93,232,255,.20),
+    inset 0 0 20px rgba(111,140,255,.12);
+  position:relative;
+  flex:none;
+}
+
+.emblem::before,
+.emblem::after{
+  content:"";
+  position:absolute;
+  inset:6px;
+  border:1px solid rgba(255,216,107,.32);
+  border-radius:50%;
+  transform:rotate(45deg);
+}
+
+.emblem::after{
+  transform:rotate(-45deg);
+}
+
+.brand-text{
+  min-width:0;
+}
+
+.brand-title{
+  font-size:14px;
+  font-weight:900;
+  letter-spacing:.18em;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.brand-sub{
+  font-size:10px;
+  color:var(--muted);
+  letter-spacing:.12em;
+  margin-top:3px;
+}
+
+.header-actions{
+  display:flex;
+  gap:7px;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+}
+
+.btn{
+  border:1px solid var(--line);
+  background:rgba(12,19,34,.78);
+  color:var(--text);
+  padding:9px 12px;
+  min-height:38px;
+  border-radius:11px;
+  font-weight:800;
+  font-size:11px;
+  letter-spacing:.04em;
+  transition:
+    transform .15s ease,
+    border-color .15s ease,
+    background .15s ease;
+}
+
+.btn:hover{
+  transform:translateY(-1px);
+  border-color:rgba(93,232,255,.55);
+  background:rgba(18,29,50,.9);
+}
+
+.btn:active{
+  transform:translateY(1px) scale(.98);
+}
+
+.btn.primary{
+  border-color:rgba(93,232,255,.50);
+  box-shadow:0 0 18px rgba(93,232,255,.08);
+}
+
+.btn.danger{
+  border-color:rgba(255,100,124,.42);
+}
+
+.btn.good{
+  border-color:rgba(88,239,172,.42);
+}
+
+.btn.gold{
+  border-color:rgba(255,216,107,.44);
+}
+
+.hero{
+  display:grid;
+  grid-template-columns:minmax(0,1.5fr) minmax(300px,.7fr);
+  gap:14px;
+  margin:18px 0 14px;
+}
+
+.card{
+  background:
+    linear-gradient(
+      145deg,
+      rgba(15,23,40,.90),
+      rgba(6,10,18,.88)
+    );
+  border:1px solid var(--line2);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  overflow:hidden;
+}
+
+.hero-main{
+  min-height:260px;
+  padding:24px;
+  position:relative;
+}
+
+.hero-main::after{
+  content:"";
+  position:absolute;
+  inset:auto -20% -70% -20%;
+  height:220px;
+  background:
+    radial-gradient(
+      ellipse,
+      rgba(93,232,255,.12),
+      transparent 65%
+    );
+  pointer-events:none;
+}
+
+.eyebrow{
+  color:var(--cyan);
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:.20em;
+  text-transform:uppercase;
+}
+
+h1{
+  margin:10px 0 8px;
+  font-size:clamp(28px,5vw,58px);
+  line-height:.95;
+  letter-spacing:-.045em;
+}
+
+.hero-copy{
+  max-width:850px;
+  color:#b7c8df;
+  line-height:1.65;
+  font-size:13px;
+}
+
+.identity-strip{
+  margin-top:20px;
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
+.badge{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  min-height:29px;
+  padding:6px 9px;
+  border-radius:999px;
+  border:1px solid var(--line);
+  background:rgba(255,255,255,.025);
+  color:#cfe1f9;
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.05em;
+}
+
+.badge.online::before,
+.badge.safe::before,
+.badge.observe::before,
+.badge.alert::before{
+  content:"";
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:currentColor;
+  box-shadow:0 0 12px currentColor;
+}
+
+.badge.online{color:var(--green)}
+.badge.safe{color:var(--cyan)}
+.badge.observe{color:var(--gold)}
+.badge.alert{color:var(--red)}
+
+.status-card{
+  padding:18px;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+}
+
+.status-head{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+}
+
+.status-title{
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+}
+
+.state-orb{
+  width:76px;
+  height:76px;
+  border-radius:50%;
+  margin:20px auto;
+  display:grid;
+  place-items:center;
+  border:1px solid rgba(93,232,255,.55);
+  box-shadow:
+    0 0 30px rgba(93,232,255,.18),
+    inset 0 0 35px rgba(111,140,255,.14);
+  animation:orbPulse 3.5s ease-in-out infinite;
+}
+
+@keyframes orbPulse{
+  0%,100%{transform:scale(.96);filter:brightness(.9)}
+  50%{transform:scale(1.04);filter:brightness(1.2)}
+}
+
+.state-core{
+  width:18px;
+  height:18px;
+  border-radius:50%;
+  background:var(--cyan);
+  box-shadow:0 0 25px var(--cyan);
+}
+
+.status-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+}
+
+.stat{
+  border:1px solid var(--line2);
+  border-radius:12px;
+  padding:10px;
+  background:rgba(255,255,255,.025);
+}
+
+.stat-label{
+  color:var(--muted);
+  font-size:9px;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+}
+
+.stat-value{
+  margin-top:5px;
+  font-size:17px;
+  font-weight:900;
+}
+
+.dashboard{
+  display:grid;
+  grid-template-columns:minmax(0,1.55fr) minmax(300px,.65fr);
+  gap:14px;
+}
+
+.network-card{
+  min-height:620px;
+  position:relative;
+}
+
+.card-header{
+  padding:14px 16px;
+  border-bottom:1px solid var(--line2);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+
+.card-title{
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:.13em;
+  text-transform:uppercase;
+}
+
+.card-meta{
+  color:var(--muted);
+  font-size:9px;
+  font-family:ui-monospace,monospace;
+}
+
+#networkCanvas{
+  display:block;
+  width:100%;
+  height:560px;
+  touch-action:none;
+}
+
+.network-overlay{
+  position:absolute;
+  left:14px;
+  bottom:14px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:7px;
+  max-width:90%;
+}
+
+.legend{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  border:1px solid var(--line2);
+  border-radius:999px;
+  padding:6px 8px;
+  background:rgba(3,5,10,.75);
+  backdrop-filter:blur(10px);
+  font-size:9px;
+  color:#b7c8df;
+}
+
+.dot{
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:currentColor;
+  box-shadow:0 0 9px currentColor;
+}
+
+.side{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+
+.controls{
+  padding:14px;
+}
+
+.control-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+}
+
+.control-grid .btn{
+  width:100%;
+}
+
+.meter{
+  margin-top:14px;
+}
+
+.meter-row{
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  font-size:9px;
+  color:var(--muted);
+  margin-bottom:6px;
+}
+
+.meter-track{
+  height:7px;
+  border-radius:999px;
+  overflow:hidden;
+  background:rgba(255,255,255,.06);
+}
+
+.meter-fill{
+  width:0%;
+  height:100%;
+  background:linear-gradient(
+    90deg,
+    var(--cyan),
+    var(--violet),
+    var(--gold)
+  );
+  box-shadow:0 0 12px rgba(93,232,255,.30);
+  transition:width .35s ease;
+}
+
+.feed{
+  height:260px;
+  overflow:auto;
+  padding:10px;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:9px;
+}
+
+.feed-row{
+  display:grid;
+  grid-template-columns:76px 74px 1fr;
+  gap:7px;
+  padding:7px 4px;
+  border-bottom:1px solid rgba(255,255,255,.035);
+}
+
+.feed-time{color:#687a93}
+.feed-type{color:var(--cyan)}
+.feed-msg{color:#b8c7dc;overflow-wrap:anywhere}
+
+.section{
+  margin-top:14px;
+}
+
+.section-grid{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:14px;
+}
+
+.module{
+  min-height:180px;
+  padding:16px;
+}
+
+.module h3{
+  margin:0 0 7px;
+  font-size:12px;
+}
+
+.module p{
+  margin:0;
+  color:#91a5bf;
+  font-size:10px;
+  line-height:1.6;
+}
+
+.module-value{
+  font-size:28px;
+  font-weight:900;
+  margin:16px 0 4px;
+}
+
+.node-browser{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:8px;
+  max-height:420px;
+  overflow:auto;
+  padding:10px;
+}
+
+.node{
+  display:grid;
+  grid-template-columns:10px 1fr auto;
+  gap:9px;
+  align-items:center;
+  border:1px solid rgba(255,255,255,.055);
+  border-radius:12px;
+  padding:9px;
+  background:rgba(255,255,255,.02);
+}
+
+.node-pip{
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:var(--cyan);
+  box-shadow:0 0 10px var(--cyan);
+}
+
+.node-main{
+  min-width:0;
+}
+
+.node-name{
+  font-size:10px;
+  font-weight:900;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.node-type{
+  font-size:8px;
+  color:var(--muted);
+  margin-top:3px;
+}
+
+.node-score{
+  text-align:right;
+  font-family:ui-monospace,monospace;
+  font-size:9px;
+}
+
+.security-layout{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+}
+
+.log-panel{
+  min-height:360px;
+}
+
+.table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:9px;
+}
+
+.table th,
+.table td{
+  text-align:left;
+  padding:8px;
+  border-bottom:1px solid rgba(255,255,255,.05);
+}
+
+.table th{
+  color:#73869f;
+  font-size:8px;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+}
+
+footer{
+  margin-top:20px;
+  padding:20px 5px 30px;
+  color:#63748b;
+  text-align:center;
+  font-size:9px;
+  line-height:1.8;
+}
+
+footer strong{
+  color:#aabbd1;
+}
+
+.modal{
+  position:fixed;
+  inset:0;
+  z-index:100;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:16px;
+  background:rgba(0,0,0,.72);
+  backdrop-filter:blur(12px);
+}
+
+.modal.open{
+  display:flex;
+}
+
+.modal-card{
+  width:min(720px,100%);
+  max-height:90vh;
+  overflow:auto;
+  border:1px solid var(--line);
+  border-radius:20px;
+  background:#080d17;
+  box-shadow:0 30px 100px rgba(0,0,0,.7);
+}
+
+.modal-head{
+  padding:16px;
+  border-bottom:1px solid var(--line2);
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+}
+
+.modal-body{
+  padding:16px;
+}
+
+textarea,
+input,
+select{
+  width:100%;
+  background:#050913;
+  border:1px solid var(--line);
+  color:var(--text);
+  border-radius:10px;
+  padding:10px;
+  outline:none;
+}
+
+textarea{
+  min-height:160px;
+  resize:vertical;
+  font-family:ui-monospace,monospace;
+  font-size:10px;
+}
+
+.security-state{
+  padding:12px;
+  border-radius:12px;
+  border:1px solid var(--line);
+  background:rgba(255,255,255,.02);
+  font-size:10px;
+  line-height:1.6;
+}
+
+.security-state strong{
+  color:var(--cyan);
+}
+
+.toast{
+  position:fixed;
+  left:50%;
+  bottom:calc(18px + var(--safe-bottom));
+  transform:translate(-50%,20px);
+  z-index:200;
+  min-width:min(340px,90vw);
+  max-width:90vw;
+  padding:11px 14px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:rgba(7,12,22,.95);
+  box-shadow:0 15px 50px rgba(0,0,0,.45);
+  color:#dcecff;
+  font-size:10px;
+  opacity:0;
+  pointer-events:none;
+  transition:.25s ease;
+}
+
+.toast.show{
+  opacity:1;
+  transform:translate(-50%,0);
+}
+
+@media(max-width:1050px){
+  .hero,
+  .dashboard,
+  .security-layout{
+    grid-template-columns:1fr;
+  }
+
+  .section-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+
+@media(max-width:650px){
+  .shell{
+    padding-left:9px;
+    padding-right:9px;
+  }
+
+  .header-inner{
+    align-items:flex-start;
+  }
+
+  .header-actions{
+    max-width:48%;
+  }
+
+  .header-actions .btn{
+    padding:7px 8px;
+    min-height:34px;
+    font-size:9px;
+  }
+
+  .hero-main{
+    padding:18px;
+  }
+
+  .hero-main h1{
+    font-size:34px;
+  }
+
+  .section-grid{
+    grid-template-columns:1fr;
+  }
+
+  #networkCanvas{
+    height:430px;
+  }
+
+  .network-card{
+    min-height:490px;
+  }
+
+  .control-grid{
+    grid-template-columns:1fr 1fr;
+  }
+
+  .feed-row{
+    grid-template-columns:64px 60px 1fr;
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  *,
+  *::before,
+  *::after{
+    animation-duration:.001ms!important;
+    animation-iteration-count:1!important;
+    scroll-behavior:auto!important;
+    transition:none!important;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div id="app">
+
+<canvas id="celestialCanvas"></canvas>
+<canvas id="gridCanvas"></canvas>
+
+<div class="scanlines"></div>
+<div class="vignette"></div>
+
+<header>
+  <div class="header-inner">
+
+    <div class="brand">
+      <div class="emblem">✦</div>
+
+      <div class="brand-text">
+        <div class="brand-title">CHIROMBE CELESTIAL PROTECTION</div>
+        <div class="brand-sub">
+          LOCAL-FIRST · ZERO-TRUST · FAMILY MATRIX · CM90+
+        </div>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button class="btn primary" id="armBtn">ARM</button>
+      <button class="btn" id="pauseBtn">PAUSE</button>
+      <button class="btn gold" id="toneBtn">TONES</button>
+      <button class="btn" id="exportBtn">EXPORT</button>
+      <button class="btn danger" id="resetBtn">RESET</button>
+    </div>
+
+  </div>
+</header>
+
+
+<main class="shell">
+
+  <section class="hero">
+
+    <div class="card hero-main">
+
+      <div class="eyebrow">
+        HOUSE OF MASAWI · CHIROMBE SYSTEM
+      </div>
+
+      <h1>
+        CELESTIAL<br>
+        PROTECTION
+      </h1>
+
+      <div class="hero-copy">
+        A local-first defensive simulation and family-resonance environment.
+        The system models lineage nodes, synthetic future branches,
+        integrity states, behavioural decoys, quarantine boundaries and
+        visual celestial fields without claiming supernatural detection or
+        transmitting retaliatory signals.
+      </div>
+
+      <div class="identity-strip">
+
+        <span class="badge safe">ZERO-TRUST INPUT</span>
+        <span class="badge safe">OFFLINE-FIRST</span>
+        <span class="badge online">MATRIX ACTIVE</span>
+        <span class="badge">77-99-33</span>
+        <span class="badge">MUKANYA</span>
+        <span class="badge">MWARI NDI MWARI</span>
+
+      </div>
+
+    </div>
+
+
+    <div class="card status-card">
+
+      <div class="status-head">
+        <div>
+          <div class="status-title">Boundary State</div>
+          <div class="card-meta" id="incidentText">NORMAL</div>
+        </div>
+
+        <span class="badge safe" id="statusBadge">
+          SECURE
+        </span>
+      </div>
+
+      <div class="state-orb">
+        <div class="state-core"></div>
+      </div>
+
+      <div class="status-grid">
+
+        <div class="stat">
+          <div class="stat-label">Nodes</div>
+          <div class="stat-value" id="statNodes">100</div>
+        </div>
+
+        <div class="stat">
+          <div class="stat-label">Events</div>
+          <div class="stat-value" id="statEvents">0</div>
+        </div>
+
+        <div class="stat">
+          <div class="stat-label">Quarantine</div>
+          <div class="stat-value" id="statQuarantine">0</div>
+        </div>
+
+        <div class="stat">
+          <div class="stat-label">Integrity</div>
+          <div class="stat-value" id="statIntegrity">100%</div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <section class="dashboard">
+
+    <div class="card network-card">
+
+      <div class="card-header">
+        <div>
+          <div class="card-title">Celestial Family Matrix</div>
+          <div class="card-meta">
+            LIVE LOCAL SIMULATION
+          </div>
+        </div>
+
+        <div class="card-meta" id="matrixMode">
+          CONTINUOUS
+        </div>
+      </div>
+
+      <canvas id="networkCanvas"></canvas>
+
+      <div class="network-overlay">
+
+        <div class="legend">
+          <span class="dot" style="color:#5de8ff"></span>
+          Known lineage
+        </div>
+
+        <div class="legend">
+          <span class="dot" style="color:#b77cff"></span>
+          Synthetic branch
+        </div>
+
+        <div class="legend">
+          <span class="dot" style="color:#ffd86b"></span>
+          Canary
+        </div>
+
+        <div class="legend">
+          <span class="dot" style="color:#ff647c"></span>
+          Quarantine
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <div class="side">
+
+      <div class="card controls">
+
+        <div class="card-title">
+          Command Nexus
+        </div>
+
+        <div style="height:10px"></div>
+
+        <div class="control-grid">
+
+          <button class="btn primary" id="pulseBtn">
+            PULSE MATRIX
+          </button>
+
+          <button class="btn" id="mirrorBtn">
+            DEFENSIVE MIRROR
+          </button>
+
+          <button class="btn good" id="boundaryBtn">
+            TEST BOUNDARY
+          </button>
+
+          <button class="btn gold" id="canaryBtn">
+            CREATE CANARY
+          </button>
+
+          <button class="btn" id="decoyBtn">
+            CREATE DECOY
+          </button>
+
+          <button class="btn danger" id="quarantineBtn">
+            QUARANTINE TEST
+          </button>
+
+          <button class="btn" id="integrityBtn">
+            INTEGRITY CHECK
+          </button>
+
+          <button class="btn" id="privacyBtn">
+            PRIVACY TEST
+          </button>
+
+        </div>
+
+        <div class="meter">
+
+          <div class="meter-row">
+            <span>Boundary confidence</span>
+            <span id="boundaryValue">100%</span>
+          </div>
+
+          <div class="meter-track">
+            <div class="meter-fill" id="boundaryMeter"></div>
+          </div>
+
+        </div>
+
+        <div class="meter">
+
+          <div class="meter-row">
+            <span>Matrix coherence</span>
+            <span id="coherenceValue">0%</span>
+          </div>
+
+          <div class="meter-track">
+            <div class="meter-fill" id="coherenceMeter"></div>
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <div class="card">
+
+        <div class="card-header">
+
+          <div class="card-title">
+            Defensive Event Feed
+          </div>
+
+          <div class="card-meta">
+            LOCAL ONLY
+          </div>
+
+        </div>
+
+        <div class="feed" id="feed"></div>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <section class="section">
+
+    <div class="section-grid">
+
+      <div class="card module">
+
+        <h3>Identity Envelope</h3>
+
+        <p>
+          Every node receives a deterministic local identity envelope
+          containing classification, lineage role, simulation state and
+          integrity metadata.
+        </p>
+
+        <div class="module-value" id="identityCount">100</div>
+
+        <div class="card-meta">IDENTITY ENVELOPES</div>
+
+      </div>
+
+
+      <div class="card module">
+
+        <h3>Defensive Mirror</h3>
+
+        <p>
+          Untrusted patterns are represented as inert local events,
+          classified, isolated and discarded rather than transmitted
+          against another person or system.
+        </p>
+
+        <div class="module-value" id="mirrorCount">0</div>
+
+        <div class="card-meta">MIRROR EVENTS</div>
+
+      </div>
+
+
+      <div class="card module">
+
+        <h3>Canary Layer</h3>
+
+        <p>
+          Synthetic canaries act as tripwires. A canary interaction is
+          treated as a boundary event and never exposes real credentials.
+        </p>
+
+        <div class="module-value" id="canaryCount">0</div>
+
+        <div class="card-meta">CANARIES</div>
+
+      </div>
+
+
+      <div class="card module">
+
+        <h3>Quarantine</h3>
+
+        <p>
+          Malformed, oversized, replayed or privacy-sensitive inputs can be
+          isolated without becoming executable commands.
+        </p>
+
+        <div class="module-value" id="quarantineCount">0</div>
+
+        <div class="card-meta">ISOLATED EVENTS</div>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <section class="section">
+
+    <div class="security-layout">
+
+      <div class="card">
+
+        <div class="card-header">
+          <div class="card-title">
+            Family Node Matrix
+          </div>
+
+          <div class="card-meta">
+            KNOWN + SYNTHETIC
+          </div>
+        </div>
+
+        <div class="node-browser" id="nodeBrowser"></div>
+
+      </div>
+
+
+      <div class="card log-panel">
+
+        <div class="card-header">
+          <div class="card-title">
+            Security Architecture
+          </div>
+
+          <div class="card-meta">
+            ZERO TRUST
+          </div>
+        </div>
+
+        <div style="padding:14px">
+
+          <div class="security-state">
+
+            <strong>ZONE 01 · UNTRUSTED INPUT</strong><br>
+            Everything entering the boundary is treated as data until
+            validated. No incoming string is automatically executed.
+          </div>
+
+          <div style="height:8px"></div>
+
+          <div class="security-state">
+
+            <strong>ZONE 02 · SCHEMA FIREWALL</strong><br>
+            Payload type, size, replay state, rate and sensitive-field
+            policies are checked before processing.
+          </div>
+
+          <div style="height:8px"></div>
+
+          <div class="security-state">
+
+            <strong>ZONE 03 · QUARANTINE</strong><br>
+            Suspicious or malformed material is isolated from the simulation
+            engine.
+          </div>
+
+          <div style="height:8px"></div>
+
+          <div class="security-state">
+
+            <strong>ZONE 04 · FAMILY MATRIX</strong><br>
+            The family visualisation receives only sanitised synthetic data.
+          </div>
+
+          <div style="height:8px"></div>
+
+          <div class="security-state">
+
+            <strong>ZONE 05 · OUTPUT</strong><br>
+            Visualisation, local logs and optional local audio are the
+            permitted outputs. No retaliatory network action is performed.
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <section class="section">
+
+    <div class="card">
+
+      <div class="card-header">
+
+        <div class="card-title">
+          Local Audit Chain
+        </div>
+
+        <div class="card-meta">
+          SHA-256 WHEN AVAILABLE
+        </div>
+
+      </div>
+
+      <div style="overflow:auto">
+
+        <table class="table">
+
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Type</th>
+              <th>State</th>
+              <th>Digest</th>
+            </tr>
+          </thead>
+
+          <tbody id="auditTable"></tbody>
+
+        </table>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <footer>
+
+    <strong>CHIROMBE · HOUSE OF MASAWI</strong><br>
+
+    Mwari ndi Mwari · 77-99-33 · Mukanya identity layer<br>
+
+    This interface is a local technical simulation and defensive boundary.
+    Visual pulses, celestial fields, tonal signals and matrix activity are
+    computational representations. They are not measurements of supernatural
+    forces, predictions about real people, or mechanisms for attacking or
+    reversing harm onto another person.
+
+  </footer>
+
+</main>
+
+
+<div class="modal" id="exportModal">
+
+  <div class="modal-card">
+
+    <div class="modal-head">
+
+      <div>
+        <div class="card-title">LOCAL STATE EXPORT</div>
+        <div class="card-meta">COPY OR SAVE JSON</div>
+      </div>
+
+      <button class="btn" id="closeExport">
+        CLOSE
+      </button>
+
+    </div>
+
+    <div class="modal-body">
+
+      <textarea id="exportText" readonly></textarea>
+
+      <div style="height:10px"></div>
+
+      <button class="btn primary" id="copyExport">
+        COPY JSON
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<div class="toast" id="toast"></div>
+
+
+<script>
+(() => {
+"use strict";
+
+/* ============================================================
+   CHIROMBE CELESTIAL PROTECTION
+   CM90 + CM90PLUS CONSOLIDATED ENGINE
+   ------------------------------------------------------------
+   LOCAL-FIRST
+   ZERO-TRUST
+   NO EXTERNAL LIBRARIES
+   NO REMOTE EXECUTION
+   NO RETALIATORY NETWORK ACTION
+   ============================================================ */
+
+
+/* ============================================================
+   01 · GLOBAL CONFIGURATION
+   ============================================================ */
+
+const CONFIG = Object.freeze({
+
+  VERSION: "1.0.0-CM90PLUS",
+
+  MATRIX_SIZE: 100,
+
+  MAX_EVENTS: 500,
+
+  MAX_AUDIT_ROWS: 150,
+
+  MAX_INPUT_BYTES: 12000,
+
+  RATE_LIMIT_WINDOW: 5000,
+
+  RATE_LIMIT_MAX: 30,
+
+  REPLAY_WINDOW: 60000,
+
+  NODE_ACTIVITY_INTERVAL: 1400,
+
+  CELESTIAL_STARS: 170,
+
+  MAX_FEED_ROWS: 120,
+
+  AUDIO_BASE: 220,
+
+  OFFLINE_FIRST: true,
+
+  ALLOW_NETWORK: false,
+
+  CANARY_LIMIT: 20,
+
+  DECoy_LIMIT: 40
+
+});
+
+
+/* ============================================================
+   02 · DOM REFERENCES
+   ============================================================ */
+
+const $ = id => document.getElementById(id);
+
+const DOM = {
+
+  celestialCanvas: $("celestialCanvas"),
+  gridCanvas: $("gridCanvas"),
+  networkCanvas: $("networkCanvas"),
+
+  feed: $("feed"),
+  nodeBrowser: $("nodeBrowser"),
+  auditTable: $("auditTable"),
+
+  armBtn: $("armBtn"),
+  pauseBtn: $("pauseBtn"),
+  toneBtn: $("toneBtn"),
+  exportBtn: $("exportBtn"),
+  resetBtn: $("resetBtn"),
+
+  pulseBtn: $("pulseBtn"),
+  mirrorBtn: $("mirrorBtn"),
+  boundaryBtn: $("boundaryBtn"),
+  canaryBtn: $("canaryBtn"),
+  decoyBtn: $("decoyBtn"),
+  quarantineBtn: $("quarantineBtn"),
+  integrityBtn: $("integrityBtn"),
+  privacyBtn: $("privacyBtn"),
+
+  statNodes: $("statNodes"),
+  statEvents: $("statEvents"),
+  statQuarantine: $("statQuarantine"),
+  statIntegrity: $("statIntegrity"),
+
+  identityCount: $("identityCount"),
+  mirrorCount: $("mirrorCount"),
+  canaryCount: $("canaryCount"),
+  quarantineCount: $("quarantineCount"),
+
+  boundaryValue: $("boundaryValue"),
+  boundaryMeter: $("boundaryMeter"),
+
+  coherenceValue: $("coherenceValue"),
+  coherenceMeter: $("coherenceMeter"),
+
+  incidentText: $("incidentText"),
+  statusBadge: $("statusBadge"),
+  matrixMode: $("matrixMode"),
+
+  exportModal: $("exportModal"),
+  exportText: $("exportText"),
+  closeExport: $("closeExport"),
+  copyExport: $("copyExport"),
+
+  toast: $("toast")
+};
+
+
+/* ============================================================
+   03 · RUNTIME STATE
+   ============================================================ */
+
+const STATE = {
+
+  armed: false,
+
+  paused: false,
+
+  destroyed: false,
+
+  audioEnabled: false,
+
+  audioContext: null,
+
+  masterGain: null,
+
+  frame: 0,
+
+  lastFrame: performance.now(),
+
+  lastActivity: 0,
+
+  lastRender: 0,
+
+  eventCount: 0,
+
+  mirrorCount: 0,
+
+  quarantineCount: 0,
+
+  canaryCount: 0,
+
+  decoyCount: 0,
+
+  integrityScore: 100,
+
+  boundaryScore: 100,
+
+  coherence: 0,
+
+  incident: "NORMAL",
+
+  stars: [],
+
+  nodes: [],
+
+  edges: [],
+
+  events: [],
+
+  audit: [],
+
+  seenNonces: new Map(),
+
+  canaries: new Map(),
+
+  quarantined: [],
+
+  decoys: [],
+
+  rateWindow: [],
+
+  pulses: [],
+
+  selectedNode: null,
+
+  mouse: {
+    x: 0,
+    y: 0,
+    active: false
+  },
+
+  devicePixelRatio: Math.min(
+    window.devicePixelRatio || 1,
+    2
+  ),
+
+  dimensions: {
+    width: 1,
+    height: 1
+  }
+
+};
+
+
+/* ============================================================
+   04 · FAMILY IDENTITY DATA
+   ------------------------------------------------------------
+   Only names explicitly established in the project are included.
+   Other nodes are synthetic placeholders.
+   ============================================================ */
+
+const KNOWN_FAMILY = [
+
+  {
+    id: "K001",
+    name: "Chirombe",
+    role: "ancestral-line-root",
+    generation: "past",
+    location: "Unspecified",
+    known: true
+  },
+
+  {
+    id: "K002",
+    name: "Makwengura",
+    role: "great-grandfather",
+    generation: "past",
+    location: "Unspecified",
+    known: true
+  },
+
+  {
+    id: "K003",
+    name: "Masawi",
+    role: "grandfather",
+    generation: "past",
+    location: "Unspecified",
+    known: true
+  },
+
+  {
+    id: "K004",
+    name: "Masarura",
+    role: "grandmother",
+    generation: "past",
+    location: "Unspecified",
+    known: true
+  },
+
+  {
+    id: "K005",
+    name: "Sebastian Karumekangu Masawi",
+    role: "father",
+    generation: "past",
+    location: "Unspecified",
+    known: true
+  },
+
+  {
+    id: "K006",
+    name: "Risto Kasirori Masawi",
+    role: "mother",
+    generation: "past-present",
+    location: "Unspecified",
+    known: true
+  },
+
+  {
+    id: "K007",
+    name: "Tariro Masawi",
+    role: "present-house-node",
+    generation: "present",
+    location: "Unspecified",
+    known: true
+  },
+
+  {
+    id: "K008",
+    name: "Tarry Kupakwashe Masawi",
+    role: "son",
+    generation: "present",
+    location: "Unspecified",
+    known: true
+  },
+
+  {
+    id: "K009",
+    name: "Kenzi Masawi",
+    role: "adopted-son-family-node",
+    generation: "present",
+    location: "Unspecified",
+    known: true
+  },
+
+  {
+    id: "K010",
+    name: "Tenderayi",
+    role: "brother",
+    generation: "present",
+    location: "Unspecified",
+    known: true
+  },
+
+  {
+    id: "K011",
+    name: "Silent",
+    role: "brother",
+    generation: "present",
+    location: "Unspecified",
+    known: true
+  },
+
+  {
+    id: "K012",
+    name: "Trymore",
+    role: "brother",
+    generation: "present",
+    location: "Unspecified",
+    known: true
+  },
+
+  {
+    id: "K013",
+    name: "Charles",
+    role: "brother",
+    generation: "present",
+    location: "Unspecified",
+    known: true
+  },
+
+  {
+    id: "K014",
+    name: "Tatenda",
+    role: "brother",
+    generation: "present",
+    location: "Unspecified",
+    known: true
+  },
+
+  {
+    id: "K015",
+    name: "Rhoda",
+    role: "sister",
+    generation: "present",
+    location: "Unspecified",
+    known: true
+  },
+
+  {
+    id: "K016",
+    name: "Abigail",
+    role: "sister",
+    generation: "present",
+    location: "Unspecified",
+    known: true
+  },
+
+  {
+    id: "K017",
+    name: "Corinna",
+    role: "deceased-sister",
+    generation: "past",
+    location: "Unspecified",
+    known: true
+  }
+
+];
+
+
+/* ============================================================
+   05 · SYNTHETIC FAMILY NODE GENERATOR
+   ============================================================ */
+
+function createSyntheticNode(index){
+
+  const generations = [
+    "past",
+    "past",
+    "present",
+    "present",
+    "future",
+    "future",
+    "future"
+  ];
+
+  const regions = [
+    "Zimbabwe",
+    "South Africa",
+    "United Kingdom",
+    "Southern Africa",
+    "Diaspora",
+    "Unspecified"
+  ];
+
+  const roles = [
+    "synthetic-descendant-branch",
+    "synthetic-ancestral-branch",
+    "synthetic-family-branch",
+    "synthetic-future-branch",
+    "synthetic-collateral-branch"
+  ];
+
+  const generation =
+    generations[index % generations.length];
+
+  const region =
+    regions[index % regions.length];
+
+  const role =
+    roles[index % roles.length];
+
+  return {
+
+    id:
+      "S" +
+      String(index + 1).padStart(3,"0"),
+
+    name:
+      "Synthetic Family Node " +
+      String(index + 1).padStart(3,"0"),
+
+    role,
+
+    generation,
+
+    locationModel: region,
+
+    known: false,
+
+    synthetic: true,
+
+    realPerson: false,
+
+    realAccount: false,
+
+    realCredential: false,
+
+    realLocation: false,
+
+    classification:
+      "SYNTHETIC_HUMAN_LIKE_DECOY",
+
+    humanIdentity: false,
+
+    life: {
+
+      wellbeing: Math.random(),
+
+      progress: Math.random(),
+
+      achievement: Math.random(),
+
+      resilience: .35 + Math.random() * .6,
+
+      trajectory: Math.random() > .5
+        ? "ascending"
+        : "variable"
+
+    },
+
+    behaviour: {
+
+      communicationRhythm:
+        Math.floor(2 + Math.random() * 8),
+
+      activityPattern:
+        [
+          "morning",
+          "afternoon",
+          "evening",
+          "distributed"
+        ][Math.floor(Math.random() * 4)],
+
+      interactionStyle:
+        [
+          "quiet",
+          "balanced",
+          "social",
+          "observant"
+        ][Math.floor(Math.random() * 4)],
+
+      responseVariance:
+        Number((.15 + Math.random() * .7).toFixed(3)),
+
+      sessionDuration:
+        20 + Math.floor(Math.random() * 900),
+
+      preferredChannels:
+        ["local-ui","matrix","visual-feed"],
+
+      simulatedInterests:
+        [
+          "music",
+          "learning",
+          "craft",
+          "community",
+          "technology",
+          "culture"
+        ].slice(
+          0,
+          2 + Math.floor(Math.random() * 3)
+        )
+
+    },
+
+    accessCount: 0,
+
+    integrity: 1,
+
+    x: 0,
+    y: 0,
+
+    vx: 0,
+    vy: 0,
+
+    radius: 3 + Math.random() * 3,
+
+    phase: Math.random() * Math.PI * 2,
+
+    energy: Math.random(),
+
+    pulse: 0,
+
+    status: "NORMAL"
+
+  };
+
+}
+
+
+/* ============================================================
+   06 · BUILD 100 NODE MATRIX
+   ============================================================ */
+
+function buildNodes(){
+
+  STATE.nodes.length = 0;
+
+  KNOWN_FAMILY.forEach((item,index) => {
+
+    STATE.nodes.push({
+
+      ...item,
+
+      synthetic: false,
+
+      realPerson: true,
+
+      realAccount: false,
+
+      realCredential: false,
+
+      realLocation: false,
+
+      classification: "KNOWN_FAMILY_NODE",
+
+      humanIdentity: true,
+
+      life: {
+
+        wellbeing: .5,
+
+        progress: .5,
+
+        achievement: .5,
+
+        resilience: .7,
+
+        trajectory: "observational-only"
+
+      },
+
+      behaviour: {
+
+        communicationRhythm: 5,
+
+        activityPattern: "not-modeled",
+
+        interactionStyle: "not-modeled",
+
+        responseVariance: 0,
+
+        sessionDuration: 0,
+
+        preferredChannels: [],
+
+        simulatedInterests: []
+
+      },
+
+      accessCount: 0,
+
+      integrity: 1,
+
+      x: 0,
+      y: 0,
+      vx: 0,
+      vy: 0,
+      radius: item.id === "K007" ? 6 : 4,
+      phase: index * .42,
+      energy: .6 + Math.random() * .4,
+      pulse: 0,
+      status: "NORMAL"
+
+    });
+
+  });
+
+
+  const syntheticNeeded =
+    CONFIG.MATRIX_SIZE -
+    STATE.nodes.length;
+
+
+  for(let i=0;i<syntheticNeeded;i++){
+
+    STATE.nodes.push(
+      createSyntheticNode(i)
+    );
+
+  }
+
+
+  positionNodes();
+
+  buildEdges();
+
+  updateNodeBrowser();
+
+}
+
+
+/* ============================================================
+   07 · NODE POSITIONING
+   ============================================================ */
+
+function positionNodes(){
+
+  const c = DOM.networkCanvas;
+
+  const width =
+    c.clientWidth || 900;
+
+  const height =
+    c.clientHeight || 560;
+
+  STATE.nodes.forEach((node,index) => {
+
+    const angle =
+      (index / STATE.nodes.length) *
+      Math.PI * 2;
+
+    const ring =
+      index % 5;
+
+    const radius =
+      Math.min(width,height) *
+      (.17 + ring * .075);
+
+    node.x =
+      width / 2 +
+      Math.cos(angle) * radius;
+
+    node.y =
+      height / 2 +
+      Math.sin(angle) * radius * .62;
+
+    node.vx =
+      (Math.random()-.5)*.2;
+
+    node.vy =
+      (Math.random()-.5)*.2;
+
+  });
+
+}
+
+
+/* ============================================================
+   08 · EDGE MATRIX
+   ============================================================ */
+
+function buildEdges(){
+
+  STATE.edges.length = 0;
+
+  const n = STATE.nodes.length;
+
+  for(let i=0;i<n;i++){
+
+    const a = STATE.nodes[i];
+
+    const next =
+      STATE.nodes[(i+1)%n];
+
+    STATE.edges.push({
+      a,
+      b:next,
+      type:"lineage"
+    });
+
+    if(i % 3 === 0){
+
+      STATE.edges.push({
+        a,
+        b:STATE.nodes[
+          (i+7)%n
+        ],
+        type:"cross-link"
+      });
+
+    }
+
+  }
+
+}
+
+
+/* ============================================================
+   09 · SECURE RANDOM / HASH HELPERS
+   ============================================================ */
+
+function randomBytes(length=16){
+
+  const bytes =
+    new Uint8Array(length);
+
+  if(
+    window.crypto &&
+    crypto.getRandomValues
+  ){
+
+    crypto.getRandomValues(bytes);
+
+  }else{
+
+    for(
+      let i=0;
+      i<length;
+      i++
+    ){
+
+      bytes[i] =
+        Math.floor(
+          Math.random()*256
+        );
+
+    }
+
+  }
+
+  return bytes;
+
+}
+
+
+function hex(bytes){
+
+  return [...bytes]
+    .map(
+      b => b
+        .toString(16)
+        .padStart(2,"0")
+    )
+    .join("");
+
+}
+
+
+function makeId(prefix="EVT"){
+
+  return (
+    prefix +
+    "-" +
+    Date.now().toString(36) +
+    "-" +
+    hex(randomBytes(5))
+  );
+
+}
+
+
+async function sha256(value){
+
+  const text =
+    String(value);
+
+  if(
+    window.crypto &&
+    crypto.subtle
+  ){
+
+    const data =
+      new TextEncoder()
+        .encode(text);
+
+    const digest =
+      await crypto.subtle.digest(
+        "SHA-256",
+        data
+      );
+
+    return hex(
+      new Uint8Array(digest)
+    );
+
+  }
+
+  /* fallback: non-cryptographic diagnostic digest */
+
+  let h = 2166136261;
+
+  for(
+    let i=0;
+    i<text.length;
+    i++
+  ){
+
+    h ^= text.charCodeAt(i);
+
+    h =
+      Math.imul(
+        h,
+        16777619
+      );
+
+  }
+
+  return (
+    "fallback-" +
+    (h >>> 0).toString(16)
+  );
+
+}
+
+
+/* ============================================================
+   10 · JSON SAFE SIZE CHECK
+   ============================================================ */
+
+function byteLength(value){
+
+  try{
+
+    return new TextEncoder()
+      .encode(
+        JSON.stringify(value)
+      )
+      .byteLength;
+
+  }catch{
+
+    return Infinity;
+
+  }
+
+}
+
+
+/* ============================================================
+   11 · PRIVACY FIREWALL
+   ============================================================ */
+
+const BLOCKED_KEYS = [
+
+  "password",
+  "passwd",
+  "secret",
+  "token",
+  "apikey",
+  "api_key",
+  "privatekey",
+  "private_key",
+  "credential",
+  "credentials",
+  "auth",
+  "authorization",
+  "session",
+  "cookie",
+  "phone",
+  "telephone",
+  "email",
+  "address",
+  "postcode",
+  "postalcode",
+  "latitude",
+  "longitude",
+  "coordinates",
+  "geolocation",
+  "locationprecise"
+
+];
+
+
+function sanitiseObject(input){
+
+  if(input === null){
+    return null;
+  }
+
+  if(
+    typeof input === "string" ||
+    typeof input === "number" ||
+    typeof input === "boolean"
+  ){
+
+    return input;
+
+  }
+
+  if(Array.isArray(input)){
+
+    return input
+      .slice(0,100)
+      .map(sanitiseObject);
+
+  }
+
+  if(typeof input === "object"){
+
+    const output = {};
+
+    for(
+      const [key,value]
+      of Object.entries(input)
+    ){
+
+      const lower =
+        key.toLowerCase()
+          .replace(/[^a-z0-9_]/g,"");
+
+      if(
+        BLOCKED_KEYS.some(
+          blocked =>
+            lower.includes(
+              blocked.replace(/_/g,"")
+            )
+        )
+      ){
+
+        continue;
+
+      }
+
+      output[key] =
+        sanitiseObject(value);
+
+    }
+
+    return output;
+
+  }
+
+  return null;
+
+}
+
+
+/* ============================================================
+   12 · SCHEMA FIREWALL
+   ============================================================ */
+
+function validateEnvelope(payload){
+
+  if(
+    payload === null ||
+    typeof payload !== "object" ||
+    Array.isArray(payload)
+  ){
+
+    return {
+      ok:false,
+      reason:"INVALID_OBJECT"
+    };
+
+  }
+
+
+  if(
+    byteLength(payload) >
+    CONFIG.MAX_INPUT_BYTES
+  ){
+
+    return {
+      ok:false,
+      reason:"PAYLOAD_TOO_LARGE"
+    };
+
+  }
+
+
+  if(
+    payload.type &&
+    typeof payload.type !== "string"
+  ){
+
+    return {
+      ok:false,
+      reason:"INVALID_TYPE"
+    };
+
+  }
+
+
+  if(
+    payload.timestamp &&
+    !Number.isFinite(
+      Number(payload.timestamp)
+    )
+  ){
+
+    return {
+      ok:false,
+      reason:"INVALID_TIMESTAMP"
+    };
+
+  }
+
+
+  return {
+    ok:true,
+    reason:"VALID"
+  };
+
+}
+
+
+/* ============================================================
+   13 · RATE LIMITER
+   ============================================================ */
+
+function allowRate(){
+
+  const now = Date.now();
+
+  STATE.rateWindow =
+    STATE.rateWindow.filter(
+      t =>
+        now - t <
+        CONFIG.RATE_LIMIT_WINDOW
+    );
+
+  if(
+    STATE.rateWindow.length >=
+    CONFIG.RATE_LIMIT_MAX
+  ){
+
+    return false;
+
+  }
+
+  STATE.rateWindow.push(now);
+
+  return true;
+
+}
+
+
+/* ============================================================
+   14 · REPLAY PROTECTION
+   ============================================================ */
+
+function checkReplay(nonce){
+
+  if(!nonce){
+    return {
+      ok:true
+    };
+  }
+
+  const now = Date.now();
+
+  for(
+    const [key,time]
+    of STATE.seenNonces
+  ){
+
+    if(
+      now - time >
+      CONFIG.REPLAY_WINDOW
+    ){
+
+      STATE.seenNonces.delete(key);
+
+    }
+
+  }
+
+  if(
+    STATE.seenNonces.has(nonce)
+  ){
+
+    return {
+      ok:false,
+      reason:"REPLAY_DETECTED"
+    };
+
+  }
+
+  STATE.seenNonces.set(
+    nonce,
+    now
+  );
+
+  return {
+    ok:true
+  };
+
+}
+
+
+/* ============================================================
+   15 · CAPABILITY FIREWALL
+   ============================================================ */
+
+const CAPABILITIES = Object.freeze({
+
+  readMatrix: true,
+
+  modifySimulation: true,
+
+  audio: true,
+
+  network: false,
+
+  storage: true,
+
+  externalTransmission: false,
+
+  commandExecution: false,
+
+  credentialAccess: false
+
+});
+
+
+function capability(name){
+
+  return Boolean(
+    CAPABILITIES[name]
+  );
+
+}
+
+
+/* ============================================================
+   16 · INCIDENT STATE MACHINE
+   ============================================================ */
+
+function setIncident(state,reason=""){
+
+  const allowed = [
+    "NORMAL",
+    "OBSERVE",
+    "SUSPICIOUS",
+    "QUARANTINE",
+    "RECOVERY"
+  ];
+
+  if(
+    !allowed.includes(state)
+  ){
+
+    return;
+
+  }
+
+  STATE.incident = state;
+
+  DOM.incidentText.textContent =
+    state;
+
+  DOM.statusBadge.className =
+    "badge " +
+    (
+      state === "NORMAL"
+        ? "safe"
+        :
+      state === "OBSERVE"
+        ? "observe"
+        :
+      state === "RECOVERY"
+        ? "online"
+        :
+        "alert"
+    );
+
+  DOM.statusBadge.textContent =
+    state === "NORMAL"
+      ? "SECURE"
+      : state;
+
+  if(reason){
+
+    logEvent(
+      "INCIDENT",
+      state +
+      (reason ? " · " + reason : "")
+    );
+
+  }
+
+}
+
+
+/* ============================================================
+   17 · TAMPER-EVIDENT LOCAL AUDIT CHAIN
+   ============================================================ */
+
+async function audit(type,payload){
+
+  const previous =
+    STATE.audit.length
+      ? STATE.audit[
+          STATE.audit.length-1
+        ].digest
+      : "GENESIS";
+
+  const record = {
+
+    id:makeId("AUD"),
+
+    timestamp:
+      new Date().toISOString(),
+
+    type,
+
+    payload:
+      sanitiseObject(payload),
+
+    previous
+
+  };
+
+  const digest =
+    await sha256(
+      JSON.stringify(record)
+    );
+
+  record.digest =
+    digest;
+
+  STATE.audit.push(record);
+
+  if(
+    STATE.audit.length >
+    CONFIG.MAX_AUDIT_ROWS
+  ){
+
+    STATE.audit.shift();
+
+  }
+
+  renderAudit();
+
+}
+
+
+/* ============================================================
+   18 · AUDIT RENDER
+   ============================================================ */
+
+function renderAudit(){
+
+  DOM.auditTable.innerHTML =
+    STATE.audit
+      .slice()
+      .reverse()
+      .slice(0,60)
+      .map(record => {
+
+        const time =
+          new Date(
+            record.timestamp
+          )
+          .toLocaleTimeString();
+
+        return `
+          <tr>
+            <td>${escapeHtml(time)}</td>
+            <td>${escapeHtml(record.type)}</td>
+            <td>${escapeHtml(
+              record.previous.slice(0,12)
+            )}</td>
+            <td>
+              ${escapeHtml(
+                record.digest.slice(0,24)
+              )}…
+            </td>
+          </tr>
+        `;
+
+      })
+      .join("");
+
+}
+
+
+/* ============================================================
+   19 · ESCAPE OUTPUT
+   ============================================================ */
+
+function escapeHtml(value){
+
+  return String(value)
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
+
+}
+
+
+/* ============================================================
+   20 · EVENT LOG
+   ============================================================ */
+
+function logEvent(type,message,data={}){
+
+  STATE.eventCount++;
+
+  const event = {
+
+    id:makeId("EVT"),
+
+    timestamp:
+      new Date().toISOString(),
+
+    type,
+
+    message,
+
+    data:
+      sanitiseObject(data)
+
+  };
+
+  STATE.events.push(event);
+
+  if(
+    STATE.events.length >
+    CONFIG.MAX_EVENTS
+  ){
+
+    STATE.events.shift();
+
+  }
+
+  renderFeed();
+
+  updateStats();
+
+  audit(
+    type,
+    {
+      message,
+      data
+    }
+  );
+
+}
+
+
+/* ============================================================
+   21 · FEED RENDER
+   ============================================================ */
+
+function renderFeed(){
+
+  DOM.feed.innerHTML =
+    STATE.events
+      .slice()
+      .reverse()
+      .slice(
+        0,
+        CONFIG.MAX_FEED_ROWS
+      )
+      .map(event => {
+
+        const time =
+          new Date(
+            event.timestamp
+          )
+          .toLocaleTimeString();
+
+        return `
+          <div class="feed-row">
+            <div class="feed-time">
+              ${escapeHtml(time)}
+            </div>
+
+            <div class="feed-type">
+              ${escapeHtml(event.type)}
+            </div>
+
+            <div class="feed-msg">
+              ${escapeHtml(event.message)}
+            </div>
+          </div>
+        `;
+
+      })
+      .join("");
+
+}
+
+
+/* ============================================================
+   22 · TOAST
+   ============================================================ */
+
+let toastTimer = null;
+
+function toast(message){
+
+  DOM.toast.textContent =
+    message;
+
+  DOM.toast.classList.add("show");
+
+  clearTimeout(toastTimer);
+
+  toastTimer =
+    setTimeout(() => {
+
+      DOM.toast.classList.remove(
+        "show"
+      );
+
+    },2200);
+
+}
+
+
+/* ============================================================
+   23 · NODE BROWSER
+   ============================================================ */
+
+function updateNodeBrowser(){
+
+  DOM.nodeBrowser.innerHTML =
+    STATE.nodes
+      .map(node => {
+
+        const known =
+          node.known === true;
+
+        const color =
+          node.status === "QUARANTINED"
+            ? "var(--red)"
+            :
+          node.canary
+            ? "var(--gold)"
+            :
+          known
+            ? "var(--cyan)"
+            :
+              "var(--violet)";
+
+        return `
+
+          <div
+            class="node"
+            data-node="${escapeHtml(node.id)}"
+          >
+
+            <span
+              class="node-pip"
+              style="
+                background:${color};
+                box-shadow:0 0 10px ${color};
+              "
+            ></span>
+
+            <div class="node-main">
+
+              <div class="node-name">
+                ${escapeHtml(node.name)}
+              </div>
+
+              <div class="node-type">
+                ${escapeHtml(
+                  node.role || "synthetic"
+                )}
+                ·
+                ${escapeHtml(
+                  node.generation || "simulation"
+                )}
+              </div>
+
+            </div>
+
+            <div class="node-score">
+
+              ${Math.round(
+                (node.energy || 0) * 100
+              )}%
+
+              <br>
+
+              <span style="color:#667992">
+                ${escapeHtml(
+                  node.location ||
+                  node.locationModel ||
+                  "Unspecified"
+                )}
+              </span>
+
+            </div>
+
+          </div>
+
+        `;
+
+      })
+      .join("");
+
+}
+
+
+/* ============================================================
+   24 · STAR FIELD
+   ============================================================ */
+
+function createStars(){
+
+  STATE.stars.length = 0;
+
+  for(
+    let i=0;
+    i<CONFIG.CELESTIAL_STARS;
+    i++
+  ){
+
+    STATE.stars.push({
+
+      x:Math.random(),
+
+      y:Math.random(),
+
+      radius:
+        .4 + Math.random()*1.8,
+
+      alpha:
+        .2 + Math.random()*.8,
+
+      phase:
+        Math.random()*Math.PI*2,
+
+      speed:
+        .0005 + Math.random()*.002
+
+    });
+
+  }
+
+}
+
+
+/* ============================================================
+   25 · CELESTIAL BACKGROUND
+   ============================================================ */
+
+function resizeBackgroundCanvas(){
+
+  const ratio =
+    STATE.devicePixelRatio;
+
+  [
+    DOM.celestialCanvas,
+    DOM.gridCanvas
+  ]
+  .forEach(canvas => {
+
+    canvas.width =
+      Math.floor(
+        window.innerWidth *
+        ratio
+      );
+
+    canvas.height =
+      Math.floor(
+        window.innerHeight *
+        ratio
+      );
+
+    canvas.style.width =
+      window.innerWidth + "px";
+
+    canvas.style.height =
+      window.innerHeight + "px";
+
+  });
+
+}
+
+
+function drawCelestial(time){
+
+  const canvas =
+    DOM.celestialCanvas;
+
+  const ctx =
+    canvas.getContext("2d");
+
+  if(!ctx)return;
+
+  const ratio =
+    STATE.devicePixelRatio;
+
+  const w =
+    canvas.width / ratio;
+
+  const h =
+    canvas.height / ratio;
+
+  ctx.setTransform(
+    ratio,
+    0,
+    0,
+    ratio,
+    0,
+    0
+  );
+
+  ctx.clearRect(
+    0,
+    0,
+    w,
+    h
+  );
+
+  const cx =
+    w/2;
+
+  const cy =
+    h/2;
+
+  /* central celestial field */
+
+  const radius =
+    Math.max(w,h)*.48;
+
+  const gradient =
+    ctx.createRadialGradient(
+      cx,
+      cy,
+      0,
+      cx,
+      cy,
+      radius
+    );
+
+  gradient.addColorStop(
+    0,
+    "rgba(90,130,255,.10)"
+  );
+
+  gradient.addColorStop(
+    .35,
+    "rgba(70,80,220,.055)"
+  );
+
+  gradient.addColorStop(
+    1,
+    "rgba(0,0,0,0)"
+  );
+
+  ctx.fillStyle =
+    gradient;
+
+  ctx.fillRect(
+    0,
+    0,
+    w,
+    h
+  );
+
+
+  /* stars */
+
+  for(
+    const star
+    of STATE.stars
+  ){
+
+    const twinkle =
+      .5 +
+      .5 *
+      Math.sin(
+        time * star.speed +
+        star.phase
+      );
+
+    ctx.globalAlpha =
+      star.alpha *
+      (.55 + twinkle*.45);
+
+    ctx.beginPath();
+
+    ctx.arc(
+      star.x*w,
+      star.y*h,
+      star.radius,
+      0,
+      Math.PI*2
+    );
+
+    ctx.fillStyle =
+      "rgba(190,220,255,1)";
+
+    ctx.fill();
+
+  }
+
+  ctx.globalAlpha = 1;
+
+
+  /* orbital rings */
+
+  ctx.save();
+
+  ctx.translate(
+    cx,
+    cy
+  );
+
+  ctx.rotate(
+    time*.000025
+  );
+
+  for(
+    let i=0;
+    i<5;
+    i++
+  ){
+
+    const r =
+      Math.min(w,h) *
+      (.15 + i*.095);
+
+    ctx.beginPath();
+
+    ctx.ellipse(
+      0,
+      0,
+      r,
+      r*.38,
+      i*.2,
+      0,
+      Math.PI*2
+    );
+
+    ctx.strokeStyle =
+      `rgba(
+        ${70+i*15},
+        ${120+i*10},
+        255,
+        ${.035+i*.008}
+      )`;
+
+    ctx.lineWidth = 1;
+
+    ctx.stroke();
+
+  }
+
+  ctx.restore();
+
+
+  /* pulses */
+
+  for(
+    let i=
+      STATE.pulses.length-1;
+    i>=0;
+    i--
+  ){
+
+    const pulse =
+      STATE.pulses[i];
+
+    pulse.radius +=
+      pulse.speed;
+
+    pulse.alpha -=
+      .006;
+
+    ctx.beginPath();
+
+    ctx.arc(
+      pulse.x,
+      pulse.y,
+      pulse.radius,
+      0,
+      Math.PI*2
+    );
+
+    ctx.strokeStyle =
+      `rgba(
+        ${pulse.r},
+        ${pulse.g},
+        ${pulse.b},
+        ${Math.max(
+          0,
+          pulse.alpha
+        )}
+      )`;
+
+    ctx.lineWidth =
+      pulse.width;
+
+    ctx.stroke();
+
+    if(
+      pulse.alpha <= 0
+    ){
+
+      STATE.pulses.splice(
+        i,
+        1
+      );
+
+    }
+
+  }
+
+}
+
+
+/* ============================================================
+   26 · GRID BACKGROUND
+   ============================================================ */
+
+function drawGrid(){
+
+  const canvas =
+    DOM.gridCanvas;
+
+  const ctx =
+    canvas.getContext("2d");
+
+  if(!ctx)return;
+
+  const ratio =
+    STATE.devicePixelRatio;
+
+  const w =
+    canvas.width / ratio;
+
+  const h =
+    canvas.height / ratio;
+
+  ctx.setTransform(
+    ratio,
+    0,
+    0,
+    ratio,
+    0,
+    0
+  );
+
+  ctx.clearRect(
+    0,
+    0,
+    w,
+    h
+  );
+
+  const size = 50;
+
+  ctx.strokeStyle =
+    "rgba(93,232,255,.045)";
+
+  ctx.lineWidth = .5;
+
+  for(
+    let x=0;
+    x<w;
+    x+=size
+  ){
+
+    ctx.beginPath();
+    ctx.moveTo(x,0);
+    ctx.lineTo(x,h);
+    ctx.stroke();
+
+  }
+
+  for(
+    let y=0;
+    y<h;
+    y+=size
+  ){
+
+    ctx.beginPath();
+    ctx.moveTo(0,y);
+    ctx.lineTo(w,y);
+    ctx.stroke();
+
+  }
+
+}
+
+
+/* ============================================================
+   27 · NETWORK CANVAS RESIZE
+   ============================================================ */
+
+function resizeNetwork(){
+
+  const canvas =
+    DOM.networkCanvas;
+
+  const rect =
+    canvas.getBoundingClientRect();
+
+  const ratio =
+    STATE.devicePixelRatio;
+
+  canvas.width =
+    Math.floor(
+      rect.width * ratio
+    );
+
+  canvas.height =
+    Math.floor(
+      rect.height * ratio
+    );
+
+  positionNodes();
+
+}
+
+
+/* ============================================================
+   28 · NETWORK DRAWING
+   ============================================================ */
+
+function drawNetwork(time){
+
+  const canvas =
+    DOM.networkCanvas;
+
+  const ctx =
+    canvas.getContext("2d");
+
+  if(!ctx)return;
+
+  const ratio =
+    STATE.devicePixelRatio;
+
+  const w =
+    canvas.width / ratio;
+
+  const h =
+    canvas.height / ratio;
+
+  ctx.setTransform(
+    ratio,
+    0,
+    0,
+    ratio,
+    0,
+    0
+  );
+
+  ctx.clearRect(
+    0,
+    0,
+    w,
+    h
+  );
+
+
+  /* subtle radial background */
+
+  const bg =
+    ctx.createRadialGradient(
+      w/2,
+      h/2,
+      0,
+      w/2,
+      h/2,
+      Math.max(w,h)*.65
+    );
+
+  bg.addColorStop(
+    0,
+    "rgba(50,70,150,.09)"
+  );
+
+  bg.addColorStop(
+    1,
+    "rgba(0,0,0,0)"
+  );
+
+  ctx.fillStyle = bg;
+
+  ctx.fillRect(
+    0,
+    0,
+    w,
+    h
+  );
+
+
+  /* central boundary */
+
+  ctx.beginPath();
+
+  ctx.arc(
+    w/2,
+    h/2,
+    Math.min(w,h)*.41,
+    0,
+    Math.PI*2
+  );
+
+  ctx.strokeStyle =
+    "rgba(93,232,255,.10)";
+
+  ctx.lineWidth = 1;
+
+  ctx.stroke();
+
+
+  /* edges */
+
+  for(
+    const edge
+    of STATE.edges
+  ){
+
+    const a =
+      edge.a;
+
+    const b =
+      edge.b;
+
+    const active =
+      a.pulse > .1 ||
+      b.pulse > .1;
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+      a.x,
+      a.y
+    );
+
+    ctx.lineTo(
+      b.x,
+      b.y
+    );
+
+    ctx.strokeStyle =
+      active
+        ? "rgba(93,232,255,.22)"
+        : "rgba(120,150,210,.055)";
+
+    ctx.lineWidth =
+      active ? 1.25 : .45;
+
+    ctx.stroke();
+
+  }
+
+
+  /* nodes */
+
+  for(
+    const node
+    of STATE.nodes
+  ){
+
+    const isKnown =
+      node.known === true;
+
+    const isCanary =
+      node.canary === true;
+
+    const isQuarantine =
+      node.status === "QUARANTINED";
+
+    const base =
+      isQuarantine
+        ? [255,100,124]
+        :
+      isCanary
+        ? [255,216,107]
+        :
+      isKnown
+        ? [93,232,255]
+        :
+          [183,124,255];
+
+    const pulse =
+      node.pulse;
+
+    const r =
+      node.radius +
+      pulse * 8;
+
+    /* glow */
+
+    if(
+      pulse > .02 ||
+      node === STATE.selectedNode
+    ){
+
+      const glow =
+        ctx.createRadialGradient(
+          node.x,
+          node.y,
+          0,
+          node.x,
+          node.y,
+          r*4
+        );
+
+      glow.addColorStop(
+        0,
+        `rgba(
+          ${base[0]},
+          ${base[1]},
+          ${base[2]},
+          .25
+        )`
+      );
+
+      glow.addColorStop(
+        1,
+        `rgba(
+          ${base[0]},
+          ${base[1]},
+          ${base[2]},
+          0
+        )`
+      );
+
+      ctx.fillStyle =
+        glow;
+
+      ctx.beginPath();
+
+      ctx.arc(
+        node.x,
+        node.y,
+        r*4,
+        0,
+        Math.PI*2
+      );
+
+      ctx.fill();
+
+    }
+
+
+    ctx.beginPath();
+
+    ctx.arc(
+      node.x,
+      node.y,
+      Math.max(1.5,r),
+      0,
+      Math.PI*2
+    );
+
+    ctx.fillStyle =
+      `rgb(
+        ${base[0]},
+        ${base[1]},
+        ${base[2]}
+      )`;
+
+    ctx.fill();
+
+
+    ctx.beginPath();
+
+    ctx.arc(
+      node.x,
+      node.y,
+      Math.max(2,r+.8),
+      0,
+      Math.PI*2
+    );
+
+    ctx.strokeStyle =
+      `rgba(
+        ${base[0]},
+        ${base[1]},
+        ${base[2]},
+        .35
+      )`;
+
+    ctx.stroke();
+
+  }
+
+
+  /* mouse attraction/selection ring */
+
+  if(
+    STATE.mouse.active
+  ){
+
+    ctx.beginPath();
+
+    ctx.arc(
+      STATE.mouse.x,
+      STATE.mouse.y,
+      14,
+      0,
+      Math.PI*2
+    );
+
+    ctx.strokeStyle =
+      "rgba(93,232,255,.32)";
+
+    ctx.stroke();
+
+  }
+
+}
+
+
+/* ============================================================
+   29 · NODE PHYSICS
+   ============================================================ */
+
+function updateNodes(delta){
+
+  if(
+    STATE.paused
+  ){
+
+    return;
+
+  }
+
+  const width =
+    DOM.networkCanvas.clientWidth;
+
+  const height =
+    DOM.networkCanvas.clientHeight;
+
+  const cx =
+    width/2;
+
+  const cy =
+    height/2;
+
+  const dt =
+    Math.min(
+      delta/16.67,
+      2
+    );
+
+
+  for(
+    const node
+    of STATE.nodes
+  ){
+
+    const angle =
+      Math.atan2(
+        node.y-cy,
+        node.x-cx
+      );
+
+    const dx =
+      node.x-cx;
+
+    const dy =
+      node.y-cy;
+
+    const distance =
+      Math.max(
+        40,
+        Math.sqrt(
+          dx*dx + dy*dy
+        )
+      );
+
+    const targetRadius =
+      Math.min(
+        width,
+        height
+      ) *
+      (
+        .17 +
+        (
+          parseInt(
+            node.id.slice(1)
+          ) % 5
+        )*.075
+      );
+
+    const radialError =
+      distance -
+      targetRadius;
+
+    const force =
+      radialError *
+      .0006;
+
+    node.vx -=
+      Math.cos(angle) *
+      force *
+      dt;
+
+    node.vy -=
+      Math.sin(angle) *
+      force *
+      dt;
+
+
+    /* very small deterministic drift */
+
+    node.vx +=
+      Math.sin(
+        STATE.frame*.002 +
+        node.phase
+      ) *
+      .002;
+
+    node.vy +=
+      Math.cos(
+        STATE.frame*.0015 +
+        node.phase
+      ) *
+      .002;
+
+
+    node.vx *= .992;
+    node.vy *= .992;
+
+    node.x +=
+      node.vx * dt;
+
+    node.y +=
+      node.vy * dt;
+
+
+    const margin = 20;
+
+    if(
+      node.x < margin
+    ){
+
+      node.x = margin;
+      node.vx *= -.5;
+
+    }
+
+    if(
+      node.x >
+      width-margin
+    ){
+
+      node.x =
+        width-margin;
+
+      node.vx *= -.5;
+
+    }
+
+    if(
+      node.y < margin
+    ){
+
+      node.y = margin;
+      node.vy *= -.5;
+
+    }
+
+    if(
+      node.y >
+      height-margin
+    ){
+
+      node.y =
+        height-margin;
+
+      node.vy *= -.5;
+
+    }
+
+
+    /* energy drift */
+
+    node.energy +=
+      (
+        Math.random()-.5
+      )*.008;
+
+    node.energy =
+      clamp(
+        node.energy,
+        0,
+        1
+      );
+
+
+    /* pulse decay */
+
+    node.pulse *= .94;
+
+  }
+
+}
+
+
+/* ============================================================
+   30 · CLAMP
+   ============================================================ */
+
+function clamp(value,min,max){
+
+  return Math.max(
+    min,
+    Math.min(max,value)
+  );
+
+}
+
+
+/* ============================================================
+   31 · COHERENCE SIMULATION
+   ============================================================ */
+
+function updateCoherence(){
+
+  if(
+    !STATE.nodes.length
+  ){
+
+    STATE.coherence = 0;
+
+    return;
+
+  }
+
+  const total =
+    STATE.nodes.reduce(
+      (sum,node) =>
+        sum +
+        node.energy,
+      0
+    );
+
+  let value =
+    total /
+    STATE.nodes.length;
+
+  /* deterministic small movement */
+
+  value +=
+    Math.sin(
+      STATE.frame*.008
+    )*.04;
+
+  STATE.coherence =
+    clamp(
+      value,
+      0,
+      1
+    );
+
+  DOM.coherenceValue.textContent =
+    Math.round(
+      STATE.coherence*100
+    ) + "%";
+
+  DOM.coherenceMeter.style.width =
+    Math.round(
+      STATE.coherence*100
+    ) + "%";
+
+}
+
+
+/* ============================================================
+   32 · METRICS
+   ============================================================ */
+
+function updateStats(){
+
+  DOM.statNodes.textContent =
+    STATE.nodes.length;
+
+  DOM.statEvents.textContent =
+    STATE.eventCount;
+
+  DOM.statQuarantine.textContent =
+    STATE.quarantineCount;
+
+  DOM.statIntegrity.textContent =
+    Math.round(
+      STATE.integrityScore
+    ) + "%";
+
+  DOM.identityCount.textContent =
+    STATE.nodes.length;
+
+  DOM.mirrorCount.textContent =
+    STATE.mirrorCount;
+
+  DOM.canaryCount.textContent =
+    STATE.canaryCount;
+
+  DOM.quarantineCount.textContent =
+    STATE.quarantineCount;
+
+  DOM.boundaryValue.textContent =
+    Math.round(
+      STATE.boundaryScore
+    ) + "%";
+
+  DOM.boundaryMeter.style.width =
+    Math.round(
+      STATE.boundaryScore
+    ) + "%";
+
+}
+
+
+/* ============================================================
+   33 · LIFE TRAJECTORY SIMULATION
+   ------------------------------------------------------------
+   Synthetic nodes only.
+   Never presented as predictions about real people.
+   ============================================================ */
+
+function updateSyntheticLife(){
+
+  for(
+    const node
+    of STATE.nodes
+  ){
+
+    if(
+      !node.synthetic
+    ){
+
+      continue;
+
+    }
+
+    const drift =
+      (
+        Math.random()-.5
+      )*.018;
+
+    node.life.wellbeing =
+      clamp(
+        node.life.wellbeing +
+        drift,
+        0,
+        1
+      );
+
+    node.life.progress =
+      clamp(
+        node.life.progress +
+        drift*.7,
+        0,
+        1
+      );
+
+    node.life.achievement =
+      clamp(
+        node.life.achievement +
+        drift*.45,
+        0,
+        1
+      );
+
+    node.energy =
+      clamp(
+        (
+          node.life.wellbeing +
+          node.life.progress +
+          node.life.achievement
+        ) / 3,
+        0,
+        1
+      );
+
+  }
+
+}
+
+
+/* ============================================================
+   34 · PULSE ENGINE
+   ============================================================ */
+
+function pulseMatrix(reason="MATRIX_PULSE"){
+
+  const intensity =
+    .35 +
+    Math.random()*.65;
+
+  STATE.nodes.forEach(
+    node => {
+
+      node.pulse =
+        Math.max(
+          node.pulse,
+          intensity *
+          (
+            .3 +
+            Math.random()*.7
+          )
+        );
+
+    }
+  );
+
+
+  const rect =
+    DOM.networkCanvas
+      .getBoundingClientRect();
+
+  STATE.pulses.push({
+
+    x:
+      rect.width/2,
+
+    y:
+      rect.height/2,
+
+    radius:10,
+
+    alpha:.6,
+
+    speed:2.5,
+
+    width:1.5,
+
+    r:93,
+
+    g:232,
+
+    b:255
+
+  });
+
+
+  logEvent(
+    "PULSE",
+    reason +
+    " · local visual propagation"
+  );
+
+}
+
+
+/* ============================================================
+   35 · DEFENSIVE MIRROR
+   ============================================================ */
+
+function defensiveMirror(input={}){
+
+  const validation =
+    validateEnvelope(input);
+
+  if(
+    !validation.ok
+  ){
+
+    quarantine(
+      input,
+      validation.reason
+    );
+
+    return {
+      ok:false,
+      mirrored:false
+    };
+
+  }
+
+
+  const sanitised =
+    sanitiseObject(input);
+
+  STATE.mirrorCount++;
+
+  STATE.nodes
+    .filter(
+      node =>
+        node.synthetic ||
+        node.known
+    )
+    .forEach(
+      node => {
+
+        node.pulse =
+          Math.max(
+            node.pulse,
+            .35
+          );
+
+      }
+    );
+
+
+  logEvent(
+    "MIRROR",
+    "Untrusted pattern reflected locally and discarded",
+    {
+      keys:Object.keys(
+        sanitised
+      )
+    }
+  );
+
+  toast(
+    "Defensive mirror completed locally."
+  );
+
+  return {
+
+    ok:true,
+
+    mirrored:true,
+
+    action:
+      "LOCAL_CLASSIFY_REFLECT_DISCARD"
+
+  };
+
+}
+
+
+/* ============================================================
+   36 · QUARANTINE
+   ============================================================ */
+
+function quarantine(input,reason="UNSPECIFIED"){
+
+  const safe =
+    sanitiseObject(
+      input
+    );
+
+  STATE.quarantined.push({
+
+    id:makeId("Q"),
+
+    timestamp:
+      new Date().toISOString(),
+
+    reason,
+
+    payload:safe
+
+  });
+
+  STATE.quarantineCount++;
+
+  STATE.boundaryScore =
+    clamp(
+      STATE.boundaryScore - 2,
+      0,
+      100
+    );
+
+  setIncident(
+    "QUARANTINE",
+    reason
+  );
+
+  logEvent(
+    "QUARANTINE",
+    "Input isolated: " + reason
+  );
+
+  updateStats();
+
+}
+
+
+/* ============================================================
+   37 · CANARY CREATION
+   ============================================================ */
+
+function createCanary(){
+
+  if(
+    STATE.canaries.size >=
+    CONFIG.CANARY_LIMIT
+  ){
+
+    toast(
+      "Canary limit reached."
+    );
+
+    return null;
+
+  }
+
+  const id =
+    makeId("CANARY");
+
+  const honeytoken =
+    makeId("HT");
+
+  const canary = {
+
+    id,
+
+    classification:
+      "SYNTHETIC_CANARY",
+
+    humanIdentity:false,
+
+    realPerson:false,
+
+    realAccount:false,
+
+    realCredential:false,
+
+    honeytoken,
+
+    created:
+      new Date().toISOString(),
+
+    accessCount:0,
+
+    triggered:false
+
+  };
+
+  STATE.canaries.set(
+    id,
+    canary
+  );
+
+  STATE.canaryCount++;
+
+  logEvent(
+    "CANARY",
+    "Synthetic canary created",
+    {
+      id
+    }
+  );
+
+  updateStats();
+
+  toast(
+    "Synthetic canary deployed."
+  );
+
+  return canary;
+
+}
+
+
+/* ============================================================
+   38 · CANARY TOUCH DETECTOR
+   ============================================================ */
+
+function touchCanary(id){
+
+  const canary =
+    STATE.canaries.get(id);
+
+  if(!canary){
+
+    quarantine(
+      {
+        id
+      },
+      "UNKNOWN_CANARY"
+    );
+
+    return false;
+
+  }
+
+  canary.accessCount++;
+
+  canary.triggered = true;
+
+  STATE.boundaryScore =
+    clamp(
+      STATE.boundaryScore - 5,
+      0,
+      100
+    );
+
+  setIncident(
+    "SUSPICIOUS",
+    "CANARY_TOUCHED"
+  );
+
+  logEvent(
+    "CANARY_ALERT",
+    "Synthetic canary interaction detected",
+    {
+      id
+    }
+  );
+
+  return true;
+
+}
+
+
+/* ============================================================
+   39 · SYNTHETIC DECOY CREATION
+   ============================================================ */
+
+function createDecoy(){
+
+  if(
+    STATE.decoys.length >=
+    CONFIG.DECoy_LIMIT
+  ){
+
+    toast(
+      "Synthetic decoy limit reached."
+    );
+
+    return null;
+
+  }
+
+  const node =
+    createSyntheticNode(
+      STATE.nodes.length +
+      STATE.decoys.length +
+      100
+    );
+
+  node.id =
+    makeId("DECOY");
+
+  node.name =
+    "Synthetic Human-Like Decoy";
+
+  node.classification =
+    "SYNTHETIC_HUMAN_LIKE_DECOY";
+
+  node.humanIdentity = false;
+  node.realPerson = false;
+  node.realAccount = false;
+  node.realCredential = false;
+  node.realLocation = false;
+
+  node.locationModel =
+    "NON-REAL-BROAD-REGION";
+
+  node.lifecycle =
+    "EPHEMERAL";
+
+  node.honeytoken =
+    makeId("HT");
+
+  node.canary = true;
+
+  STATE.decoys.push(
+    node
+  );
+
+  STATE.nodes.push(
+    node
+  );
+
+  STATE.canaryCount++;
+
+  positionNodes();
+
+  buildEdges();
+
+  updateNodeBrowser();
+
+  logEvent(
+    "DECOY",
+    "Synthetic human-like decoy created; no real identity represented"
+  );
+
+  updateStats();
+
+  return node;
+
+}
+
+
+/* ============================================================
+   40 · INPUT RECEIVER
+   ============================================================ */
+
+async function receive(input){
+
+  if(
+    STATE.destroyed
+  ){
+
+    return {
+      ok:false,
+      reason:"ENGINE_DESTROYED"
+    };
+
+  }
+
+
+  if(
+    !allowRate()
+  ){
+
+    quarantine(
+      {
+        reason:"RATE_LIMIT"
+      },
+      "RATE_LIMIT"
+    );
+
+    return {
+      ok:false,
+      reason:"RATE_LIMIT"
+    };
+
+  }
+
+
+  const validation =
+    validateEnvelope(input);
+
+  if(
+    !validation.ok
+  ){
+
+    quarantine(
+      input,
+      validation.reason
+    );
+
+    return {
+      ok:false,
+      reason:validation.reason
+    };
+
+  }
+
+
+  const replay =
+    checkReplay(
+      input.nonce
+    );
+
+  if(
+    !replay.ok
+  ){
+
+    quarantine(
+      input,
+      replay.reason
+    );
+
+    return {
+      ok:false,
+      reason:replay.reason
+    };
+
+  }
+
+
+  const safe =
+    sanitiseObject(input);
+
+  logEvent(
+    "INPUT_ACCEPTED",
+    "Sanitised input accepted as inert data"
+  );
+
+  return {
+
+    ok:true,
+
+    data:safe,
+
+    capabilities:CAPABILITIES
+
+  };
+
+}
+
+
+/* ============================================================
+   41 · PRIVACY TEST
+   ============================================================ */
+
+async function privacyTest(){
+
+  const test = {
+
+    type:"PRIVACY_TEST",
+
+    message:
+      "synthetic",
+
+    password:
+      "REMOVED",
+
+    token:
+      "REMOVED",
+
+    email:
+      "REMOVED",
+
+    phone:
+      "REMOVED",
+
+    address:
+      "REMOVED",
+
+    coordinates:
+      "REMOVED",
+
+    harmless:
+      "retained"
+
+  };
+
+  const result =
+    await receive(
+      test
+    );
+
+  logEvent(
+    "PRIVACY",
+    "Privacy sanitisation test executed"
+  );
+
+  toast(
+    result.ok
+      ? "Privacy firewall passed."
+      : "Privacy test quarantined."
+  );
+
+}
+
+
+/* ============================================================
+   42 · BOUNDARY TEST
+   ============================================================ */
+
+async function boundaryTest(){
+
+  const maliciousLike = {
+
+    type:
+      "BOUNDARY_TEST",
+
+    nonce:
+      makeId("NONCE"),
+
+    payload:
+      "synthetic test",
+
+    command:
+      "DO_NOT_EXECUTE",
+
+    token:
+      "REMOVED"
+
+  };
+
+  const result =
+    await receive(
+      maliciousLike
+    );
+
+  if(
+    result.ok
+  ){
+
+    setIncident(
+      "OBSERVE",
+      "Boundary test accepted as inert data"
+    );
+
+  }
+
+  toast(
+    "Boundary test completed."
+  );
+
+}
+
+
+/* ============================================================
+   43 · REPLAY TEST
+   ============================================================ */
+
+async function replayTest(){
+
+  const nonce =
+    makeId("REPLAY");
+
+  const first =
+    await receive({
+      type:"REPLAY_TEST",
+      nonce
+    });
+
+  const second =
+    await receive({
+      type:"REPLAY_TEST",
+      nonce
+    });
+
+  logEvent(
+    "REPLAY_TEST",
+    second.ok
+      ? "Replay unexpectedly accepted"
+      : "Replay correctly blocked"
+  );
+
+  toast(
+    second.ok
+      ? "Review replay protection."
+      : "Replay protection passed."
+  );
+
+}
+
+
+/* ============================================================
+   44 · SELF-INTEGRITY
+   ============================================================ */
+
+async function integrityCheck(){
+
+  let score = 100;
+
+  if(
+    !CAPABILITIES.network
+  ){
+
+    score += 0;
+
+  }else{
+
+    score -= 20;
+
+  }
+
+  if(
+    !CAPABILITIES.externalTransmission
+  ){
+
+    score += 0;
+
+  }else{
+
+    score -= 20;
+
+  }
+
+  if(
+    !CAPABILITIES.commandExecution
+  ){
+
+    score += 0;
+
+  }else{
+
+    score -= 20;
+
+  }
+
+  if(
+    !CAPABILITIES.credentialAccess
+  ){
+
+    score += 0;
+
+  }else{
+
+    score -= 20;
+
+  }
+
+  if(
+    CONFIG.OFFLINE_FIRST
+  ){
+
+    score += 0;
+
+  }else{
+
+    score -= 10;
+
+  }
+
+  STATE.integrityScore =
+    clamp(
+      score,
+      0,
+      100
+    );
+
+  logEvent(
+    "INTEGRITY",
+    "Self-integrity policy check completed"
+  );
+
+  updateStats();
+
+  toast(
+    "Integrity: " +
+    Math.round(
+      STATE.integrityScore
+    ) +
+    "%"
+  );
+
+  return STATE.integrityScore;
+
+}
+
+
+/* ============================================================
+   45 · LOCAL NETWORK LOCK
+   ============================================================ */
+
+function networkLock(){
+
+  if(
+    CONFIG.ALLOW_NETWORK
+  ){
+
+    return {
+      locked:false
+    };
+
+  }
+
+  return {
+
+    locked:true,
+
+    reason:
+      "CHIROMBE OFFLINE-FIRST POLICY"
+
+  };
+
+}
+
+
+/* ============================================================
+   46 · AUDIO / TONAL LAYER
+   ------------------------------------------------------------
+   Browser audio requires a user gesture on iPhone/Safari.
+   ============================================================ */
+
+function ensureAudio(){
+
+  if(
+    STATE.audioContext
+  ){
+
+    return STATE.audioContext;
+
+  }
+
+  const AudioCtx =
+    window.AudioContext ||
+    window.webkitAudioContext;
+
+  if(!AudioCtx){
+
+    toast(
+      "Web Audio unavailable on this browser."
+    );
+
+    return null;
+
+  }
+
+  const context =
+    new AudioCtx();
+
+  const gain =
+    context.createGain();
+
+  gain.gain.value = .035;
+
+  gain.connect(
+    context.destination
+  );
+
+  STATE.audioContext =
+    context;
+
+  STATE.masterGain =
+    gain;
+
+  return context;
+
+}
+
+
+async function enableTones(){
+
+  const context =
+    ensureAudio();
+
+  if(!context){
+
+    return;
+
+  }
+
+  if(
+    context.state === "suspended"
+  ){
+
+    await context.resume();
+
+  }
+
+  STATE.audioEnabled = true;
+
+  DOM.toneBtn.textContent =
+    "TONES ON";
+
+  logEvent(
+    "AUDIO",
+    "Local tonal layer enabled by user gesture"
+  );
+
+  playTone(
+    CONFIG.AUDIO_BASE,
+    .18
+  );
+
+  toast(
+    "Local tonal layer armed."
+  );
+
+}
+
+
+function playTone(
+  frequency,
+  duration=.15,
+  type="sine"
+){
+
+  if(
+    !STATE.audioEnabled ||
+    !STATE.audioContext ||
+    !STATE.masterGain
+  ){
+
+    return;
+
+  }
+
+  const context =
+    STATE.audioContext;
+
+  const osc =
+    context.createOscillator();
+
+  const gain =
+    context.createGain();
+
+  osc.type = type;
+
+  osc.frequency.value =
+    frequency;
+
+  gain.gain.setValueAtTime(
+    0,
+    context.currentTime
+  );
+
+  gain.gain.linearRampToValueAtTime(
+    .18,
+    context.currentTime+.015
+  );
+
+  gain.gain.exponentialRampToValueAtTime(
+    .001,
+    context.currentTime+duration
+  );
+
+  osc.connect(gain);
+
+  gain.connect(
+    STATE.masterGain
+  );
+
+  osc.start();
+
+  osc.stop(
+    context.currentTime +
+    duration +
+    .02
+  );
+
+}
+
+
+function protectionTone(){
+
+  if(
+    !STATE.audioEnabled
+  ){
+
+    return;
+
+  }
+
+  playTone(
+    CONFIG.AUDIO_BASE,
+    .12
+  );
+
+  setTimeout(
+    () =>
+      playTone(
+        CONFIG.AUDIO_BASE*1.25,
+        .15
+      ),
+    100
+  );
+
+}
+
+
+/* ============================================================
+   47 · AUDIO EVENT BUTTON
+   ============================================================ */
+
+DOM.toneBtn.addEventListener(
+  "click",
+  async () => {
+
+    if(
+      STATE.audioEnabled
+    ){
+
+      STATE.audioEnabled = false;
+
+      DOM.toneBtn.textContent =
+        "TONES";
+
+      logEvent(
+        "AUDIO",
+        "Local tonal layer disabled"
+      );
+
+      return;
+
+    }
+
+    await enableTones();
+
+  }
+);
+
+
+/* ============================================================
+   48 · ARM / DISARM
+   ============================================================ */
+
+DOM.armBtn.addEventListener(
+  "click",
+  () => {
+
+    STATE.armed =
+      !STATE.armed;
+
+    DOM.armBtn.textContent =
+      STATE.armed
+        ? "ARMED"
+        : "ARM";
+
+    DOM.armBtn.className =
+      STATE.armed
+        ? "btn good"
+        : "btn primary";
+
+    logEvent(
+      "SYSTEM",
+      STATE.armed
+        ? "Celestial protection simulation armed"
+        : "Simulation disarmed"
+    );
+
+    toast(
+      STATE.armed
+        ? "Matrix armed."
+        : "Matrix disarmed."
+    );
+
+  }
+);
+
+
+/* ============================================================
+   49 · PAUSE
+   ============================================================ */
+
+DOM.pauseBtn.addEventListener(
+  "click",
+  () => {
+
+    STATE.paused =
+      !STATE.paused;
+
+    DOM.pauseBtn.textContent =
+      STATE.paused
+        ? "RESUME"
+        : "PAUSE";
+
+    DOM.matrixMode.textContent =
+      STATE.paused
+        ? "PAUSED"
+        : "CONTINUOUS";
+
+    logEvent(
+      "SYSTEM",
+      STATE.paused
+        ? "Matrix paused"
+        : "Matrix resumed"
+    );
+
+  }
+);
+
+
+/* ============================================================
+   50 · PULSE BUTTON
+   ============================================================ */
+
+DOM.pulseBtn.addEventListener(
+  "click",
+  () => {
+
+    pulseMatrix(
+      "MANUAL_MATRIX_PULSE"
+    );
+
+    protectionTone();
+
+  }
+);
+
+
+/* ============================================================
+   51 · DEFENSIVE MIRROR BUTTON
+   ============================================================ */
+
+DOM.mirrorBtn.addEventListener(
+  "click",
+  () => {
+
+    defensiveMirror({
+
+      type:"MANUAL_MIRROR_TEST",
+
+      nonce:
+        makeId("MIRROR"),
+
+      pattern:
+        "synthetic-untrusted-pattern"
+
+    });
+
+    protectionTone();
+
+  }
+);
+
+
+/* ============================================================
+   52 · BOUNDARY BUTTON
+   ============================================================ */
+
+DOM.boundaryBtn.addEventListener(
+  "click",
+  boundaryTest
+);
+
+
+/* ============================================================
+   53 · CANARY BUTTON
+   ============================================================ */
+
+DOM.canaryBtn.addEventListener(
+  "click",
+  createCanary
+);
+
+
+/* ============================================================
+   54 · DECOY BUTTON
+   ============================================================ */
+
+DOM.decoyBtn.addEventListener(
+  "click",
+  createDecoy
+);
+
+
+/* ============================================================
+   55 · QUARANTINE BUTTON
+   ============================================================ */
+
+DOM.quarantineBtn.addEventListener(
+  "click",
+  () => {
+
+    quarantine(
+      {
+        type:
+          "MANUAL_QUARANTINE_TEST",
+
+        payload:
+          "synthetic-only-test"
+      },
+      "MANUAL_TEST"
+    );
+
+    toast(
+      "Synthetic event quarantined."
+    );
+
+  }
+);
+
+
+/* ============================================================
+   56 · INTEGRITY BUTTON
+   ============================================================ */
+
+DOM.integrityBtn.addEventListener(
+  "click",
+  integrityCheck
+);
+
+
+/* ============================================================
+   57 · PRIVACY BUTTON
+   ============================================================ */
+
+DOM.privacyBtn.addEventListener(
+  "click",
+  privacyTest
+);
+
+
+/* ============================================================
+   58 · EXPORT
+   ============================================================ */
+
+function exportState(){
+
+  const exportData = {
+
+    application:
+      "CHIROMBE CELESTIAL PROTECTION",
+
+    version:
+      CONFIG.VERSION,
+
+    exportedAt:
+      new Date().toISOString(),
+
+    configuration:{
+      ...CONFIG
+    },
+
+    capabilities:{
+      ...CAPABILITIES
+    },
+
+    incident:
+      STATE.incident,
+
+    integrityScore:
+      STATE.integrityScore,
+
+    boundaryScore:
+      STATE.boundaryScore,
+
+    coherence:
+      STATE.coherence,
+
+    nodes:
+      STATE.nodes.map(
+        node =>
+          sanitiseObject({
+            id:node.id,
+            name:node.name,
+            role:node.role,
+            generation:node.generation,
+            known:node.known,
+            synthetic:node.synthetic,
+            classification:
+              node.classification,
+            locationModel:
+              node.locationModel,
+            location:
+              node.location,
+            life:node.life,
+            behaviour:node.behaviour,
+            status:node.status
+          })
+      ),
+
+    canaries:
+      [...STATE.canaries.values()]
+        .map(sanitiseObject),
+
+    quarantined:
+      STATE.quarantined
+        .slice(-50)
+        .map(sanitiseObject),
+
+    events:
+      STATE.events
+        .slice(-100)
+        .map(sanitiseObject),
+
+    audit:
+      STATE.audit
+        .slice(-100)
+        .map(sanitiseObject)
+
+  };
+
+  DOM.exportText.value =
+    JSON.stringify(
+      exportData,
+      null,
+      2
+    );
+
+  DOM.exportModal.classList.add(
+    "open"
+  );
+
+}
+
+
+DOM.exportBtn.addEventListener(
+  "click",
+  exportState
+);
+
+
+DOM.closeExport.addEventListener(
+  "click",
+  () => {
+
+    DOM.exportModal.classList.remove(
+      "open"
+    );
+
+  }
+);
+
+
+DOM.copyExport.addEventListener(
+  "click",
+  async () => {
+
+    try{
+
+      await navigator.clipboard.writeText(
+        DOM.exportText.value
+      );
+
+      toast(
+        "JSON copied."
+      );
+
+    }catch{
+
+      DOM.exportText.select();
+
+      document.execCommand(
+        "copy"
+      );
+
+      toast(
+        "JSON copied using fallback."
+      );
+
+    }
+
+  }
+);
+
+
+/* ============================================================
+   59 · RESET
+   ============================================================ */
+
+DOM.resetBtn.addEventListener(
+  "click",
+  () => {
+
+    const confirmed =
+      window.confirm(
+        "Reset the local CHIROMBE simulation?"
+      );
+
+    if(!confirmed){
+
+      return;
+
+    }
+
+    resetSystem();
+
+  }
+);
+
+
+function resetSystem(){
+
+  STATE.eventCount = 0;
+  STATE.mirrorCount = 0;
+  STATE.quarantineCount = 0;
+  STATE.canaryCount = 0;
+  STATE.decoyCount = 0;
+
+  STATE.integrityScore = 100;
+  STATE.boundaryScore = 100;
+  STATE.coherence = 0;
+
+  STATE.incident = "NORMAL";
+
+  STATE.events.length = 0;
+  STATE.audit.length = 0;
+  STATE.quarantined.length = 0;
+  STATE.canaries.clear();
+  STATE.decoys.length = 0;
+  STATE.seenNonces.clear();
+  STATE.rateWindow.length = 0;
+  STATE.pulses.length = 0;
+
+  STATE.selectedNode = null;
+
+  buildNodes();
+
+  setIncident(
+    "NORMAL"
+  );
+
+  renderFeed();
+
+  renderAudit();
+
+  updateStats();
+
+  logEvent(
+    "SYSTEM",
+    "Local simulation reset"
+  );
+
+  toast(
+    "CHIROMBE matrix reset."
+  );
+
+}
+
+
+/* ============================================================
+   60 · NODE SELECTION
+   ============================================================ */
+
+DOM.networkCanvas.addEventListener(
+  "pointermove",
+  event => {
+
+    const rect =
+      DOM.networkCanvas
+        .getBoundingClientRect();
+
+    STATE.mouse.x =
+      event.clientX -
+      rect.left;
+
+    STATE.mouse.y =
+      event.clientY -
+      rect.top;
+
+    STATE.mouse.active =
+      true;
+
+  }
+);
+
+
+DOM.networkCanvas.addEventListener(
+  "pointerleave",
+  () => {
+
+    STATE.mouse.active =
+      false;
+
+  }
+);
+
+
+DOM.networkCanvas.addEventListener(
+  "pointerdown",
+  event => {
+
+    const rect =
+      DOM.networkCanvas
+        .getBoundingClientRect();
+
+    const x =
+      event.clientX -
+      rect.left;
+
+    const y =
+      event.clientY -
+      rect.top;
+
+    let closest = null;
+
+    let distance = Infinity;
+
+    for(
+      const node
+      of STATE.nodes
+    ){
+
+      const dx =
+        node.x-x;
+
+      const dy =
+        node.y-y;
+
+      const d =
+        Math.sqrt(
+          dx*dx + dy*dy
+        );
+
+      if(
+        d < distance
+      ){
+
+        distance = d;
+        closest = node;
+
+      }
+
+    }
+
+    if(
+      closest &&
+      distance < 28
+    ){
+
+      STATE.selectedNode =
+        closest;
+
+      closest.pulse =
+        .9;
+
+      logEvent(
+        "NODE_SELECT",
+        "Selected " +
+        closest.name
+      );
+
+    }
+
+  }
+);
+
+
+/* ============================================================
+   61 · PAGE VISIBILITY
+   ------------------------------------------------------------
+   Saves battery and prevents unnecessary work while hidden.
+   ============================================================ */
+
+document.addEventListener(
+  "visibilitychange",
+  () => {
+
+    if(
+      document.hidden
+    ){
+
+      STATE.paused = true;
+
+      DOM.matrixMode.textContent =
+        "BACKGROUND";
+
+    }else{
+
+      STATE.paused = false;
+
+      DOM.matrixMode.textContent =
+        "CONTINUOUS";
+
+      logEvent(
+        "SYSTEM",
+        "Matrix returned to foreground"
+      );
+
+    }
+
+  }
+);
+
+
+/* ============================================================
+   62 · SYNTHETIC ACTIVITY
+   ============================================================ */
+
+function syntheticActivity(now){
+
+  if(
+    STATE.paused ||
+    !STATE.armed
+  ){
+
+    return;
+
+  }
+
+  if(
+    now -
+    STATE.lastActivity <
+    CONFIG.NODE_ACTIVITY_INTERVAL
+  ){
+
+    return;
+
+  }
+
+  STATE.lastActivity =
+    now;
+
+  const index =
+    Math.floor(
+      Math.random() *
+      STATE.nodes.length
+    );
+
+  const node =
+    STATE.nodes[index];
+
+  if(!node){
+
+    return;
+
+  }
+
+  node.accessCount =
+    (node.accessCount || 0) +
+    1;
+
+  node.pulse =
+    .25 +
+    Math.random()*.55;
+
+  node.energy =
+    clamp(
+      node.energy +
+      (Math.random()-.5)*.08,
+      0,
+      1
+    );
+
+  if(
+    node.synthetic
+  ){
+
+    updateSyntheticLife();
+
+  }
+
+}
+
+
+/* ============================================================
+   63 · AUTOMATIC CANARY MAINTENANCE
+   ============================================================ */
+
+function automaticCanaryMaintenance(){
+
+  if(
+    !STATE.armed ||
+    STATE.paused
+  ){
+
+    return;
+
+  }
+
+  if(
+    STATE.canaries.size === 0
+  ){
+
+    createCanary();
+
+  }
+
+}
+
+
+/* ============================================================
+   64 · AUTOMATIC SECURITY SAMPLING
+   ============================================================ */
+
+function securitySampling(){
+
+  if(
+    !STATE.armed ||
+    STATE.paused
+  ){
+
+    return;
+
+  }
+
+  const sample =
+    Math.random();
+
+  if(
+    sample < .015
+  ){
+
+    defensiveMirror({
+
+      type:"AUTOMATIC_LOCAL_SAMPLE",
+
+      nonce:
+        makeId("AUTO"),
+
+      pattern:
+        "synthetic"
+
+    });
+
+  }
+
+}
+
+
+/* ============================================================
+   65 · HASH CHAIN VERIFICATION
+   ============================================================ */
+
+async function verifyAuditChain(){
+
+  if(
+    STATE.audit.length < 2
+  ){
+
+    return true;
+
+  }
+
+  let previous =
+    "GENESIS";
+
+  for(
+    const record
+    of STATE.audit
+  ){
+
+    const copy = {
+
+      id:record.id,
+
+      timestamp:
+        record.timestamp,
+
+      type:
+        record.type,
+
+      payload:
+        record.payload,
+
+      previous:
+        record.previous
+
+    };
+
+    if(
+      record.previous !==
+      previous
+    ){
+
+      return false;
+
+    }
+
+    const digest =
+      await sha256(
+        JSON.stringify(copy)
+      );
+
+    if(
+      digest !==
+      record.digest
+    ){
+
+      return false;
+
+    }
+
+    previous =
+      record.digest;
+
+  }
+
+  return true;
+
+}
+
+
+/* ============================================================
+   66 · PERIODIC INTEGRITY MONITOR
+   ============================================================ */
+
+let lastIntegrityRun = 0;
+
+async function periodicIntegrity(now){
+
+  if(
+    now-lastIntegrityRun <
+    12000
+  ){
+
+    return;
+
+  }
+
+  lastIntegrityRun =
+    now;
+
+  const ok =
+    await verifyAuditChain();
+
+  if(!ok){
+
+    STATE.integrityScore =
+      Math.max(
+        0,
+        STATE.integrityScore-20
+      );
+
+    setIncident(
+      "SUSPICIOUS",
+      "AUDIT_CHAIN_MISMATCH"
+    );
+
+  }else{
+
+    STATE.integrityScore =
+      Math.min(
+        100,
+        STATE.integrityScore+.25
+      );
+
+  }
+
+  updateStats();
+
+}
+
+
+/* ============================================================
+   67 · BOUNDARY RECOVERY
+   ============================================================ */
+
+function boundaryRecovery(){
+
+  if(
+    STATE.incident ===
+    "QUARANTINE"
+  ){
+
+    if(
+      STATE.quarantineCount === 0
+    ){
+
+      setIncident(
+        "RECOVERY"
+      );
+
+    }
+
+  }
+
+  if(
+    STATE.boundaryScore >= 98 &&
+    STATE.integrityScore >= 98
+  ){
+
+    if(
+      STATE.incident !==
+      "NORMAL"
+    ){
+
+      setIncident(
+        "RECOVERY"
+      );
+
+    }
+
+  }
+
+}
+
+
+/* ============================================================
+   68 · SAFE STATE DECAY
+   ============================================================ */
+
+function securityDecay(){
+
+  if(
+    STATE.boundaryScore < 100
+  ){
+
+    STATE.boundaryScore =
+      Math.min(
+        100,
+        STATE.boundaryScore+.015
+      );
+
+  }
+
+}
+
+
+/* ============================================================
+   69 · MAIN ANIMATION LOOP
+   ============================================================ */
+
+function frame(now){
+
+  if(
+    STATE.destroyed
+  ){
+
+    return;
+
+  }
+
+  STATE.frame++;
+
+  const delta =
+    now -
+    STATE.lastFrame;
+
+  STATE.lastFrame =
+    now;
+
+
+  drawCelestial(
+    now
+  );
+
+  drawGrid();
+
+
+  if(
+    !STATE.paused
+  ){
+
+    updateNodes(
+      delta
+    );
+
+    updateCoherence();
+
+    syntheticActivity(
+      now
+    );
+
+    securitySampling();
+
+    securityDecay();
+
+  }
+
+
+  boundaryRecovery();
+
+  periodicIntegrity(
+    now
+  );
+
+
+  drawNetwork(
+    now
+  );
+
+
+  if(
+    STATE.frame % 20 === 0
+  ){
+
+    updateStats();
+
+  }
+
+
+  requestAnimationFrame(
+    frame
+  );
+
+}
+
+
+/* ============================================================
+   70 · RESIZE
+   ============================================================ */
+
+function resizeAll(){
+
+  resizeBackgroundCanvas();
+
+  resizeNetwork();
+
+  drawGrid();
+
+}
+
+
+/* ============================================================
+   71 · RESIZE OBSERVER
+   ============================================================ */
+
+window.addEventListener(
+  "resize",
+  resizeAll,
+  {
+    passive:true
+  }
+);
+
+
+/* ============================================================
+   72 · KEYBOARD SHORTCUTS
+   ============================================================ */
+
+document.addEventListener(
+  "keydown",
+  event => {
+
+    if(
+      event.key === " "
+    ){
+
+      event.preventDefault();
+
+      DOM.pulseBtn.click();
+
+    }
+
+    if(
+      event.key.toLowerCase() === "p"
+    ){
+
+      DOM.pauseBtn.click();
+
+    }
+
+    if(
+      event.key.toLowerCase() === "a"
+    ){
+
+      DOM.armBtn.click();
+
+    }
+
+  }
+);
+
+
+/* ============================================================
+   73 · SAFE STORAGE
+   ============================================================ */
+
+const STORAGE_KEY =
+  "chirombe_celestial_protection_state_v1";
+
+
+function saveLocalState(){
+
+  try{
+
+    const state = {
+
+      version:
+        CONFIG.VERSION,
+
+      armed:
+        STATE.armed,
+
+      incident:
+        STATE.incident,
+
+      integrityScore:
+        STATE.integrityScore,
+
+      boundaryScore:
+        STATE.boundaryScore,
+
+      coherence:
+        STATE.coherence,
+
+      timestamp:
+        Date.now()
+
+    };
+
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify(state)
+    );
+
+  }catch{
+
+    /* localStorage is optional */
+
+  }
+
+}
+
+
+function loadLocalState(){
+
+  try{
+
+    const raw =
+      localStorage.getItem(
+        STORAGE_KEY
+      );
+
+    if(!raw){
+
+      return;
+
+    }
+
+    const state =
+      JSON.parse(raw);
+
+    if(
+      state &&
+      typeof state === "object"
+    ){
+
+      if(
+        typeof state.armed ===
+        "boolean"
+      ){
+
+        STATE.armed =
+          state.armed;
+
+      }
+
+      if(
+        Number.isFinite(
+          state.integrityScore
+        )
+      ){
+
+        STATE.integrityScore =
+          clamp(
+            state.integrityScore,
+            0,
+            100
+          );
+
+      }
+
+      if(
+        Number.isFinite(
+          state.boundaryScore
+        )
+      ){
+
+        STATE.boundaryScore =
+          clamp(
+            state.boundaryScore,
+            0,
+            100
+          );
+
+      }
+
+    }
+
+  }catch{
+
+    /* ignore malformed local state */
+
+  }
+
+}
+
+
+/* ============================================================
+   74 · LOCAL STATE AUTOSAVE
+   ============================================================ */
+
+let lastSave = 0;
+
+function autosave(now){
+
+  if(
+    now-lastSave <
+    10000
+  ){
+
+    return;
+
+  }
+
+  lastSave =
+    now;
+
+  saveLocalState();
+
+}
+
+
+/* ============================================================
+   75 · PATCH LOOP FOR AUTOSAVE
+   ============================================================ */
+
+const originalFrame =
+  frame;
+
+function enhancedFrame(now){
+
+  autosave(now);
+
+  originalFrame(now);
+
+}
+
+
+/* ============================================================
+   76 · DESTROY API
+   ============================================================ */
+
+function destroy(){
+
+  STATE.destroyed = true;
+
+  STATE.paused = true;
+
+  if(
+    STATE.audioContext
+  ){
+
+    try{
+
+      STATE.audioContext.close();
+
+    }catch{}
+
+  }
+
+  logEvent(
+    "SYSTEM",
+    "Engine destroyed"
+  );
+
+}
+
+
+/* ============================================================
+   77 · PUBLIC API
+   ============================================================ */
+
+window.ChirombeCelestialProtection = {
+
+  version:
+    CONFIG.VERSION,
+
+  state:
+    STATE,
+
+  config:
+    CONFIG,
+
+  capabilities:
+    CAPABILITIES,
+
+  nodes:
+    STATE.nodes,
+
+  receive,
+
+  defensiveMirror,
+
+  createCanary,
+
+  createDecoy,
+
+  quarantine,
+
+  pulseMatrix,
+
+  integrityCheck,
+
+  verifyAuditChain,
+
+  privacyTest,
+
+  boundaryTest,
+
+  replayTest,
+
+  exportState,
+
+  saveLocalState,
+
+  loadLocalState,
+
+  destroy,
+
+  networkLock
+
+};
+
+
+/* ============================================================
+   78 · CM90 COMPATIBILITY API
+   ============================================================ */
+
+window.ChirombeCM90 = {
+
+  version:
+    CONFIG.VERSION,
+
+  get nodes(){
+    return STATE.nodes;
+  },
+
+  get events(){
+    return STATE.events;
+  },
+
+  pulse:
+    pulseMatrix,
+
+  mirror:
+    defensiveMirror,
+
+  quarantine,
+
+  createDecoy,
+
+  createCanary,
+
+  integrity:
+    integrityCheck
+
+};
+
+
+/* ============================================================
+   79 · CM90PLUS COMPATIBILITY API
+   ============================================================ */
+
+window.ChirombeCM90Plus = {
+
+  version:
+    CONFIG.VERSION,
+
+  receive,
+
+  createDecoy,
+
+  createCanary,
+
+  quarantine,
+
+  testBoundary:
+    boundaryTest,
+
+  testReplay:
+    replayTest,
+
+  touchCanary,
+
+  integrityCheck,
+
+  privacyTest,
+
+  networkLock,
+
+  capabilities:
+    CAPABILITIES,
+
+  destroy
+
+};
+
+
+/* ============================================================
+   80 · INITIALISATION
+   ============================================================ */
+
+async function init(){
+
+  createStars();
+
+  resizeAll();
+
+  buildNodes();
+
+  loadLocalState();
+
+  updateStats();
+
+  renderFeed();
+
+  renderAudit();
+
+  setIncident(
+    "NORMAL"
+  );
+
+  await integrityCheck();
+
+  logEvent(
+    "BOOT",
+    "CHIROMBE Celestial Protection initialized"
+  );
+
+  logEvent(
+    "BOUNDARY",
+    "Offline-first boundary active"
+  );
+
+  logEvent(
+    "MATRIX",
+    "100-node family simulation constructed"
+  );
+
+  logEvent(
+    "IDENTITY",
+    "Known lineage and synthetic nodes separated"
+  );
+
+  logEvent(
+    "SAFETY",
+    "Defensive mirror configured for local classify/reflection/discard"
+  );
+
+  toast(
+    "CHIROMBE Celestial Protection initialized."
+  );
+
+  requestAnimationFrame(
+    enhancedFrame
+  );
+
+}
+
+
+/* ============================================================
+   81 · START
+   ============================================================ */
+
+init();
+
+
+/* ============================================================
+   82 · PERIODIC LOCAL HEARTBEAT
+   ============================================================ */
+
+setInterval(
+  () => {
+
+    if(
+      STATE.destroyed ||
+      STATE.paused
+    ){
+
+      return;
+
+    }
+
+    if(
+      STATE.armed
+    ){
+
+      pulseMatrix(
+        "AUTONOMOUS_LOCAL_HEARTBEAT"
+      );
+
+    }
+
+  },
+  15000
+);
+
+
+/* ============================================================
+   83 · CANARY MAINTENANCE
+   ============================================================ */
+
+setInterval(
+  automaticCanaryMaintenance,
+  30000
+);
+
+
+/* ============================================================
+   84 · SYNTHETIC LIFE UPDATE
+   ============================================================ */
+
+setInterval(
+  () => {
+
+    if(
+      STATE.destroyed ||
+      STATE.paused ||
+      !STATE.armed
+    ){
+
+      return;
+
+    }
+
+    updateSyntheticLife();
+
+  },
+  7000
+);
+
+
+/* ============================================================
+   85 · BOUNDARY HEARTBEAT
+   ============================================================ */
+
+setInterval(
+  () => {
+
+    if(
+      STATE.destroyed
+    ){
+
+      return;
+
+    }
+
+    if(
+      STATE.integrityScore < 85
+    ){
+
+      setIncident(
+        "SUSPICIOUS",
+        "INTEGRITY_BELOW_THRESHOLD"
+      );
+
+    }
+
+    updateStats();
+
+  },
+  5000
+);
+
+
+/* ============================================================
+   86 · BEFORE UNLOAD
+   ============================================================ */
+
+window.addEventListener(
+  "beforeunload",
+  () => {
+
+    saveLocalState();
+
+  }
+);
+
+
+/* ============================================================
+   87 · ONLINE/OFFLINE INDICATOR
+   ------------------------------------------------------------
+   Online status is displayed as environmental information only.
+   No external network operation is performed by this engine.
+   ============================================================ */
+
+window.addEventListener(
+  "online",
+  () => {
+
+    logEvent(
+      "ENVIRONMENT",
+      "Browser reports network availability; engine remains offline-first"
+    );
+
+  }
+);
+
+
+window.addEventListener(
+  "offline",
+  () => {
+
+    logEvent(
+      "ENVIRONMENT",
+      "Browser reports offline state"
+    );
+
+  }
+);
+
+
+/* ============================================================
+   88 · UNTRUSTED POSTMESSAGE GATE
+   ============================================================ */
+
+window.addEventListener(
+  "message",
+  event => {
+
+    /* Never execute message contents. */
+
+    receive({
+
+      type:
+        "WINDOW_MESSAGE",
+
+      nonce:
+        makeId("MSG"),
+
+      sourceOrigin:
+        typeof event.origin ===
+        "string"
+          ? event.origin
+          : "unknown",
+
+      payload:
+        sanitiseObject(
+          event.data
+        )
+
+    });
+
+  }
+);
+
+
+/* ============================================================
+   89 · GLOBAL ERROR OBSERVATION
+   ============================================================ */
+
+window.addEventListener(
+  "error",
+  event => {
+
+    logEvent(
+      "RUNTIME_ERROR",
+      "Runtime error observed without executing external recovery commands",
+      {
+        message:
+          event.message ||
+          "unknown"
+      }
+    );
+
+  }
+);
+
+
+/* ============================================================
+   90 · UNHANDLED PROMISE OBSERVATION
+   ============================================================ */
+
+window.addEventListener(
+  "unhandledrejection",
+  event => {
+
+    logEvent(
+      "PROMISE_ERROR",
+      "Unhandled promise rejection observed",
+      {
+        reason:
+          String(
+            event.reason || ""
+          ).slice(0,300)
+      }
+    );
+
+  }
+);
+
+
+/* ============================================================
+   91 · POINTER-BASED CELESTIAL RESPONSE
+   ============================================================ */
+
+document.addEventListener(
+  "pointermove",
+  event => {
+
+    if(
+      STATE.paused
+    ){
+
+      return;
+
+    }
+
+    const x =
+      event.clientX;
+
+    const y =
+      event.clientY;
+
+    if(
+      Math.random() < .02
+    ){
+
+      STATE.pulses.push({
+
+        x,
+
+        y,
+
+        radius:2,
+
+        alpha:.18,
+
+        speed:.7,
+
+        width:.6,
+
+        r:183,
+
+        g:124,
+
+        b:255
+
+      });
+
+    }
+
+  },
+  {
+    passive:true
+  }
+);
+
+
+/* ============================================================
+   92 · TOUCH RESPONSE
+   ============================================================ */
+
+document.addEventListener(
+  "touchstart",
+  event => {
+
+    const touch =
+      event.touches[0];
+
+    if(!touch){
+
+      return;
+
+    }
+
+    STATE.pulses.push({
+
+      x:touch.clientX,
+
+      y:touch.clientY,
+
+      radius:4,
+
+      alpha:.35,
+
+      speed:1.4,
+
+      width:1,
+
+      r:255,
+
+      g:216,
+
+      b:107
+
+    });
+
+  },
+  {
+    passive:true
+  }
+);
+
+
+/* ============================================================
+   93 · HASHED HOUSE IDENTITY
+   ============================================================ */
+
+async function initialiseHouseIdentity(){
+
+  const identity =
+    [
+      "CHIROMBE",
+      "MASAWI",
+      "MUKANYA",
+      "77-99-33"
+    ].join("|");
+
+  const digest =
+    await sha256(
+      identity
+    );
+
+  window.ChirombeCelestialProtection
+    .houseIdentityHash =
+      digest;
+
+  logEvent(
+    "IDENTITY",
+    "House identity digest initialized",
+    {
+      digest:
+        digest.slice(0,32)
+    }
+  );
+
+}
+
+
+/* ============================================================
+   94 · NODE IDENTITY DIGESTS
+   ============================================================ */
+
+async function initialiseNodeDigests(){
+
+  for(
+    const node
+    of STATE.nodes.slice(0,30)
+  ){
+
+    const digest =
+      await sha256(
+        [
+          node.id,
+          node.name,
+          node.role,
+          node.generation,
+          node.classification
+        ].join("|")
+      );
+
+    node.identityDigest =
+      digest;
+
+  }
+
+  logEvent(
+    "IDENTITY",
+    "Node identity envelopes hashed locally"
+  );
+
+}
+
+
+/* ============================================================
+   95 · FINAL STARTUP IDENTITY
+   ============================================================ */
+
+Promise.resolve()
+  .then(
+    initialiseHouseIdentity
+  )
+  .then(
+    initialiseNodeDigests
+  );
+
+
+/* ============================================================
+   96 · ACCESSIBILITY
+   ============================================================ */
+
+DOM.networkCanvas.setAttribute(
+  "aria-label",
+  "Animated local family matrix visualization"
+);
+
+DOM.feed.setAttribute(
+  "aria-live",
+  "polite"
+);
+
+
+/* ============================================================
+   97 · PREVENT ACCIDENTAL FORM SUBMISSION
+   ============================================================ */
+
+document.addEventListener(
+  "submit",
+  event => {
+
+    event.preventDefault();
+
+  }
+);
+
+
+/* ============================================================
+   98 · SAFETY STATUS
+   ============================================================ */
+
+logEvent(
+  "SAFETY",
+  "No supernatural detection, retaliation, credential access or external attack capability is implemented"
+);
+
+
+/* ============================================================
+   99 · PERFORMANCE STATUS
+   ============================================================ */
+
+logEvent(
+  "PERFORMANCE",
+  "Single animation loop, bounded event history and capped device pixel ratio active"
+);
+
+
+/* ============================================================
+   100 · FINAL SYSTEM READY
+   ============================================================ */
+
+console.info(
+  "CHIROMBE CELESTIAL PROTECTION READY",
+  window.ChirombeCelestialProtection
+);
+
+})();
+</script>
+
+</body>
+</html>/*
 ===============================================================
  CHIROMBE MASTER AUTOSTART ORCHESTRATOR
  Version: 1.0.0
