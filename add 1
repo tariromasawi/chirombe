@@ -19334,7 +19334,1637 @@ MWARINDIMWARI
 `
 );
 
+</script><!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#05070d">
+<meta name="color-scheme" content="dark">
+<title>Universal Recovery Master — Bottom Shell</title>
+
+<style>
+:root{
+  --bg:#05070d;
+  --panel:rgba(12,17,29,.88);
+  --panel2:rgba(18,25,41,.78);
+  --line:rgba(255,255,255,.11);
+  --text:#edf3ff;
+  --muted:#8290a8;
+  --good:#42f5a7;
+  --warn:#ffd166;
+  --bad:#ff5d73;
+  --accent:#8ab4ff;
+  --cyan:#5ee7f7;
+  --shadow:0 20px 80px rgba(0,0,0,.45);
+}
+
+*{box-sizing:border-box}
+
+html,body{
+  margin:0;
+  min-height:100%;
+  background:
+    radial-gradient(circle at 50% 0%,rgba(80,110,255,.12),transparent 35%),
+    var(--bg);
+  color:var(--text);
+  font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+
+body{
+  padding:18px;
+}
+
+#URM_BOTTOM_ROOT{
+  width:min(1200px,100%);
+  margin:auto;
+}
+
+.urm-shell{
+  border:1px solid var(--line);
+  border-radius:24px;
+  background:linear-gradient(145deg,var(--panel),rgba(5,8,15,.95));
+  box-shadow:var(--shadow);
+  overflow:hidden;
+  backdrop-filter:blur(18px);
+}
+
+.urm-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:15px;
+  padding:18px 20px;
+  border-bottom:1px solid var(--line);
+}
+
+.urm-brand{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+
+.urm-orb{
+  width:42px;
+  height:42px;
+  border-radius:50%;
+  background:
+    radial-gradient(circle at 35% 30%,#fff,transparent 8%),
+    radial-gradient(circle,#5ee7f7 0%,#5570ff 38%,#11172c 72%);
+  box-shadow:
+    0 0 20px rgba(94,231,247,.45),
+    0 0 60px rgba(85,112,255,.2);
+  animation:orb 3s ease-in-out infinite alternate;
+}
+
+@keyframes orb{
+  from{transform:scale(.96);filter:brightness(.9)}
+  to{transform:scale(1.04);filter:brightness(1.25)}
+}
+
+.urm-title{
+  font-weight:800;
+  letter-spacing:.04em;
+}
+
+.urm-sub{
+  font-size:11px;
+  color:var(--muted);
+  margin-top:3px;
+}
+
+.urm-badge{
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:.14em;
+  padding:7px 10px;
+  border:1px solid rgba(94,231,247,.3);
+  border-radius:999px;
+  color:var(--cyan);
+  background:rgba(94,231,247,.05);
+}
+
+.urm-body{
+  padding:20px;
+}
+
+.urm-grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:12px;
+}
+
+.metric{
+  padding:15px;
+  border:1px solid var(--line);
+  border-radius:16px;
+  background:rgba(255,255,255,.025);
+}
+
+.metric-label{
+  font-size:10px;
+  text-transform:uppercase;
+  letter-spacing:.12em;
+  color:var(--muted);
+}
+
+.metric-value{
+  font-size:25px;
+  font-weight:800;
+  margin-top:5px;
+}
+
+.metric.good .metric-value{color:var(--good)}
+.metric.warn .metric-value{color:var(--warn)}
+.metric.bad .metric-value{color:var(--bad)}
+
+.controls{
+  display:flex;
+  flex-wrap:wrap;
+  gap:9px;
+  margin:18px 0;
+}
+
+button{
+  border:1px solid var(--line);
+  background:rgba(255,255,255,.055);
+  color:var(--text);
+  border-radius:12px;
+  padding:10px 14px;
+  cursor:pointer;
+  font-weight:700;
+  transition:.18s ease;
+}
+
+button:hover{
+  transform:translateY(-1px);
+  background:rgba(255,255,255,.1);
+  border-color:rgba(138,180,255,.35);
+}
+
+button.primary{
+  background:linear-gradient(135deg,#415eff,#6b7dff);
+  border-color:transparent;
+}
+
+button.danger{
+  color:#ff9aaa;
+}
+
+.urm-panels{
+  display:grid;
+  grid-template-columns:1.1fr .9fr;
+  gap:14px;
+}
+
+.panel{
+  border:1px solid var(--line);
+  border-radius:18px;
+  overflow:hidden;
+  background:rgba(255,255,255,.025);
+}
+
+.panel-head{
+  padding:12px 15px;
+  border-bottom:1px solid var(--line);
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:.13em;
+  color:var(--muted);
+}
+
+#URM_LOG{
+  height:300px;
+  overflow:auto;
+  padding:12px;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:11px;
+}
+
+.log{
+  padding:7px 8px;
+  border-bottom:1px solid rgba(255,255,255,.045);
+  white-space:pre-wrap;
+  word-break:break-word;
+}
+
+.log-info{color:#b9c8df}
+.log-good{color:var(--good)}
+.log-warn{color:var(--warn)}
+.log-error{color:var(--bad)}
+
+#URM_DIAGNOSTICS{
+  height:300px;
+  overflow:auto;
+  padding:14px;
+  font-size:12px;
+}
+
+.diag-row{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  padding:9px 0;
+  border-bottom:1px solid rgba(255,255,255,.05);
+}
+
+.diag-key{color:var(--muted)}
+.diag-value{
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  text-align:right;
+  overflow-wrap:anywhere;
+}
+
+.status{
+  margin-top:15px;
+  padding:12px 14px;
+  border-radius:13px;
+  border:1px solid rgba(66,245,167,.2);
+  background:rgba(66,245,167,.035);
+  color:#a9fbd4;
+  font-size:12px;
+}
+
+.footer{
+  padding:13px 20px;
+  border-top:1px solid var(--line);
+  color:#66738a;
+  font-size:10px;
+  text-align:center;
+  letter-spacing:.06em;
+}
+
+@media(max-width:800px){
+  .urm-grid{grid-template-columns:repeat(2,1fr)}
+  .urm-panels{grid-template-columns:1fr}
+}
+
+@media(max-width:480px){
+  body{padding:8px}
+  .urm-header{padding:14px}
+  .urm-body{padding:12px}
+  .urm-grid{gap:8px}
+  .metric{padding:11px}
+  .metric-value{font-size:21px}
+}
+</style>
+</head>
+
+<body>
+
+<div id="URM_BOTTOM_ROOT">
+
+  <section class="urm-shell">
+
+    <header class="urm-header">
+      <div class="urm-brand">
+        <div class="urm-orb"></div>
+        <div>
+          <div class="urm-title">UNIVERSAL RECOVERY MASTER</div>
+          <div class="urm-sub">BOTTOM EXECUTION / DIAGNOSTIC / RECONCILIATION CORE</div>
+        </div>
+      </div>
+
+      <div class="urm-badge">77-99-33</div>
+    </header>
+
+    <main class="urm-body">
+
+      <div class="urm-grid">
+
+        <div class="metric good">
+          <div class="metric-label">Runtime</div>
+          <div class="metric-value" id="URM_RUNTIME">ONLINE</div>
+        </div>
+
+        <div class="metric">
+          <div class="metric-label">DOM Nodes</div>
+          <div class="metric-value" id="URM_NODES">0</div>
+        </div>
+
+        <div class="metric warn">
+          <div class="metric-label">Warnings</div>
+          <div class="metric-value" id="URM_WARNINGS">0</div>
+        </div>
+
+        <div class="metric">
+          <div class="metric-label">Errors</div>
+          <div class="metric-value" id="URM_ERRORS">0</div>
+        </div>
+
+      </div>
+
+      <div class="controls">
+
+        <button class="primary" id="URM_SCAN">
+          RUN DEEP SCAN
+        </button>
+
+        <button id="URM_REPAIR">
+          RECONCILE LAYOUT
+        </button>
+
+        <button id="URM_AUDIT">
+          AUDIT INTERACTIONS
+        </button>
+
+        <button id="URM_REFRESH">
+          REFRESH DIAGNOSTICS
+        </button>
+
+        <button id="URM_EXPORT">
+          EXPORT REPORT
+        </button>
+
+        <button class="danger" id="URM_CLEAR">
+          CLEAR LOG
+        </button>
+
+      </div>
+
+      <div class="urm-panels">
+
+        <section class="panel">
+
+          <div class="panel-head">
+            Live Recovery Log
+          </div>
+
+          <div id="URM_LOG"></div>
+
+        </section>
+
+        <section class="panel">
+
+          <div class="panel-head">
+            Runtime Diagnostics
+          </div>
+
+          <div id="URM_DIAGNOSTICS"></div>
+
+        </section>
+
+      </div>
+
+      <div class="status" id="URM_STATUS">
+        Universal recovery runtime initialising...
+      </div>
+
+    </main>
+
+    <footer class="footer">
+      HOUSE OF MASAWI · UNIVERSAL RECOVERY MASTER · LOCAL RUNTIME DIAGNOSTICS
+    </footer>
+
+  </section>
+
+</div>
+
+
+<script>
+(() => {
+
+"use strict";
+
+/* ============================================================
+   UNIVERSAL RECOVERY MASTER
+   BOTTOM EXECUTION CORE
+   ============================================================ */
+
+const VERSION = "URM-BOTTOM-1.0.0";
+
+const state = {
+
+  started: Date.now(),
+
+  scans: 0,
+
+  repairs: 0,
+
+  warnings: 0,
+
+  errors: 0,
+
+  mutations: 0,
+
+  interactionIssues: 0,
+
+  duplicateIDs: 0,
+
+  oversizedElements: 0,
+
+  suspiciousLayers: 0,
+
+  orphanedNodes: 0,
+
+  scripts: 0,
+
+  styles: 0,
+
+  report: null,
+
+  events: []
+
+};
+
+
+/* ============================================================
+   DOM HELPERS
+   ============================================================ */
+
+const $ = id => document.getElementById(id);
+
+const safe = (fn, fallback = null) => {
+
+  try {
+
+    return fn();
+
+  } catch(error) {
+
+    recordError(error);
+
+    return fallback;
+
+  }
+
+};
+
+
+/* ============================================================
+   LOGGING
+   ============================================================ */
+
+function log(message, type = "info") {
+
+  const timestamp =
+    new Date().toLocaleTimeString();
+
+  state.events.push({
+
+    timestamp,
+
+    type,
+
+    message
+
+  });
+
+  if(state.events.length > 1000){
+
+    state.events.shift();
+
+  }
+
+  const target = $("URM_LOG");
+
+  if(target){
+
+    const row =
+      document.createElement("div");
+
+    row.className =
+      "log log-" + type;
+
+    row.textContent =
+      `[${timestamp}] ${message}`;
+
+    target.appendChild(row);
+
+    target.scrollTop =
+      target.scrollHeight;
+
+  }
+
+}
+
+
+function recordWarning(message){
+
+  state.warnings++;
+
+  log(message,"warn");
+
+  updateMetrics();
+
+}
+
+
+function recordError(error){
+
+  state.errors++;
+
+  const message =
+    error instanceof Error
+      ? error.message
+      : String(error);
+
+  log(message,"error");
+
+  updateMetrics();
+
+}
+
+
+/* ============================================================
+   METRICS
+   ============================================================ */
+
+function updateMetrics(){
+
+  const nodes =
+    document.querySelectorAll("*").length;
+
+  if($("URM_NODES"))
+    $("URM_NODES").textContent =
+      nodes.toLocaleString();
+
+  if($("URM_WARNINGS"))
+    $("URM_WARNINGS").textContent =
+      state.warnings.toLocaleString();
+
+  if($("URM_ERRORS"))
+    $("URM_ERRORS").textContent =
+      state.errors.toLocaleString();
+
+}
+
+
+/* ============================================================
+   DOCUMENT STRUCTURE ANALYSIS
+   ============================================================ */
+
+function scanDOM(){
+
+  state.scans++;
+
+  log("Beginning deep DOM analysis...");
+
+  const elements =
+    [...document.querySelectorAll("*")];
+
+  state.duplicateIDs = 0;
+  state.oversizedElements = 0;
+  state.suspiciousLayers = 0;
+  state.orphanedNodes = 0;
+
+  const ids =
+    new Map();
+
+  for(const element of elements){
+
+    if(element.id){
+
+      const count =
+        (ids.get(element.id) || 0) + 1;
+
+      ids.set(element.id,count);
+
+    }
+
+    const rect =
+      safe(() => element.getBoundingClientRect());
+
+    if(rect){
+
+      const viewportArea =
+        window.innerWidth *
+        window.innerHeight;
+
+      const area =
+        rect.width *
+        rect.height;
+
+      if(
+        viewportArea > 0 &&
+        area > viewportArea * 12
+      ){
+
+        state.oversizedElements++;
+
+      }
+
+    }
+
+    const style =
+      safe(() =>
+        getComputedStyle(element)
+      );
+
+    if(style){
+
+      const z =
+        parseInt(style.zIndex,10);
+
+      if(
+        Number.isFinite(z) &&
+        Math.abs(z) > 100000
+      ){
+
+        state.suspiciousLayers++;
+
+      }
+
+    }
+
+  }
+
+
+  for(const [id,count] of ids){
+
+    if(count > 1){
+
+      state.duplicateIDs++;
+
+      recordWarning(
+        `Duplicate ID detected: ${id} × ${count}`
+      );
+
+    }
+
+  }
+
+
+  if(state.oversizedElements){
+
+    recordWarning(
+      `${state.oversizedElements} oversized element(s) detected`
+    );
+
+  }
+
+
+  if(state.suspiciousLayers){
+
+    recordWarning(
+      `${state.suspiciousLayers} extreme z-index layer(s) detected`
+    );
+
+  }
+
+
+  log(
+    `DOM scan complete: ${elements.length} elements`,
+    "good"
+  );
+
+}
+
+
+/* ============================================================
+   SCRIPT / STYLE INVENTORY
+   ============================================================ */
+
+function inventoryResources(){
+
+  const scripts =
+    [...document.scripts];
+
+  const styles =
+    [...document.querySelectorAll(
+      "style,link[rel='stylesheet']"
+    )];
+
+  state.scripts =
+    scripts.length;
+
+  state.styles =
+    styles.length;
+
+  log(
+    `Resource inventory: ${state.scripts} scripts / ${state.styles} styles`,
+    "info"
+  );
+
+}
+
+
+/* ============================================================
+   LAYOUT ANALYSIS
+   ============================================================ */
+
+function analyseLayout(){
+
+  log("Analysing visual stacking and overflow...");
+
+  const elements =
+    [...document.querySelectorAll("*")];
+
+  let fixed = 0;
+  let absolute = 0;
+  let overflow = 0;
+
+  for(const element of elements){
+
+    const style =
+      safe(() =>
+        getComputedStyle(element)
+      );
+
+    if(!style) continue;
+
+    if(style.position === "fixed")
+      fixed++;
+
+    if(style.position === "absolute")
+      absolute++;
+
+    if(
+      style.overflow === "hidden" ||
+      style.overflow === "scroll" ||
+      style.overflow === "auto"
+    ){
+
+      overflow++;
+
+    }
+
+  }
+
+
+  if(fixed > 25){
+
+    recordWarning(
+      `High fixed-layer count detected: ${fixed}`
+    );
+
+  }
+
+  if(absolute > 100){
+
+    recordWarning(
+      `High absolute-position count detected: ${absolute}`
+    );
+
+  }
+
+  log(
+    `Layout analysis complete: fixed=${fixed}, absolute=${absolute}, managed-overflow=${overflow}`,
+    "good"
+  );
+
+}
+
+
+/* ============================================================
+   INTERACTION AUDIT
+   ============================================================ */
+
+function auditInteractions(){
+
+  log("Auditing interactive controls...");
+
+  state.interactionIssues = 0;
+
+  const controls =
+    [...document.querySelectorAll(
+      "button,a,input,select,textarea,[role='button']"
+    )];
+
+  for(const element of controls){
+
+    const style =
+      safe(() =>
+        getComputedStyle(element)
+      );
+
+    if(!style) continue;
+
+    if(
+      style.pointerEvents === "none" &&
+      style.visibility !== "hidden"
+    ){
+
+      state.interactionIssues++;
+
+      recordWarning(
+        `Interactive element blocked by pointer-events:none: ${element.tagName}`
+      );
+
+    }
+
+    if(
+      element.tagName === "A" &&
+      !element.getAttribute("href") &&
+      !element.onclick
+    ){
+
+      recordWarning(
+        "Anchor without href or onclick detected"
+      );
+
+    }
+
+  }
+
+  log(
+    `Interaction audit complete: ${controls.length} controls inspected`,
+    "good"
+  );
+
+}
+
+
+/* ============================================================
+   SAFE LAYOUT RECONCILIATION
+   ============================================================ */
+
+function reconcileLayout(){
+
+  state.repairs++;
+
+  log("Starting conservative layout reconciliation...");
+
+  const html =
+    document.documentElement;
+
+  const body =
+    document.body;
+
+  if(html){
+
+    html.style.maxWidth = "100%";
+
+  }
+
+  if(body){
+
+    body.style.maxWidth = "100%";
+
+  }
+
+  /*
+    We intentionally DO NOT globally rewrite:
+
+      z-index
+      position
+      display
+      transform
+      overflow
+      pointer-events
+
+    because doing so could destroy a legitimate application.
+
+    Instead, only obvious pathological conditions are addressed.
+  */
+
+  const elements =
+    [...document.querySelectorAll("*")];
+
+  let repaired = 0;
+
+  for(const element of elements){
+
+    const rect =
+      safe(() => element.getBoundingClientRect());
+
+    if(!rect) continue;
+
+    if(
+      rect.width === 0 &&
+      rect.height === 0
+    ){
+
+      continue;
+
+    }
+
+    const style =
+      safe(() =>
+        getComputedStyle(element)
+      );
+
+    if(!style) continue;
+
+    if(
+      style.position === "fixed" &&
+      rect.width >
+      window.innerWidth * 3
+    ){
+
+      element.style.maxWidth = "100vw";
+
+      repaired++;
+
+    }
+
+  }
+
+  log(
+    `Conservative reconciliation completed: ${repaired} safe adjustment(s)`,
+    "good"
+  );
+
+}
+
+
+/* ============================================================
+   BROWSER CAPABILITY DISCOVERY
+   ============================================================ */
+
+function capabilityReport(){
+
+  const capabilities = {
+
+    secureContext:
+      window.isSecureContext,
+
+    serviceWorker:
+      "serviceWorker" in navigator,
+
+    workers:
+      typeof Worker !== "undefined",
+
+    sharedWorkers:
+      typeof SharedWorker !== "undefined",
+
+    webCrypto:
+      !!(
+        window.crypto &&
+        window.crypto.subtle
+      ),
+
+    indexedDB:
+      "indexedDB" in window,
+
+    localStorage:
+      (() => {
+
+        try{
+
+          localStorage.setItem(
+            "__urm_test",
+            "1"
+          );
+
+          localStorage.removeItem(
+            "__urm_test"
+          );
+
+          return true;
+
+        }catch{
+
+          return false;
+
+        }
+
+      })(),
+
+    resizeObserver:
+      "ResizeObserver" in window,
+
+    mutationObserver:
+      "MutationObserver" in window,
+
+    intersectionObserver:
+      "IntersectionObserver" in window,
+
+    broadcastChannel:
+      "BroadcastChannel" in window,
+
+    webSocket:
+      "WebSocket" in window,
+
+    audio:
+      "AudioContext" in window ||
+      "webkitAudioContext" in window,
+
+    camera:
+      !!(
+        navigator.mediaDevices &&
+        navigator.mediaDevices.getUserMedia
+      ),
+
+    geolocation:
+      "geolocation" in navigator,
+
+    deviceMotion:
+      "DeviceMotionEvent" in window,
+
+    deviceOrientation:
+      "DeviceOrientationEvent" in window
+
+  };
+
+  return capabilities;
+
+}
+
+
+/* ============================================================
+   DIAGNOSTIC DISPLAY
+   ============================================================ */
+
+function renderDiagnostics(){
+
+  const target =
+    $("URM_DIAGNOSTICS");
+
+  if(!target) return;
+
+  const capabilities =
+    capabilityReport();
+
+  const rows = {
+
+    VERSION,
+
+    "Page":
+      location.href,
+
+    "Viewport":
+      `${window.innerWidth} × ${window.innerHeight}`,
+
+    "Device Pixel Ratio":
+      window.devicePixelRatio,
+
+    "Online":
+      navigator.onLine,
+
+    "User Agent":
+      navigator.userAgent,
+
+    "DOM Nodes":
+      document.querySelectorAll("*").length,
+
+    "Scripts":
+      state.scripts,
+
+    "Styles":
+      state.styles,
+
+    "Duplicate IDs":
+      state.duplicateIDs,
+
+    "Oversized Elements":
+      state.oversizedElements,
+
+    "Suspicious Layers":
+      state.suspiciousLayers,
+
+    "Interaction Issues":
+      state.interactionIssues,
+
+    "Scans":
+      state.scans,
+
+    "Repairs":
+      state.repairs,
+
+    "Mutations":
+      state.mutations,
+
+    "WebCrypto":
+      capabilities.webCrypto,
+
+    "Secure Context":
+      capabilities.secureContext,
+
+    "Service Worker":
+      capabilities.serviceWorker,
+
+    "Workers":
+      capabilities.workers,
+
+    "Camera API":
+      capabilities.camera,
+
+    "Audio API":
+      capabilities.audio
+
+  };
+
+  target.innerHTML = "";
+
+  for(const [key,value] of Object.entries(rows)){
+
+    const row =
+      document.createElement("div");
+
+    row.className =
+      "diag-row";
+
+    const keyNode =
+      document.createElement("span");
+
+    keyNode.className =
+      "diag-key";
+
+    keyNode.textContent =
+      key;
+
+    const valueNode =
+      document.createElement("span");
+
+    valueNode.className =
+      "diag-value";
+
+    valueNode.textContent =
+      String(value);
+
+    row.appendChild(keyNode);
+    row.appendChild(valueNode);
+
+    target.appendChild(row);
+
+  }
+
+}
+
+
+/* ============================================================
+   FULL SCAN
+   ============================================================ */
+
+function deepScan(){
+
+  log("══════════════════════════════════");
+
+  log("UNIVERSAL RECOVERY MASTER SCAN");
+
+  log("══════════════════════════════════");
+
+  scanDOM();
+
+  inventoryResources();
+
+  analyseLayout();
+
+  auditInteractions();
+
+  renderDiagnostics();
+
+  updateStatus(
+    "Deep scan completed successfully."
+  );
+
+}
+
+
+/* ============================================================
+   STATUS
+   ============================================================ */
+
+function updateStatus(message){
+
+  const target =
+    $("URM_STATUS");
+
+  if(target){
+
+    target.textContent =
+      message;
+
+  }
+
+}
+
+
+/* ============================================================
+   REPORT GENERATOR
+   ============================================================ */
+
+function generateReport(){
+
+  const report = {
+
+    system:
+      "Universal Recovery Master",
+
+    version:
+      VERSION,
+
+    generated:
+      new Date().toISOString(),
+
+    location:
+      location.href,
+
+    state:
+      {...state},
+
+    capabilities:
+      capabilityReport(),
+
+    document: {
+
+      title:
+        document.title,
+
+      elements:
+        document.querySelectorAll("*").length,
+
+      scripts:
+        document.scripts.length,
+
+      styles:
+        document.querySelectorAll(
+          "style,link[rel='stylesheet']"
+        ).length
+
+    }
+
+  };
+
+  state.report =
+    report;
+
+  return report;
+
+}
+
+
+/* ============================================================
+   EXPORT
+   ============================================================ */
+
+function exportReport(){
+
+  const report =
+    generateReport();
+
+  const blob =
+    new Blob(
+      [JSON.stringify(report,null,2)],
+      {type:"application/json"}
+    );
+
+  const url =
+    URL.createObjectURL(blob);
+
+  const link =
+    document.createElement("a");
+
+  link.href =
+    url;
+
+  link.download =
+    `urm-report-${Date.now()}.json`;
+
+  document.body.appendChild(link);
+
+  link.click();
+
+  link.remove();
+
+  setTimeout(
+    () => URL.revokeObjectURL(url),
+    1000
+  );
+
+  log(
+    "Diagnostic report exported.",
+    "good"
+  );
+
+}
+
+
+/* ============================================================
+   MUTATION MONITOR
+   ============================================================ */
+
+let mutationObserver = null;
+
+function startMutationMonitor(){
+
+  if(!window.MutationObserver){
+
+    recordWarning(
+      "MutationObserver unavailable."
+    );
+
+    return;
+
+  }
+
+  mutationObserver =
+    new MutationObserver(
+      mutations => {
+
+        state.mutations +=
+          mutations.length;
+
+        updateMetrics();
+
+      }
+    );
+
+  mutationObserver.observe(
+    document.documentElement,
+    {
+      subtree:true,
+      childList:true,
+      attributes:true
+    }
+  );
+
+  log(
+    "Live DOM mutation monitor online.",
+    "good"
+  );
+
+}
+
+
+/* ============================================================
+   GLOBAL ERROR MONITOR
+   ============================================================ */
+
+window.addEventListener(
+  "error",
+  event => {
+
+    if(
+      event &&
+      event.message
+    ){
+
+      recordError(
+        `Runtime error: ${event.message}`
+      );
+
+    }
+
+  }
+);
+
+
+window.addEventListener(
+  "unhandledrejection",
+  event => {
+
+    recordError(
+      `Unhandled promise rejection: ${
+        event.reason || "unknown"
+      }`
+    );
+
+  }
+);
+
+
+/* ============================================================
+   CONNECTION MONITOR
+   ============================================================ */
+
+window.addEventListener(
+  "online",
+  () => {
+
+    log(
+      "Network connection restored.",
+      "good"
+    );
+
+  }
+);
+
+
+window.addEventListener(
+  "offline",
+  () => {
+
+    recordWarning(
+      "Browser reports offline state."
+    );
+
+  }
+);
+
+
+/* ============================================================
+   PERFORMANCE MONITOR
+   ============================================================ */
+
+function performanceSnapshot(){
+
+  if(!window.performance)
+    return;
+
+  const memory =
+    performance.memory;
+
+  if(memory){
+
+    log(
+      `Memory: ${Math.round(
+        memory.usedJSHeapSize / 1048576
+      )} MB used`,
+      "info"
+    );
+
+  }
+
+}
+
+
+/* ============================================================
+   EVENT WIRING
+   ============================================================ */
+
+function wireControls(){
+
+  $("URM_SCAN")?.addEventListener(
+    "click",
+    deepScan
+  );
+
+  $("URM_REPAIR")?.addEventListener(
+    "click",
+    () => {
+
+      reconcileLayout();
+
+      renderDiagnostics();
+
+      updateStatus(
+        "Conservative layout reconciliation completed."
+      );
+
+    }
+  );
+
+  $("URM_AUDIT")?.addEventListener(
+    "click",
+    () => {
+
+      auditInteractions();
+
+      renderDiagnostics();
+
+      updateStatus(
+        "Interaction audit completed."
+      );
+
+    }
+  );
+
+  $("URM_REFRESH")?.addEventListener(
+    "click",
+    () => {
+
+      renderDiagnostics();
+
+      updateMetrics();
+
+      performanceSnapshot();
+
+      updateStatus(
+        "Diagnostics refreshed."
+      );
+
+    }
+  );
+
+  $("URM_EXPORT")?.addEventListener(
+    "click",
+    exportReport
+  );
+
+  $("URM_CLEAR")?.addEventListener(
+    "click",
+    () => {
+
+      const logTarget =
+        $("URM_LOG");
+
+      if(logTarget)
+        logTarget.innerHTML = "";
+
+      state.events = [];
+
+      log(
+        "Log cleared.",
+        "good"
+      );
+
+    }
+  );
+
+}
+
+
+/* ============================================================
+   PUBLIC API
+   ============================================================ */
+
+window.UNIVERSAL_RECOVERY_BOTTOM = {
+
+  version: VERSION,
+
+  scan:
+    deepScan,
+
+  repair:
+    reconcileLayout,
+
+  audit:
+    auditInteractions,
+
+  diagnostics:
+    renderDiagnostics,
+
+  report:
+    generateReport,
+
+  export:
+    exportReport,
+
+  capabilities:
+    capabilityReport,
+
+  state
+
+};
+
+
+/* ============================================================
+   BOOT
+   ============================================================ */
+
+function boot(){
+
+  log(
+    `Universal Recovery Master ${VERSION} booting...`
+  );
+
+  wireControls();
+
+  updateMetrics();
+
+  renderDiagnostics();
+
+  startMutationMonitor();
+
+  performanceSnapshot();
+
+  log(
+    "Recovery command interface online.",
+    "good"
+  );
+
+  updateStatus(
+    "Universal Recovery Master is operational."
+  );
+
+  /*
+    Delay the first deep scan slightly so that
+    dynamically generated application content has
+    an opportunity to initialise first.
+  */
+
+  setTimeout(
+    deepScan,
+    250
+  );
+
+}
+
+
+/* ============================================================
+   SAFE DOM READY
+   ============================================================ */
+
+if(
+  document.readyState === "loading"
+){
+
+  document.addEventListener(
+    "DOMContentLoaded",
+    boot,
+    {once:true}
+  );
+
+}else{
+
+  boot();
+
+}
+
+
+/* ============================================================
+   GLOBAL READY SIGNAL
+   ============================================================ */
+
+window.dispatchEvent(
+  new CustomEvent(
+    "UNIVERSAL_RECOVERY_BOTTOM_READY",
+    {
+      detail:{
+        version:VERSION
+      }
+    }
+  )
+);
+
+
+})();
 </script>
+
+</body>
+</html>
 
 </body>
 </html>
