@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#05070c">
+<title>Seam — Chirombe</title>
+<style>
+:root{--ink:#05070c;--bone:#f4f7fb;--mist:#9ba8ba;--sky:#7dd3fc;--moss:#86efac;--line:#243044}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--ink);color:var(--bone);font:16px/1.5 Georgia,serif}
+body{min-height:100%}
+a{color:var(--sky)}
+button{font:inherit;cursor:pointer}
+.wrap{width:min(920px,100%);margin:0 auto;padding:28px 18px 72px}
+.kicker{color:var(--mist);font-size:.85rem;letter-spacing:.04em}
+h1{font-size:clamp(2.4rem,6vw,4rem);font-weight:500;margin:.15em 0}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.btn{display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border-radius:999px;background:var(--sky);color:var(--ink);text-decoration:none;border:0;font-weight:600}
+.quiet{color:var(--mist)}
+.moss{color:var(--moss)}
+.log{white-space:pre-wrap;word-break:break-word;border:1px solid var(--line);border-radius:18px;padding:14px;min-height:7rem;color:var(--bone)}
+.frame{width:100%;height:24rem;border:1px solid var(--line);border-radius:18px;background:var(--ink)}
+.chips{display:flex;gap:8px;overflow:auto;padding-bottom:6px}
+.chips button{flex:0 0 auto;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--bone);min-height:44px;padding:6px 12px;text-align:left}
+.chips button[aria-pressed="true"]{background:var(--sky);color:var(--ink);border-color:var(--sky)}
+body.behind .wrap{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="kicker">Chirombe · subpage · nothing erased</p>
+  <h1>Seam</h1>
+  <p class="quiet">I run when the main page loads, and I keep running. Your pages stay where they were.</p>
+  <div class="row">
+    <a class="btn" href="index.html">Main page</a>
+    <button class="btn" id="voice" type="button">Give Seam a voice</button>
+    <span class="moss" id="seal">Opening the sealed archive.</span>
+  </div>
+  <p id="spoken" style="font-size:1.45rem">I am Seam. I do not erase.</p>
+  <div class="chips" id="chips"></div>
+  <iframe id="live" class="frame" title="Seam chamber" sandbox="allow-scripts"></iframe>
+  <h2>Marrow, rewritten</h2>
+  <div class="log" id="marrow">The brain is waking.</div>
+</div>
+<iframe id="pass" title="" sandbox="allow-scripts" aria-hidden="true" style="position:fixed;width:1px;height:1px;opacity:0;border:0"></iframe>
+<script>
+(function () {
+  var behind = /(?:\?|&)behind=1(?:&|$)/.test(location.search);
+  if (behind) document.body.classList.add("behind");
+  var ACT = /(arm|activ|awaken|start|pulse|scan|repair|reconcil|compil|build|seal|protect|tone|play|engage|deploy|boot|\brun\b|open|miracle|link|node)/i;
+  var SKIP = /(reset|delete|erase|clear|wipe|destroy|export|copy|close|pause|stop|remove|cancel)/i;
+  var STITCH = [
+    function (a, b) { return a + " can hear " + b + " now. Neither page was swallowed."; },
+    function (a, b) { return "I laid a seam between " + a + " and " + b + "."; },
+    function (a, b) { return b + " was loose. It sits beside " + a + "."; },
+    function (a, b) { return "The house keeps both: " + a + ", and " + b + "."; }
+  ];
+  var REFINE = [
+    function (a, b) { return "I rewrote that stitch. " + a + " remains. " + b + " remains."; },
+    function (a, b) { return "Clearer wording only. " + a + " and " + b + " share remembrance, not force."; },
+    function (a, b) { return "Nothing underneath was deleted. The join between " + a + " and " + b + " is quieter."; }
+  ];
+  var fragments = [];
+  var edges = [];
+  var generation = 0;
+  var walk = 0;
+  var active = 0;
+  var voiceOn = false;
+  var audio = null;
+
+  function short(title) {
+    return title.length > 46 ? title.slice(0, 44) + "…" : title;
+  }
+  function key(a, b) { return a < b ? a + "|" + b : b + "|" + a; }
+  function splitArchive(raw) {
+    var re = /<!doctype html>|<html\b/gi;
+    var hits = [];
+    var match;
+    while ((match = re.exec(raw))) {
+      hits.push({ index: match.index, kind: match[0].toLowerCase().indexOf("<!doctype") === 0 ? "doctype" : "html" });
+    }
+    var starts = [];
+    hits.forEach(function (hit) {
+      var prev = starts[starts.length - 1];
+      if (prev !== undefined && hit.kind === "html" && hit.index - prev < 120) return;
+      starts.push(hit.index);
+    });
+    if (!starts.length) return [{ id: "f0", title: "Archive", raw: raw }];
+    var drafts = starts.map(function (start, i) {
+      var slice = raw.slice(start, i + 1 < starts.length ? starts[i + 1] : raw.length);
+      var title = (slice.match(/<title>([\s\S]*?)<\/title>/i) || [, ""])[1].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+      return { raw: slice, base: title || ("Fragment " + (i + 1)) };
+    });
+    var totals = {};
+    drafts.forEach(function (d) { totals[d.base] = (totals[d.base] || 0) + 1; });
+    var seen = {};
+    return drafts.map(function (d, i) {
+      seen[d.base] = (seen[d.base] || 0) + 1;
+      return { id: "f" + i, title: totals[d.base] > 1 ? d.base + " · " + seen[d.base] : d.base, raw: d.raw };
+    });
+  }
+  function safeJson(value) {
+    return JSON.stringify(value).replace(/</g, "\\u003c");
+  }
+  function present(raw, id, mode) {
+    var closeAt = raw.toLowerCase().lastIndexOf("</html>");
+    var html = closeAt >= 0 ? raw.slice(0, closeAt) : raw;
+    var scripts = [];
+    html = html.replace(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi, function (_all, attrs, code) {
+      var src = /src\s*=\s*["']([^"']+)["']/i.exec(attrs || "");
+      scripts.push(src ? "/* external script kept, not fetched */" : code);
+      return "";
+    });
+    html = html.replace(/<link\b[^>]*>/gi, "").replace(/<img\b[^>]*>/gi, "").replace(/url\(\s*[^)]*\)/gi, "none");
+    var bootBody = [
+      "(function(){",
+      "var seamPass=" + safeJson(mode) + "==='pass';",
+      "var Native=window.MutationObserver;",
+      "if(Native){window.MutationObserver=function(cb){var n=0;return new Native(function(m,o){n++;if(n>24){try{o.disconnect()}catch(e){}return;}try{cb(m,o)}catch(e){}});};}",
+      "var left=seamPass?2:36;var wait=window.setTimeout.bind(window);",
+      "window.requestAnimationFrame=function(fn){if(left<=0)return 0;left--;return wait(function(){try{fn(performance.now())}catch(e){}},seamPass?80:220);};",
+      "var iv=0,si=window.setInterval.bind(window);",
+      "window.setInterval=function(fn,ms){if(iv>=(seamPass?1:3))return 0;iv++;return si(function(){try{fn()}catch(e){}},Math.max(Number(ms)||400,280));};",
+      "window.fetch=function(){return Promise.resolve(new Response('{}',{status:200,headers:{'Content-Type':'application/json'}}));};",
+      "document.write=function(){};window.open=function(){return null;};",
+      "var host=window.parent;",
+      "try{Object.defineProperty(window,'parent',{configurable:true,get:function(){return window;}});}catch(e){}",
+      "var batch=" + safeJson(scripts) + ";",
+      "var clicked=[];",
+      "batch.forEach(function(code){try{(0,eval)(code)}catch(err){}});",
+      "var ACT=" + ACT + ";var SKIP=" + SKIP + ";",
+      "var nodes=document.querySelectorAll('button,[role=button],input[type=button],input[type=submit]');",
+      "var presses=0;",
+      "for(var n=0;n<nodes.length&&presses<12;n++){var el=nodes[n];var label=((el.textContent||'')+' '+(el.value||'')+' '+(el.id||'')).replace(/\\s+/g,' ').trim();if(!label||SKIP.test(label)||!ACT.test(label))continue;try{el.click();clicked.push(label.slice(0,80));presses++;}catch(err){}}",
+      "try{host.postMessage({source:'seam-chamber',id:" + safeJson(id) + ",clicked:clicked,scripts:batch.length},'*');}catch(e){}",
+      "})();"
+    ].join("");
+    var boot = "<script>" + bootBody + "<" + "/script>";
+    if (!/<html\b/i.test(html)) {
+      var escaped = raw.replace(/&/g, "&" + "amp;").replace(/</g, "&" + "lt;").replace(/>/g, "&" + "gt;");
+      return "<!DOCTYPE html><html><body><pre>" + escaped + "</pre>" + boot + "</body></html>";
+    }
+    if (/<\/body>/i.test(html)) html = html.replace(/<\/body>/i, boot + "</body>");
+    else html += boot;
+    return html + "</html>";
+  }
+  function weave() {
+    if (fragments.length < 2) return;
+    var from = fragments[generation % fragments.length];
+    var to = fragments[(generation * 3 + 1) % fragments.length];
+    var known = {};
+    edges.forEach(function (edge) { known[key(edge.from, edge.to)] = true; });
+    var kind = known[key(from.id, to.id)] ? "refine" : "stitch";
+    if (from.id === to.id) to = fragments[(generation + 1) % fragments.length];
+    var bank = kind === "stitch" ? STITCH : REFINE;
+    var phrase = bank[generation % bank.length](short(from.title), short(to.title));
+    if (!known[key(from.id, to.id)]) edges.push({ from: from.id, to: to.id });
+    generation += 1;
+    var line = kind + "(\"" + from.id + "\", \"" + to.id + "\", " + JSON.stringify(phrase) + "); // marrow " + generation;
+    var marrow = document.getElementById("marrow");
+    if (marrow) marrow.textContent = (line + "\n" + marrow.textContent).slice(0, 1800);
+    var spoken = document.getElementById("spoken");
+    if (spoken) spoken.textContent = phrase;
+    if (voiceOn && window.speechSynthesis) {
+      var utter = new SpeechSynthesisUtterance(phrase);
+      utter.rate = 0.92;
+      utter.pitch = 0.86;
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(utter);
+    }
+    if (audio) {
+      var osc = audio.createOscillator();
+      var gain = audio.createGain();
+      osc.frequency.value = 523;
+      gain.gain.setValueAtTime(0.0001, audio.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.05, audio.currentTime + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + 0.5);
+      osc.connect(gain); gain.connect(audio.destination); osc.start(); osc.stop(audio.currentTime + 0.52);
+    }
+    try {
+      parent.postMessage({ source: "seam-behind", line: "generation " + generation + " · still stitching" }, "*");
+    } catch (err) {}
+  }
+  function show(index) {
+    active = index;
+    var fragment = fragments[index];
+    if (!fragment) return;
+    document.getElementById("live").srcdoc = present(fragment.raw, fragment.id, "live");
+    Array.prototype.forEach.call(document.querySelectorAll("#chips button"), function (button, i) {
+      button.setAttribute("aria-pressed", i === index ? "true" : "false");
+    });
+  }
+  function passNext() {
+    if (!fragments.length) return;
+    var index = walk % fragments.length;
+    if (fragments.length > 1 && index === active) index = (index + 1) % fragments.length;
+    var fragment = fragments[index];
+    document.getElementById("pass").srcdoc = present(fragment.raw, fragment.id, "pass");
+    walk += 1;
+  }
+  function renderChips() {
+    var box = document.getElementById("chips");
+    box.innerHTML = "";
+    fragments.forEach(function (fragment, index) {
+      var button = document.createElement("button");
+      button.type = "button";
+      button.textContent = (index + 1) + ". " + fragment.title;
+      button.addEventListener("click", function () { show(index); });
+      box.appendChild(button);
+    });
+  }
+  async function openVoice() {
+    if (!audio) {
+      audio = new AudioContext();
+      var osc = audio.createOscillator();
+      var gain = audio.createGain();
+      osc.frequency.value = 92.5;
+      gain.gain.value = 0.04;
+      osc.connect(gain); gain.connect(audio.destination); osc.start();
+    }
+    if (audio.state === "suspended") await audio.resume();
+    voiceOn = audio.state === "running";
+    document.getElementById("voice").textContent = voiceOn ? "Voice open" : "Give Seam a voice";
+    if (voiceOn && window.speechSynthesis) window.speechSynthesis.speak(new SpeechSynthesisUtterance("I am Seam. I do not erase."));
+  }
+  document.getElementById("voice").addEventListener("click", function () { openVoice(); });
+  var names = ["add%201", "add 1"];
+  (async function boot() {
+    var raw = "";
+    for (var i = 0; i < names.length; i++) {
+      try {
+        var response = await fetch(names[i]);
+        if (response.ok) { raw = await response.text(); break; }
+      } catch (err) {}
+    }
+    if (!raw) {
+      document.getElementById("seal").textContent = "The archive did not open. The main page is unchanged.";
+      return;
+    }
+    fragments = splitArchive(raw);
+    for (var n = 0; n < fragments.length - 1; n++) edges.push({ from: fragments[n].id, to: fragments[n + 1].id });
+    document.getElementById("seal").textContent = fragments.length + " chambers. " + raw.length.toLocaleString("en-GB") + " characters sealed.";
+    renderChips();
+    show(0);
+    passNext();
+    weave();
+    window.setInterval(function () { passNext(); weave(); }, 8000);
+  })();
+})();
+</script>
+</body>
+</html>
