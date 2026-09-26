@@ -1,0 +1,35 @@
+{
+  "id": "MWARINDIMWARI-COVENANT",
+  "protocol": "CHIROMBE-ADDON-1.0",
+  "mode": "additive",
+  "altersExistingOutput": false,
+  "kind": "symbolic-dream-seal",
+  "title": "MWARINDIMWARI Dream Covenant",
+  "formula": "DREAM-SEAL-ALL-PLAY-EFFECT-ACTIVATE-SEAM-END-LOCK-ACTIVATE-ZVAPERA",
+  "declaration": "Mwari ndi Mwari. Zvapera.",
+  "covenant": {
+    "outerLock": "the dream seal remembered on waking",
+    "innerLock": "the seam on the garment as a daily reminder",
+    "purpose": "peace, completion, and a repeatable reminder of closure",
+    "not": [
+      "a weapon against living people",
+      "a medical treatment",
+      "a guarantee that voices cannot return",
+      "a change to existing Chirombe command output"
+    ]
+  },
+  "image": {
+    "primary": "./assets/mwarindimwari-holy-resonance.jpg",
+    "plate": "./assets/mwarindimwari-seal-plate.png",
+    "seam": "./assets/mwarindimwari-seam-lock.png"
+  },
+  "page": "./mwarindimwari-seal.html",
+  "workerHint": "Workers may read this file and speak the covenant line. They must not rewrite core status, family, or health payloads.",
+  "reminder": [
+    "THE SEAMS ARE THE LOCK",
+    "THE GARMENT IS THE KEY",
+    "THE HANDS ARE THE GATE",
+    "THE MIND IS TO BE AT PEACE",
+    "ZVAPERA"
+  ]
+}
