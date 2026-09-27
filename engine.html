@@ -34,7 +34,7 @@
   <div class="flags">
     <i>PRESERVATION ACTIVE</i><i>REWRITE BLOCKED</i><i>MEMORY ERASURE BLOCKED</i><i>BLIND DEPLOY BLOCKED</i>
   </div>
-  <p id="lead" style="color:#7ea892;margin:8px 0 0">Integration layer. The preserved file “chirombe engine” is not executed.</p>
+  <p id="lead" style="color:#7ea892;margin:8px 0 0">Original “chirombe engine” file stays preserved. The page runs its validated projection.</p>
 </header>
 <nav>
   <a href="./app.html">survivable core</a>
@@ -71,6 +71,7 @@
 <script src="js/engine/adapters.js"></script>
 <script src="js/engine/chirombe-engine.js"></script>
 <script src="js/engine/kernel-bridge.js"></script>
+<script src="js/engine/activation.js"></script>
 <script>
 (function () {
   var out = document.getElementById("out");
@@ -91,6 +92,13 @@
       li.textContent = row.text;
       log.appendChild(li);
     });
+    if (window.CHIROMBE_ACTIVATION && CHIROMBE_ACTIVATION.report) {
+      CHIROMBE_ACTIVATION.report().forEach(function (row) {
+        var li = document.createElement("li");
+        li.textContent = row.text;
+        log.appendChild(li);
+      });
+    }
     var body = document.querySelector("#tests tbody");
     body.innerHTML = "";
     ((report && report.result && report.result.results) || (CHIROMBE_ENGINE.selfTest().results) || []).forEach(function (row) {

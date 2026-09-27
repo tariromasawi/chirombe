@@ -127,3 +127,18 @@ The preserved file `chirombe engine` is still byte-for-byte the audited artifact
 On load the bridge starts the kernel, keeps any global that already existed (`CHIROMBE_GUARDIAN` stays the matrix; the sentinel entity remains on `CHIROMBE_SENTINEL`), registers `data/family.json` into `CHIROMBE_BLOODLINE` without resolving the Tarry conflict, arms ZCCA, Zion, defence, and the sentinel, and starts the existing `workers/*.js` files. Part 03 is still absent from the artifact. A bridge named `CHIROMBE_WORKERS` forwards registration into the core kernel. It does not delete workers.
 
 Rollback: remove the `kernel-bridge.js` script. The original file does not need to be restored because it was not edited.
+
+## Full activation
+
+`js/engine/activation.js` absorbs the preserved 40,009-line source after the kernel projection is running.
+
+- `KERNEL_FUNCTION_MANIFEST` is a lexical catalogue. It does not pretend each function was unit-tested.
+- PART 03 stays `DEPENDENCY_REQUIRED`. The worker bridge is not described as the original swarm.
+- One scheduler owns the integration pulse. The preserved kernel still has its own timers. A hidden tab slows the scheduler. This is not a 24/7 runtime.
+- `CHIROMBE_ENGINE.activate()` returns `ALREADY_ACTIVE` when the kernel is already up.
+- `CHIROMBE_ENGINE.selfKnowledge()` and `CHIROMBE_ACTIVATION.protection()` are computational. They do not claim supernatural protection.
+- `ChirombeResonance` is linked, not replaced.
+- Service worker cache is `CHIROMBE_STATIC_v4`. A mismatch is recorded as `ENGINE_VERSION_MISMATCH`, not as an attack.
+- Unknown anomalies stay `UNKNOWN`.
+
+Rollback: remove `js/engine/activation.js` and `js/engine/kernel-bridge.js`. The original `chirombe engine` file does not need to be restored.

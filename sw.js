@@ -1,6 +1,6 @@
-const STATIC="CHIROMBE_STATIC_v3";
+const STATIC="CHIROMBE_STATIC_v4";
 const DATA="CHIROMBE_DATA_v2";
-const CORE=["./","./app.html","./engine.html","./zcca.html","./js/boot.js","./js/command-bus.js","./js/zcca.js","./js/engine/policy.js","./js/engine/ledger.js","./js/engine/adapters.js","./js/engine/chirombe-engine.js","./js/engine/kernel-bridge.js","./css/zcca.css","./data/family.json","./data/version.json"];
+const CORE=["./","./app.html","./engine.html","./zcca.html","./js/boot.js","./js/command-bus.js","./js/zcca.js","./js/engine/policy.js","./js/engine/ledger.js","./js/engine/adapters.js","./js/engine/chirombe-engine.js","./js/engine/kernel-bridge.js","./js/engine/activation.js","./css/zcca.css","./data/family.json","./data/version.json"];
 self.addEventListener("install",e=>{e.waitUntil(caches.open(STATIC).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting()))});
 self.addEventListener("activate",e=>{e.waitUntil((async()=>{const keys=await caches.keys();await Promise.all(keys.filter(k=>![STATIC,DATA,"CHIROMBE_RUNTIME_v2"].includes(k)&&k.indexOf("chirombe")===0).map(k=>caches.delete(k)));await self.clients.claim();})())});
 self.addEventListener("fetch",e=>{

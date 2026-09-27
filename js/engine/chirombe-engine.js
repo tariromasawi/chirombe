@@ -1,5 +1,6 @@
 /* CHIROMBE ENGINE — integration brain.
-   Discovers and connects. Does not execute the preserved "chirombe engine" artifact. */
+   Connects the live system. The preserved "chirombe engine" file is not rewritten.
+   kernel-bridge.js builds and runs the executable projection. */
 (function (g) {
   "use strict";
   if (g.CHIROMBE_ENGINE && g.CHIROMBE_ENGINE.version) return;
@@ -313,7 +314,7 @@
       resonanceStatus: adapters ? { available: !!(g.ChirombeResonance), audioArmedByEngine: false } : null,
       externalAIStatus: adapters ? adapters.externalAI.status() : { provider: "NONE" },
       errors: ledger() ? ledger().listErrors().length : 0,
-      warnings: (g.CHIROMBE_ENGINE_ARTIFACT && !g.CHIROMBE_ENGINE_ARTIFACT.parseable) ? ["ARTIFACT_PRESERVED_UNEXECUTED"] : [],
+      warnings: (g.__CHIROMBE_KERNEL_LOADED__ ? [] : ((g.CHIROMBE_ENGINE_ARTIFACT && !g.CHIROMBE_ENGINE_ARTIFACT.parseable) ? ["ARTIFACT_PRESERVED_UNEXECUTED"] : [])),
       pendingProposals: proposals.filter(function (p) { return !p.applied; }).length,
       pendingTests: 0,
       pendingRecovery: ledger() ? ledger().listRecovery().filter(function (r) { return r.state !== "RECOVERED"; }).length : 0,
@@ -359,7 +360,7 @@
       ledger().append({
         operation: "BOOT",
         target: "CHIROMBE_ENGINE",
-        reason: "Staged integration boot. Artifact not executed.",
+        reason: "Integration boot. Original chirombe engine file is not rewritten. The kernel projection is activated by kernel-bridge.",
         validation: "PRESERVE",
         result: "READY",
         rollback: "Remove js/engine scripts and engine.html. Live modules stay."

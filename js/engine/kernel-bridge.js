@@ -144,7 +144,8 @@
   }
 
   function spawnPageWorkers() {
-    if (!g.Worker || g.__CHIROMBE_PAGE_WORKERS__) return [];
+    if (!g.Worker || g.__CHIROMBE_PAGE_WORKERS_STARTED__) return g.__CHIROMBE_PAGE_WORKERS__ || [];
+    g.__CHIROMBE_PAGE_WORKERS_STARTED__ = true;
     g.__CHIROMBE_PAGE_WORKERS__ = [];
     PAGE_WORKERS.forEach(function (file) {
       try {
@@ -224,7 +225,10 @@
       }
       pulse(state);
     }).catch(function () { pulse(state); });
-    if (!g.__CHIROMBE_KERNEL_PULSE__) {
+    g.CHIROMBE_KERNEL_PULSE_FN = function () { pulse(state); };
+    if (g.CHIROMBE_SCHEDULER && typeof g.CHIROMBE_SCHEDULER.register === "function") {
+      g.CHIROMBE_SCHEDULER.register("MEDIUM", "kernel-pulse", function () { pulse(state); });
+    } else if (!g.__CHIROMBE_KERNEL_PULSE__) {
       g.__CHIROMBE_KERNEL_PULSE__ = g.setInterval(function () { pulse(state); }, 12000);
     }
     g.CHIROMBE_KERNEL_STATE = state;
@@ -264,6 +268,7 @@
       if (!response.ok) throw new Error("KERNEL_FETCH_" + response.status);
       return response.text();
     }).then(function (raw) {
+      g.CHIROMBE_KERNEL_INGEST = { text: raw, lines: raw.split("\n").length, chars: raw.length, original: true };
       var prepared = sanitize(raw);
       g.CHIROMBE_KERNEL_NOTES = prepared.notes;
       return new Promise(function (resolve, reject) {
