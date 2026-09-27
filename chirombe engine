@@ -13126,4 +13126,3349 @@
 
 /* ================================================================
    END CHIROMBE KNOWLEDGE INTELLIGENCE ENGINE
+   ================================================================ *//* ================================================================
+   CHIROMBE BUILD INTELLIGENCE & CODE SYNTHESIS ENGINE
+   ================================================================
+   Protocol : CHEP-08
+   Version  : 1.0.0
+
+   ARCHITECTURE POSITION
+   ---------------------
+
+        CORE
+          │
+        MEMORY
+          │
+        WORKERS
+          │
+       EVOLUTION
+          │
+       PATHWAYS
+          │
+       WATCHDOG
+          │
+       KNOWLEDGE
+          │
+          ▼
+   ┌─────────────────────────────┐
+   │ BUILD INTELLIGENCE ENGINE   │
+   │                             │
+   │ REQUIREMENTS                │
+   │ ARCHITECTURE                │
+   │ DEPENDENCIES                │
+   │ CHANGE PLANS                │
+   │ CODE PROPOSALS              │
+   │ TEST PLANS                  │
+   │ VALIDATION                  │
+   │ VERSION PACKAGES            │
+   │ PATCH GENERATION             │
+   │ ROLLBACK METADATA            │
+   └──────────────┬──────────────┘
+                  │
+                  ▼
+             ORCHESTRATOR
+                  │
+                  ▼
+          EXTERNAL AI / GROK
+
+   IMPORTANT
+   ----------
+   This engine produces controlled build proposals and code
+   packages. It does not claim to autonomously deploy arbitrary
+   source code to GitHub.
+
+   Production deployment requires an authenticated backend,
+   repository API or CI/CD environment.
+
+   ================================================================ */
+
+(function (global) {
+    "use strict";
+
+    /* ============================================================
+       DEPENDENCY CHECK
+       ============================================================ */
+
+    if (!global.CHIROMBE) {
+        console.error(
+            "[CHIROMBE BUILD] Core not loaded."
+        );
+        return;
+    }
+
+    const CORE =
+        global.CHIROMBE;
+
+    const MEMORY =
+        global.CHIROMBE_MEMORY || null;
+
+    const WORKERS =
+        global.CHIROMBE_WORKERS || null;
+
+    const EVOLUTION =
+        global.CHIROMBE_EVOLUTION ||
+        global.CHIROMBE_EVOLUTION_ENGINE ||
+        null;
+
+    const PATHWAYS =
+        global.CHIROMBE_PATHWAYS ||
+        global.CHIROMBE_PATHWAY_ENGINE ||
+        null;
+
+    const WATCHDOG =
+        global.CHIROMBE_WATCHDOG ||
+        global.CHIROMBE_WATCHDOG_ENGINE ||
+        null;
+
+    const KNOWLEDGE =
+        global.CHIROMBE_KNOWLEDGE ||
+        global.CHIROMBE_KNOWLEDGE_ENGINE ||
+        null;
+
+    /* ============================================================
+       CONFIGURATION
+       ============================================================ */
+
+    const CONFIG = {
+
+        protocol:
+            "CHEP-08",
+
+        version:
+            "1.0.0",
+
+        maximumRequirements:
+            2000,
+
+        maximumPlans:
+            1000,
+
+        maximumProposals:
+            1000,
+
+        maximumTests:
+            3000,
+
+        maximumPackages:
+            1000,
+
+        maximumDependencies:
+            5000,
+
+        automaticPlanning:
+            true,
+
+        automaticValidation:
+            true,
+
+        automaticPackaging:
+            true,
+
+        productionAutoDeploy:
+            false,
+
+        requireValidation:
+            true,
+
+        requireIntegrity:
+            true,
+
+        minimumBuildConfidence:
+            0.70,
+
+        persistenceNamespace:
+            "BUILD",
+
+        protectedFiles: [
+
+            "chirombe-core.js",
+            "chirombe-memory.js",
+            "chirombe-workers.js",
+            "chirombe-evolution.js",
+            "chirombe-pathways.js",
+            "chirombe-watchdog.js",
+            "chirombe-knowledge.js",
+            "chirombe-build.js"
+
+        ]
+    };
+
+    /* ============================================================
+       STATE
+       ============================================================ */
+
+    const STATE = {
+
+        booted:
+            false,
+
+        running:
+            false,
+
+        startedAt:
+            Date.now(),
+
+        cycle:
+            0,
+
+        requirements:
+            {},
+
+        architecture:
+            {},
+
+        dependencies:
+            {},
+
+        plans:
+            {},
+
+        proposals:
+            {},
+
+        tests:
+            {},
+
+        packages:
+            {},
+
+        validation:
+            {},
+
+        history:
+            [],
+
+        metrics: {
+
+            requirements:
+                0,
+
+            plans:
+                0,
+
+            proposals:
+                0,
+
+            tests:
+                0,
+
+            packages:
+                0,
+
+            validations:
+                0,
+
+            successfulValidations:
+                0,
+
+            failedValidations:
+                0,
+
+            cycles:
+                0
+        },
+
+        timers:
+            []
+    };
+
+    /* ============================================================
+       UTILITIES
+       ============================================================ */
+
+    function uid(prefix) {
+
+        return (
+            String(
+                prefix || "BUILD"
+            ) +
+            "_" +
+            Date.now()
+                .toString(36) +
+            "_" +
+            Math.random()
+                .toString(36)
+                .slice(2, 10)
+        ).toUpperCase();
+    }
+
+    function now() {
+        return Date.now();
+    }
+
+    function clone(value) {
+
+        try {
+
+            return JSON.parse(
+                JSON.stringify(value)
+            );
+
+        } catch (e) {
+
+            return {
+                error:
+                    e.message
+            };
+        }
+    }
+
+    function normalize(value) {
+
+        return String(
+            value === undefined ||
+            value === null
+                ? ""
+                : value
+        )
+            .trim()
+            .toLowerCase();
+    }
+
+    function emit(
+        event,
+        payload
+    ) {
+
+        try {
+
+            if (
+                CORE &&
+                typeof CORE.emit ===
+                    "function"
+            ) {
+
+                CORE.emit(
+                    event,
+                    payload
+                );
+            }
+
+        } catch (e) {}
+    }
+
+    async function digest(value) {
+
+        const text =
+            typeof value === "string"
+                ? value
+                : JSON.stringify(value);
+
+        try {
+
+            if (
+                global.crypto &&
+                global.crypto.subtle &&
+                typeof TextEncoder !==
+                    "undefined"
+            ) {
+
+                const bytes =
+                    new TextEncoder()
+                        .encode(text);
+
+                const buffer =
+                    await global.crypto
+                        .subtle
+                        .digest(
+                            "SHA-256",
+                            bytes
+                        );
+
+                return Array
+                    .from(
+                        new Uint8Array(
+                            buffer
+                        )
+                    )
+                    .map(
+                        function (b) {
+
+                            return b
+                                .toString(16)
+                                .padStart(
+                                    2,
+                                    "0"
+                                );
+                        }
+                    )
+                    .join("");
+            }
+
+        } catch (e) {}
+
+        let hash =
+            2166136261;
+
+        for (
+            let i = 0;
+            i < text.length;
+            i++
+        ) {
+
+            hash ^=
+                text.charCodeAt(i);
+
+            hash =
+                Math.imul(
+                    hash,
+                    16777619
+                );
+        }
+
+        return (
+            hash >>> 0
+        )
+            .toString(16)
+            .padStart(
+                8,
+                "0"
+            );
+    }
+
+    async function persist(
+        key,
+        value
+    ) {
+
+        if (
+            !MEMORY ||
+            typeof MEMORY.write !==
+                "function"
+        ) {
+
+            return false;
+        }
+
+        try {
+
+            await MEMORY.write(
+                CONFIG.persistenceNamespace,
+                key,
+                value,
+                {
+                    source:
+                        "CHIROMBE_BUILD",
+                    protocol:
+                        CONFIG.protocol,
+                    timestamp:
+                        now()
+                }
+            );
+
+            return true;
+
+        } catch (e) {
+
+            console.warn(
+                "[CHIROMBE BUILD] Persistence error:",
+                e.message
+            );
+
+            return false;
+        }
+    }
+
+    /* ============================================================
+       REQUIREMENT ENGINE
+       ============================================================ */
+
+    async function createRequirement(
+        input
+    ) {
+
+        input =
+            input || {};
+
+        const requirement = {
+
+            id:
+                input.id ||
+                uid("REQ"),
+
+            title:
+                input.title ||
+                "Untitled Requirement",
+
+            description:
+                input.description ||
+                "",
+
+            category:
+                input.category ||
+                "GENERAL",
+
+            priority:
+                input.priority ||
+                "NORMAL",
+
+            source:
+                input.source ||
+                "INTERNAL",
+
+            status:
+                input.status ||
+                "OPEN",
+
+            acceptanceCriteria:
+                Array.isArray(
+                    input.acceptanceCriteria
+                )
+                    ? input.acceptanceCriteria
+                    : [],
+
+            dependencies:
+                Array.isArray(
+                    input.dependencies
+                )
+                    ? input.dependencies
+                    : [],
+
+            confidence:
+                Math.max(
+                    0,
+                    Math.min(
+                        1,
+                        Number(
+                            input.confidence
+                        ) || 0.5
+                    )
+                ),
+
+            createdAt:
+                now(),
+
+            updatedAt:
+                now(),
+
+            metadata:
+                clone(
+                    input.metadata ||
+                    {}
+                )
+        };
+
+        STATE.requirements[
+            requirement.id
+        ] = requirement;
+
+        STATE.metrics
+            .requirements++;
+
+        await persist(
+            "REQUIREMENT_" +
+                requirement.id,
+            requirement
+        );
+
+        emit(
+            "BUILD_REQUIREMENT_CREATED",
+            requirement
+        );
+
+        return clone(
+            requirement
+        );
+    }
+
+    /* ============================================================
+       ARCHITECTURE NODE ENGINE
+       ============================================================ */
+
+    async function createArchitectureNode(
+        input
+    ) {
+
+        input =
+            input || {};
+
+        const node = {
+
+            id:
+                input.id ||
+                uid("ARCH"),
+
+            name:
+                input.name ||
+                "Unnamed Component",
+
+            type:
+                input.type ||
+                "COMPONENT",
+
+            file:
+                input.file ||
+                null,
+
+            purpose:
+                input.purpose ||
+                "",
+
+            dependencies:
+                Array.isArray(
+                    input.dependencies
+                )
+                    ? input.dependencies
+                    : [],
+
+            interfaces:
+                Array.isArray(
+                    input.interfaces
+                )
+                    ? input.interfaces
+                    : [],
+
+            protected:
+                !!input.protected,
+
+            status:
+                input.status ||
+                "KNOWN",
+
+            createdAt:
+                now(),
+
+            updatedAt:
+                now()
+        };
+
+        STATE.architecture[
+            node.id
+        ] = node;
+
+        await persist(
+            "ARCHITECTURE_" +
+                node.id,
+            node
+        );
+
+        return clone(node);
+    }
+
+    /* ============================================================
+       DEPENDENCY ENGINE
+       ============================================================ */
+
+    async function createDependency(
+        from,
+        to,
+        type,
+        metadata
+    ) {
+
+        if (
+            !from ||
+            !to
+        ) {
+
+            throw new Error(
+                "Dependency requires source and target."
+            );
+        }
+
+        const dependency = {
+
+            id:
+                uid("DEP"),
+
+            from:
+                from,
+
+            to:
+                to,
+
+            type:
+                type ||
+                "REQUIRES",
+
+            strength:
+                1,
+
+            metadata:
+                clone(
+                    metadata || {}
+                ),
+
+            createdAt:
+                now()
+        };
+
+        STATE.dependencies[
+            dependency.id
+        ] = dependency;
+
+        if (
+            Object.keys(
+                STATE.dependencies
+            ).length >
+            CONFIG.maximumDependencies
+        ) {
+
+            const ids =
+                Object.keys(
+                    STATE.dependencies
+                );
+
+            delete STATE.dependencies[
+                ids[0]
+            ];
+        }
+
+        await persist(
+            "DEPENDENCY_" +
+                dependency.id,
+            dependency
+        );
+
+        return clone(
+            dependency
+        );
+    }
+
+    /* ============================================================
+       SYSTEM ARCHITECTURE DISCOVERY
+       ============================================================ */
+
+    async function discoverArchitecture() {
+
+        const components = [
+
+            {
+                name:
+                    "CHIROMBE CORE",
+
+                file:
+                    "chirombe-core.js",
+
+                type:
+                    "CORE",
+
+                purpose:
+                    "Central runtime kernel.",
+
+                protected:
+                    true
+            },
+
+            {
+                name:
+                    "CHIROMBE MEMORY",
+
+                file:
+                    "chirombe-memory.js",
+
+                type:
+                    "MEMORY",
+
+                purpose:
+                    "Persistent memory layer.",
+
+                protected:
+                    true
+            },
+
+            {
+                name:
+                    "CHIROMBE WORKERS",
+
+                file:
+                    "chirombe-workers.js",
+
+                type:
+                    "WORKER_SYSTEM",
+
+                purpose:
+                    "Task orchestration.",
+
+                protected:
+                    true
+            },
+
+            {
+                name:
+                    "CHIROMBE EVOLUTION",
+
+                file:
+                    "chirombe-evolution.js",
+
+                type:
+                    "EVOLUTION",
+
+                purpose:
+                    "Controlled system improvement.",
+
+                protected:
+                    true
+            },
+
+            {
+                name:
+                    "CHIROMBE PATHWAYS",
+
+                file:
+                    "chirombe-pathways.js",
+
+                type:
+                    "PATHWAY",
+
+                purpose:
+                    "Graph routing and pathway intelligence.",
+
+                protected:
+                    true
+            },
+
+            {
+                name:
+                    "CHIROMBE WATCHDOG",
+
+                file:
+                    "chirombe-watchdog.js",
+
+                type:
+                    "WATCHDOG",
+
+                purpose:
+                    "Integrity and recovery.",
+
+                protected:
+                    true
+            },
+
+            {
+                name:
+                    "CHIROMBE KNOWLEDGE",
+
+                file:
+                    "chirombe-knowledge.js",
+
+                type:
+                    "KNOWLEDGE",
+
+                purpose:
+                    "Knowledge graph and inference.",
+
+                protected:
+                    true
+            },
+
+            {
+                name:
+                    "CHIROMBE BUILD",
+
+                file:
+                    "chirombe-build.js",
+
+                type:
+                    "BUILD",
+
+                purpose:
+                    "Build planning and controlled code synthesis.",
+
+                protected:
+                    true
+            }
+        ];
+
+        for (
+            let i = 0;
+            i < components.length;
+            i++
+        ) {
+
+            const component =
+                components[i];
+
+            const existing =
+                Object.values(
+                    STATE.architecture
+                ).find(
+                    function (item) {
+
+                        return (
+                            item.file ===
+                            component.file
+                        );
+                    }
+                );
+
+            if (!existing) {
+
+                await createArchitectureNode(
+                    component
+                );
+            }
+        }
+
+        /*
+         * Establish known architecture dependencies.
+         */
+
+        const files = {
+
+            core:
+                "chirombe-core.js",
+
+            memory:
+                "chirombe-memory.js",
+
+            workers:
+                "chirombe-workers.js",
+
+            evolution:
+                "chirombe-evolution.js",
+
+            pathways:
+                "chirombe-pathways.js",
+
+            watchdog:
+                "chirombe-watchdog.js",
+
+            knowledge:
+                "chirombe-knowledge.js",
+
+            build:
+                "chirombe-build.js"
+        };
+
+        const dependencyPairs = [
+
+            [
+                files.memory,
+                files.core
+            ],
+
+            [
+                files.workers,
+                files.core
+            ],
+
+            [
+                files.evolution,
+                files.core
+            ],
+
+            [
+                files.evolution,
+                files.memory
+            ],
+
+            [
+                files.evolution,
+                files.workers
+            ],
+
+            [
+                files.pathways,
+                files.evolution
+            ],
+
+            [
+                files.pathways,
+                files.workers
+            ],
+
+            [
+                files.watchdog,
+                files.core
+            ],
+
+            [
+                files.watchdog,
+                files.memory
+            ],
+
+            [
+                files.watchdog,
+                files.workers
+            ],
+
+            [
+                files.knowledge,
+                files.memory
+            ],
+
+            [
+                files.knowledge,
+                files.evolution
+            ],
+
+            [
+                files.knowledge,
+                files.pathways
+            ],
+
+            [
+                files.knowledge,
+                files.watchdog
+            ],
+
+            [
+                files.build,
+                files.core
+            ],
+
+            [
+                files.build,
+                files.memory
+            ],
+
+            [
+                files.build,
+                files.evolution
+            ],
+
+            [
+                files.build,
+                files.pathways
+            ],
+
+            [
+                files.build,
+                files.watchdog
+            ],
+
+            [
+                files.build,
+                files.knowledge
+            ]
+        ];
+
+        for (
+            let i = 0;
+            i < dependencyPairs.length;
+            i++
+        ) {
+
+            const pair =
+                dependencyPairs[i];
+
+            const exists =
+                Object.values(
+                    STATE.dependencies
+                ).some(
+                    function (dep) {
+
+                        return (
+                            dep.from ===
+                                pair[0] &&
+                            dep.to ===
+                                pair[1]
+                        );
+                    }
+                );
+
+            if (!exists) {
+
+                await createDependency(
+                    pair[0],
+                    pair[1],
+                    "REQUIRES"
+                );
+            }
+        }
+
+        return {
+            components:
+                Object.keys(
+                    STATE.architecture
+                ).length,
+
+            dependencies:
+                Object.keys(
+                    STATE.dependencies
+                ).length
+        };
+    }
+
+    /* ============================================================
+       BUILD PLAN ENGINE
+       ============================================================ */
+
+    async function createBuildPlan(
+        input
+    ) {
+
+        input =
+            input || {};
+
+        const plan = {
+
+            id:
+                input.id ||
+                uid("PLAN"),
+
+            title:
+                input.title ||
+                "Untitled Build Plan",
+
+            objective:
+                input.objective ||
+                "",
+
+            requirementIds:
+                Array.isArray(
+                    input.requirementIds
+                )
+                    ? input.requirementIds
+                    : [],
+
+            targetFiles:
+                Array.isArray(
+                    input.targetFiles
+                )
+                    ? input.targetFiles
+                    : [],
+
+            operations:
+                Array.isArray(
+                    input.operations
+                )
+                    ? input.operations
+                    : [],
+
+            dependencies:
+                Array.isArray(
+                    input.dependencies
+                )
+                    ? input.dependencies
+                    : [],
+
+            tests:
+                Array.isArray(
+                    input.tests
+                )
+                    ? input.tests
+                    : [],
+
+            rollback:
+                input.rollback ||
+                {
+                    required:
+                        true,
+
+                    strategy:
+                        "RESTORE_PREVIOUS_VERSION"
+                },
+
+            confidence:
+                Math.max(
+                    0,
+                    Math.min(
+                        1,
+                        Number(
+                            input.confidence
+                        ) || 0.5
+                    )
+                ),
+
+            status:
+                "PROPOSED",
+
+            createdAt:
+                now(),
+
+            updatedAt:
+                now(),
+
+            metadata:
+                clone(
+                    input.metadata ||
+                    {}
+                )
+        };
+
+        STATE.plans[
+            plan.id
+        ] = plan;
+
+        STATE.metrics
+            .plans++;
+
+        await persist(
+            "PLAN_" +
+                plan.id,
+            plan
+        );
+
+        emit(
+            "BUILD_PLAN_CREATED",
+            plan
+        );
+
+        return clone(plan);
+    }
+
+    /* ============================================================
+       REQUIREMENT → BUILD PLAN
+       ============================================================ */
+
+    async function planRequirement(
+        requirementId
+    ) {
+
+        const requirement =
+            STATE.requirements[
+                requirementId
+            ];
+
+        if (!requirement) {
+
+            throw new Error(
+                "Requirement not found."
+            );
+        }
+
+        const targetFiles =
+            [];
+
+        const operations =
+            [];
+
+        const tests =
+            [];
+
+        /*
+         * Basic target inference.
+         */
+
+        const category =
+            normalize(
+                requirement.category
+            );
+
+        if (
+            category ===
+                "CORE"
+        ) {
+
+            targetFiles.push(
+                "chirombe-core.js"
+            );
+
+        } else if (
+            category ===
+                "MEMORY"
+        ) {
+
+            targetFiles.push(
+                "chirombe-memory.js"
+            );
+
+        } else if (
+            category ===
+                "WORKER"
+        ) {
+
+            targetFiles.push(
+                "chirombe-workers.js"
+            );
+
+        } else if (
+            category ===
+                "EVOLUTION"
+        ) {
+
+            targetFiles.push(
+                "chirombe-evolution.js"
+            );
+
+        } else if (
+            category ===
+                "PATHWAY"
+        ) {
+
+            targetFiles.push(
+                "chirombe-pathways.js"
+            );
+
+        } else if (
+            category ===
+                "WATCHDOG"
+        ) {
+
+            targetFiles.push(
+                "chirombe-watchdog.js"
+            );
+
+        } else if (
+            category ===
+                "KNOWLEDGE"
+        ) {
+
+            targetFiles.push(
+                "chirombe-knowledge.js"
+            );
+
+        } else {
+
+            targetFiles.push(
+                "NEW_MODULE"
+            );
+        }
+
+        operations.push({
+
+            type:
+                "IMPLEMENT",
+
+            description:
+                requirement.description,
+
+            acceptanceCriteria:
+                requirement.acceptanceCriteria
+        });
+
+        tests.push({
+
+            type:
+                "FUNCTIONAL",
+
+            description:
+                "Verify requirement acceptance criteria.",
+
+            criteria:
+                requirement.acceptanceCriteria
+        });
+
+        const plan =
+            await createBuildPlan({
+
+                title:
+                    "Build plan for " +
+                    requirement.title,
+
+                objective:
+                    requirement.description,
+
+                requirementIds:
+                    [
+                        requirement.id
+                    ],
+
+                targetFiles:
+                    targetFiles,
+
+                operations:
+                    operations,
+
+                dependencies:
+                    requirement.dependencies,
+
+                tests:
+                    tests,
+
+                confidence:
+                    requirement.confidence
+            });
+
+        return plan;
+    }
+
+    /* ============================================================
+       CODE PROPOSAL ENGINE
+       ============================================================ */
+
+    async function createCodeProposal(
+        input
+    ) {
+
+        input =
+            input || {};
+
+        const proposal = {
+
+            id:
+                input.id ||
+                uid("CODE"),
+
+            planId:
+                input.planId ||
+                null,
+
+            file:
+                input.file ||
+                "new-module.js",
+
+            operation:
+                input.operation ||
+                "CREATE",
+
+            description:
+                input.description ||
+                "",
+
+            code:
+                input.code ||
+                "",
+
+            language:
+                input.language ||
+                "javascript",
+
+            dependencies:
+                Array.isArray(
+                    input.dependencies
+                )
+                    ? input.dependencies
+                    : [],
+
+            tests:
+                Array.isArray(
+                    input.tests
+                )
+                    ? input.tests
+                    : [],
+
+            confidence:
+                Math.max(
+                    0,
+                    Math.min(
+                        1,
+                        Number(
+                            input.confidence
+                        ) || 0.5
+                    )
+                ),
+
+            protectedTarget:
+                CONFIG.protectedFiles
+                    .indexOf(
+                        input.file
+                    ) !== -1,
+
+            status:
+                "PROPOSED",
+
+            createdAt:
+                now(),
+
+            updatedAt:
+                now()
+        };
+
+        /*
+         * Never silently mark a production rewrite as approved.
+         */
+
+        if (
+            proposal.protectedTarget
+        ) {
+
+            proposal.status =
+                "PROTECTED_REVIEW_REQUIRED";
+        }
+
+        STATE.proposals[
+            proposal.id
+        ] = proposal;
+
+        STATE.metrics
+            .proposals++;
+
+        await persist(
+            "CODE_PROPOSAL_" +
+                proposal.id,
+            proposal
+        );
+
+        emit(
+            "BUILD_CODE_PROPOSAL_CREATED",
+            proposal
+        );
+
+        return clone(proposal);
+    }
+
+    /* ============================================================
+       CODE TEMPLATE ENGINE
+       ============================================================ */
+
+    function generateModuleTemplate(
+        name,
+        purpose
+    ) {
+
+        const safeName =
+            String(
+                name ||
+                "New Module"
+            )
+                .replace(
+                    /[^a-zA-Z0-9_$]/g,
+                    "_"
+                );
+
+        const safePurpose =
+            String(
+                purpose ||
+                "Extensible CHIROMBE module."
+            )
+                .replace(
+                    /\*\//g,
+                    "* /"
+                );
+
+        return (
+`/* ================================================================
+   CHIROMBE GENERATED MODULE
+   Name    : ${safeName}
+   Purpose : ${safePurpose}
+   ================================================================ */
+
+(function (global) {
+    "use strict";
+
+    if (!global.CHIROMBE) {
+        console.error(
+            "[CHIROMBE MODULE] Core unavailable."
+        );
+        return;
+    }
+
+    const CORE =
+        global.CHIROMBE;
+
+    const STATE = {
+        booted: false,
+        createdAt: Date.now(),
+        metrics: {
+            calls: 0
+        }
+    };
+
+    function status() {
+        return {
+            name:
+                "${safeName}",
+
+            purpose:
+                "${safePurpose}",
+
+            booted:
+                STATE.booted,
+
+            metrics:
+                STATE.metrics
+        };
+    }
+
+    function execute(payload) {
+
+        STATE.metrics.calls++;
+
+        return {
+            success:
+                true,
+
+            payload:
+                payload || {},
+
+            timestamp:
+                Date.now()
+        };
+    }
+
+    const API = {
+        status:
+            status,
+
+        execute:
+            execute
+    };
+
+    global.CHIROMBE_${safeName.toUpperCase()} =
+        API;
+
+    STATE.booted =
+        true;
+
+})(window);
+
+/* ================================================================
+   END GENERATED MODULE
+   ================================================================ */
+`
+        );
+    }
+
+    /* ============================================================
+       TEST ENGINE
+       ============================================================ */
+
+    async function createTest(
+        input
+    ) {
+
+        input =
+            input || {};
+
+        const test = {
+
+            id:
+                input.id ||
+                uid("TEST"),
+
+            planId:
+                input.planId ||
+                null,
+
+            proposalId:
+                input.proposalId ||
+                null,
+
+            name:
+                input.name ||
+                "Unnamed Test",
+
+            type:
+                input.type ||
+                "FUNCTIONAL",
+
+            description:
+                input.description ||
+                "",
+
+            expected:
+                input.expected,
+
+            actual:
+                null,
+
+            status:
+                "PENDING",
+
+            createdAt:
+                now(),
+
+            executedAt:
+                null,
+
+            metadata:
+                clone(
+                    input.metadata ||
+                    {}
+                )
+        };
+
+        STATE.tests[
+            test.id
+        ] = test;
+
+        STATE.metrics
+            .tests++;
+
+        await persist(
+            "TEST_" +
+                test.id,
+            test
+        );
+
+        return clone(test);
+    }
+
+    /* ============================================================
+       PROPOSAL STATIC VALIDATION
+       ============================================================ */
+
+    function staticValidateProposal(
+        proposal
+    ) {
+
+        const result = {
+
+            valid:
+                true,
+
+            errors:
+                [],
+
+            warnings:
+                [],
+
+            checks:
+                []
+        };
+
+        if (!proposal) {
+
+            result.valid =
+                false;
+
+            result.errors.push(
+                "Missing proposal."
+            );
+
+            return result;
+        }
+
+        if (
+            !proposal.file
+        ) {
+
+            result.valid =
+                false;
+
+            result.errors.push(
+                "Missing target file."
+            );
+        }
+
+        if (
+            !proposal.code
+        ) {
+
+            result.valid =
+                false;
+
+            result.errors.push(
+                "Code payload is empty."
+            );
+        }
+
+        if (
+            proposal.protectedTarget
+        ) {
+
+            result.warnings.push(
+                "Protected production target requires review."
+            );
+        }
+
+        if (
+            proposal.code &&
+            proposal.code.indexOf(
+                "<script"
+            ) !== -1
+        ) {
+
+            result.warnings.push(
+                "Script tag detected inside JavaScript proposal."
+            );
+        }
+
+        /*
+         * Basic structural checks.
+         */
+
+        if (
+            proposal.code
+        ) {
+
+            const openBraces =
+                (
+                    proposal.code.match(
+                        /\{/g
+                    ) || []
+                ).length;
+
+            const closeBraces =
+                (
+                    proposal.code.match(
+                        /\}/g
+                    ) || []
+                ).length;
+
+            if (
+                openBraces !==
+                closeBraces
+            ) {
+
+                result.valid =
+                    false;
+
+                result.errors.push(
+                    "Brace count mismatch."
+                );
+            }
+
+            const openParens =
+                (
+                    proposal.code.match(
+                        /\(/g
+                    ) || []
+                ).length;
+
+            const closeParens =
+                (
+                    proposal.code.match(
+                        /\)/g
+                    ) || []
+                ).length;
+
+            if (
+                openParens !==
+                closeParens
+            ) {
+
+                result.valid =
+                    false;
+
+                result.errors.push(
+                    "Parenthesis count mismatch."
+                );
+            }
+        }
+
+        result.checks.push(
+            "TARGET_PRESENT"
+        );
+
+        result.checks.push(
+            "CODE_PRESENT"
+        );
+
+        result.checks.push(
+            "BASIC_STRUCTURE"
+        );
+
+        return result;
+    }
+
+    /* ============================================================
+       PROPOSAL VALIDATION
+       ============================================================ */
+
+    async function validateProposal(
+        proposalId
+    ) {
+
+        const proposal =
+            STATE.proposals[
+                proposalId
+            ];
+
+        if (!proposal) {
+
+            throw new Error(
+                "Code proposal not found."
+            );
+        }
+
+        const result =
+            staticValidateProposal(
+                proposal
+            );
+
+        result.timestamp =
+            now();
+
+        result.proposalId =
+            proposal.id;
+
+        result.confidence =
+            result.valid
+                ? 0.85
+                : 0.15;
+
+        STATE.validation[
+            proposal.id
+        ] = result;
+
+        STATE.metrics
+            .validations++;
+
+        if (
+            result.valid
+        ) {
+
+            STATE.metrics
+                .successfulValidations++;
+
+        } else {
+
+            STATE.metrics
+                .failedValidations++;
+        }
+
+        await persist(
+            "VALIDATION_" +
+                proposal.id,
+            result
+        );
+
+        emit(
+            "BUILD_VALIDATION_COMPLETE",
+            result
+        );
+
+        return clone(result);
+    }
+
+    /* ============================================================
+       PACKAGE ENGINE
+       ============================================================ */
+
+    async function packageProposal(
+        proposalId
+    ) {
+
+        const proposal =
+            STATE.proposals[
+                proposalId
+            ];
+
+        if (!proposal) {
+
+            throw new Error(
+                "Proposal not found."
+            );
+        }
+
+        const validation =
+            STATE.validation[
+                proposalId
+            ] ||
+            await validateProposal(
+                proposalId
+            );
+
+        if (
+            CONFIG.requireValidation &&
+            !validation.valid
+        ) {
+
+            throw new Error(
+                "Proposal failed validation."
+            );
+        }
+
+        const packageData = {
+
+            id:
+                uid("PKG"),
+
+            proposalId:
+                proposal.id,
+
+            file:
+                proposal.file,
+
+            operation:
+                proposal.operation,
+
+            code:
+                proposal.code,
+
+            language:
+                proposal.language,
+
+            validation:
+                clone(validation),
+
+            rollback: {
+
+                required:
+                    true,
+
+                strategy:
+                    "RESTORE_PREVIOUS_VERSION"
+            },
+
+            generatedAt:
+                now(),
+
+            deployment:
+                {
+                    automatic:
+                        false,
+
+                    status:
+                        "NOT_DEPLOYED"
+                }
+        };
+
+        packageData.integrity =
+            await digest(
+                packageData
+            );
+
+        STATE.packages[
+            packageData.id
+        ] = packageData;
+
+        STATE.metrics
+            .packages++;
+
+        proposal.status =
+            "PACKAGED";
+
+        await persist(
+            "PACKAGE_" +
+                packageData.id,
+            packageData
+        );
+
+        await persist(
+            "CODE_PROPOSAL_" +
+                proposal.id,
+            proposal
+        );
+
+        emit(
+            "BUILD_PACKAGE_CREATED",
+            packageData
+        );
+
+        return clone(
+            packageData
+        );
+    }
+
+    /* ============================================================
+       BUILD PACKAGE FROM PLAN
+       ============================================================ */
+
+    async function buildFromPlan(
+        planId
+    ) {
+
+        const plan =
+            STATE.plans[
+                planId
+            ];
+
+        if (!plan) {
+
+            throw new Error(
+                "Build plan not found."
+            );
+        }
+
+        const generated = [];
+
+        for (
+            let i = 0;
+            i < plan.operations.length;
+            i++
+        ) {
+
+            const operation =
+                plan.operations[i];
+
+            let file =
+                plan.targetFiles[0] ||
+                "new-module.js";
+
+            if (
+                plan.targetFiles.length >
+                i
+            ) {
+
+                file =
+                    plan.targetFiles[i];
+            }
+
+            let code =
+                "";
+
+            /*
+             * For a new module we can safely generate
+             * a structural template.
+             *
+             * For existing protected files, the engine
+             * creates a proposal requiring review rather
+             * than pretending it has safely rewritten the
+             * production file.
+             */
+
+            if (
+                file ===
+                "NEW_MODULE"
+                ||
+                file ===
+                "new-module.js"
+            ) {
+
+                code =
+                    generateModuleTemplate(
+                        plan.title,
+                        operation.description
+                    );
+
+            } else {
+
+                code =
+                    "/* PROTECTED CHANGE PROPOSAL */\n" +
+                    "/* Target: " +
+                    file +
+                    " */\n" +
+                    "/* Description: " +
+                    String(
+                        operation.description ||
+                        ""
+                    )
+                        .replace(
+                            /\*\//g,
+                            "* /"
+                        ) +
+                    " */\n";
+            }
+
+            const proposal =
+                await createCodeProposal({
+
+                    planId:
+                        plan.id,
+
+                    file:
+                        file,
+
+                    operation:
+                        file ===
+                            "NEW_MODULE"
+                            ? "CREATE"
+                            : "REVIEW_AND_PATCH",
+
+                    description:
+                        operation.description,
+
+                    code:
+                        code,
+
+                    tests:
+                        plan.tests,
+
+                    confidence:
+                        plan.confidence
+                });
+
+            generated.push(
+                proposal
+            );
+        }
+
+        plan.status =
+            "CODE_PROPOSED";
+
+        plan.updatedAt =
+            now();
+
+        await persist(
+            "PLAN_" +
+                plan.id,
+            plan
+        );
+
+        return generated;
+    }
+
+    /* ============================================================
+       BUILD SAFETY ENGINE
+       ============================================================ */
+
+    function safetyCheck(
+        proposal
+    ) {
+
+        const result = {
+
+            safe:
+                true,
+
+            reasons:
+                [],
+
+            requiresReview:
+                false
+        };
+
+        if (!proposal) {
+
+            result.safe =
+                false;
+
+            result.reasons.push(
+                "Missing proposal."
+            );
+
+            return result;
+        }
+
+        if (
+            proposal.protectedTarget
+        ) {
+
+            result.safe =
+                false;
+
+            result.requiresReview =
+                true;
+
+            result.reasons.push(
+                "Protected production module."
+            );
+        }
+
+        if (
+            proposal.operation ===
+                "DELETE"
+        ) {
+
+            result.safe =
+                false;
+
+            result.requiresReview =
+                true;
+
+            result.reasons.push(
+                "Deletion requires explicit review."
+            );
+        }
+
+        if (
+            proposal.operation ===
+                "REPLACE"
+        ) {
+
+            result.requiresReview =
+                true;
+
+            result.reasons.push(
+                "Replacement requires rollback validation."
+            );
+        }
+
+        return result;
+    }
+
+    /* ============================================================
+       BUILD INTELLIGENCE FROM KNOWLEDGE
+       ============================================================ */
+
+    async function generateFromKnowledge(
+        query
+    ) {
+
+        if (
+            !KNOWLEDGE
+        ) {
+
+            return {
+                success:
+                    false,
+
+                reason:
+                    "KNOWLEDGE_ENGINE_UNAVAILABLE"
+            };
+        }
+
+        let results = [];
+
+        try {
+
+            results =
+                KNOWLEDGE.search(
+                    query,
+                    {
+                        limit:
+                            20,
+
+                        threshold:
+                            0.15
+                    }
+                );
+
+        } catch (e) {
+
+            return {
+                success:
+                    false,
+
+                reason:
+                    e.message
+            };
+        }
+
+        const requirements = [];
+
+        for (
+            let i = 0;
+            i < results.length;
+            i++
+        ) {
+
+            const match =
+                results[i];
+
+            requirements.push(
+                await createRequirement({
+
+                    title:
+                        "Knowledge-derived requirement",
+
+                    description:
+                        match.concept
+                            .description ||
+                        match.concept.name,
+
+                    category:
+                        match.concept
+                            .category ||
+                        "GENERAL",
+
+                    source:
+                        "KNOWLEDGE_ENGINE",
+
+                    confidence:
+                        match.score,
+
+                    acceptanceCriteria:
+                        [
+                            "Requirement is represented in the build plan.",
+                            "Implementation has validation coverage.",
+                            "Rollback metadata exists."
+                        ],
+
+                    metadata: {
+
+                        conceptId:
+                            match.concept.id,
+
+                        searchScore:
+                            match.score
+                    }
+                })
+            );
+        }
+
+        return {
+            success:
+                true,
+
+            requirements:
+                requirements
+        };
+    }
+
+    /* ============================================================
+       EVOLUTION → BUILD
+       ============================================================ */
+
+    async function ingestEvolutionProposals() {
+
+        if (
+            !EVOLUTION
+        ) {
+
+            return [];
+        }
+
+        let proposals = [];
+
+        try {
+
+            if (
+                typeof EVOLUTION.proposals ===
+                    "function"
+            ) {
+
+                proposals =
+                    EVOLUTION.proposals();
+            }
+
+        } catch (e) {
+
+            return [];
+        }
+
+        if (
+            !Array.isArray(
+                proposals
+            )
+        ) {
+
+            return [];
+        }
+
+        const requirements = [];
+
+        for (
+            let i = 0;
+            i < proposals.length;
+            i++
+        ) {
+
+            const proposal =
+                proposals[i];
+
+            requirements.push(
+                await createRequirement({
+
+                    title:
+                        proposal.title ||
+                        "Evolution proposal",
+
+                    description:
+                        proposal.description ||
+                        JSON.stringify(
+                            proposal
+                        ),
+
+                    category:
+                        "EVOLUTION",
+
+                    priority:
+                        proposal.priority ||
+                        "NORMAL",
+
+                    source:
+                        "EVOLUTION_ENGINE",
+
+                    confidence:
+                        Number(
+                            proposal.score
+                        ) || 0.5,
+
+                    acceptanceCriteria:
+                        [
+                            "Change remains reversible.",
+                            "Change is validated before deployment.",
+                            "Integrity state remains recoverable."
+                        ],
+
+                    metadata: {
+                        evolutionProposal:
+                            clone(
+                                proposal
+                            )
+                    }
+                })
+            );
+        }
+
+        return requirements;
+    }
+
+    /* ============================================================
+       AUTOMATIC BUILD CYCLE
+       ============================================================ */
+
+    async function cycle() {
+
+        STATE.cycle++;
+        STATE.metrics.cycles++;
+
+        try {
+
+            await discoverArchitecture();
+
+            const evolutionRequirements =
+                await ingestEvolutionProposals();
+
+            for (
+                let i = 0;
+                i <
+                evolutionRequirements.length;
+                i++
+            ) {
+
+                const plan =
+                    await planRequirement(
+                        evolutionRequirements[
+                            i
+                        ].id
+                    );
+
+                await buildFromPlan(
+                    plan.id
+                );
+            }
+
+            /*
+             * Validate all outstanding proposals.
+             */
+
+            const proposalIds =
+                Object.keys(
+                    STATE.proposals
+                );
+
+            for (
+                let i = 0;
+                i < proposalIds.length;
+                i++
+            ) {
+
+                const id =
+                    proposalIds[i];
+
+                if (
+                    !STATE.validation[
+                        id
+                    ]
+                ) {
+
+                    await validateProposal(
+                        id
+                    );
+                }
+            }
+
+        } catch (e) {
+
+            console.error(
+                "[CHIROMBE BUILD] Cycle error:",
+                e
+            );
+
+            emit(
+                "BUILD_ERROR",
+                {
+                    message:
+                        e.message,
+
+                    timestamp:
+                        now()
+                }
+            );
+        }
+
+        return status();
+    }
+
+    /* ============================================================
+       SCHEDULER
+       ============================================================ */
+
+    function start() {
+
+        if (
+            STATE.running
+        ) {
+            return;
+        }
+
+        STATE.running =
+            true;
+
+        const timer =
+            setInterval(
+                function () {
+
+                    if (
+                        CONFIG
+                            .automaticPlanning
+                    ) {
+
+                        cycle();
+                    }
+
+                },
+                120000
+            );
+
+        STATE.timers.push(
+            timer
+        );
+
+        console.log(
+            "[CHIROMBE BUILD] Build intelligence scheduler online."
+        );
+    }
+
+    function stop() {
+
+        STATE.timers.forEach(
+            function (timer) {
+
+                clearInterval(
+                    timer
+                );
+            }
+        );
+
+        STATE.timers = [];
+
+        STATE.running =
+            false;
+
+        console.log(
+            "[CHIROMBE BUILD] Scheduler stopped."
+        );
+    }
+
+    /* ============================================================
+       STATUS
+       ============================================================ */
+
+    function status() {
+
+        return {
+
+            protocol:
+                CONFIG.protocol,
+
+            version:
+                CONFIG.version,
+
+            booted:
+                STATE.booted,
+
+            running:
+                STATE.running,
+
+            uptime:
+                now() -
+                STATE.startedAt,
+
+            cycle:
+                STATE.cycle,
+
+            counts: {
+
+                requirements:
+                    Object.keys(
+                        STATE.requirements
+                    ).length,
+
+                architecture:
+                    Object.keys(
+                        STATE.architecture
+                    ).length,
+
+                dependencies:
+                    Object.keys(
+                        STATE.dependencies
+                    ).length,
+
+                plans:
+                    Object.keys(
+                        STATE.plans
+                    ).length,
+
+                proposals:
+                    Object.keys(
+                        STATE.proposals
+                    ).length,
+
+                tests:
+                    Object.keys(
+                        STATE.tests
+                    ).length,
+
+                packages:
+                    Object.keys(
+                        STATE.packages
+                    ).length,
+
+                validations:
+                    Object.keys(
+                        STATE.validation
+                    ).length
+            },
+
+            metrics:
+                clone(
+                    STATE.metrics
+                )
+        };
+    }
+
+    /* ============================================================
+       QUERY FUNCTIONS
+       ============================================================ */
+
+    function getRequirement(
+        id
+    ) {
+
+        return clone(
+            STATE.requirements[id] ||
+            null
+        );
+    }
+
+    function getPlan(
+        id
+    ) {
+
+        return clone(
+            STATE.plans[id] ||
+            null
+        );
+    }
+
+    function getProposal(
+        id
+    ) {
+
+        return clone(
+            STATE.proposals[id] ||
+            null
+        );
+    }
+
+    function getPackage(
+        id
+    ) {
+
+        return clone(
+            STATE.packages[id] ||
+            null
+        );
+    }
+
+    function listPlans() {
+
+        return Object.values(
+            STATE.plans
+        ).map(
+            clone
+        );
+    }
+
+    function listProposals() {
+
+        return Object.values(
+            STATE.proposals
+        ).map(
+            clone
+        );
+    }
+
+    function listPackages() {
+
+        return Object.values(
+            STATE.packages
+        ).map(
+            clone
+        );
+    }
+
+    /* ============================================================
+       PACKAGE INTEGRITY
+       ============================================================ */
+
+    async function verifyPackage(
+        packageId
+    ) {
+
+        const packageData =
+            STATE.packages[
+                packageId
+            ];
+
+        if (!packageData) {
+
+            return {
+                valid:
+                    false,
+
+                reason:
+                    "PACKAGE_NOT_FOUND"
+            };
+        }
+
+        const copy =
+            clone(
+                packageData
+            );
+
+        delete copy.integrity;
+
+        const calculated =
+            await digest(
+                copy
+            );
+
+        return {
+
+            valid:
+                calculated ===
+                packageData.integrity,
+
+            expected:
+                packageData.integrity,
+
+            calculated:
+                calculated,
+
+            packageId:
+                packageId
+        };
+    }
+
+    /* ============================================================
+       EXPORT BUILD STATE
+       ============================================================ */
+
+    async function exportBuildState() {
+
+        const data = {
+
+            protocol:
+                CONFIG.protocol,
+
+            version:
+                CONFIG.version,
+
+            exportedAt:
+                now(),
+
+            requirements:
+                clone(
+                    STATE.requirements
+                ),
+
+            architecture:
+                clone(
+                    STATE.architecture
+                ),
+
+            dependencies:
+                clone(
+                    STATE.dependencies
+                ),
+
+            plans:
+                clone(
+                    STATE.plans
+                ),
+
+            proposals:
+                clone(
+                    STATE.proposals
+                ),
+
+            tests:
+                clone(
+                    STATE.tests
+                ),
+
+            packages:
+                clone(
+                    STATE.packages
+                ),
+
+            validation:
+                clone(
+                    STATE.validation
+                )
+        };
+
+        data.integrity =
+            await digest(
+                data
+            );
+
+        return data;
+    }
+
+    /* ============================================================
+       COMMAND INTERFACE
+       ============================================================ */
+
+    async function command(
+        action,
+        payload
+    ) {
+
+        payload =
+            payload || {};
+
+        switch (
+            String(action)
+                .toUpperCase()
+        ) {
+
+            case "STATUS":
+
+                return status();
+
+            case "DISCOVER":
+
+                return discoverArchitecture();
+
+            case "REQUIREMENT":
+
+                return createRequirement(
+                    payload
+                );
+
+            case "PLAN":
+
+                return createBuildPlan(
+                    payload
+                );
+
+            case "PLAN_REQUIREMENT":
+
+                return planRequirement(
+                    payload.id
+                );
+
+            case "PROPOSAL":
+
+                return createCodeProposal(
+                    payload
+                );
+
+            case "VALIDATE":
+
+                return validateProposal(
+                    payload.id
+                );
+
+            case "PACKAGE":
+
+                return packageProposal(
+                    payload.id
+                );
+
+            case "BUILD":
+
+                return buildFromPlan(
+                    payload.id
+                );
+
+            case "CYCLE":
+
+                return cycle();
+
+            case "VERIFY_PACKAGE":
+
+                return verifyPackage(
+                    payload.id
+                );
+
+            case "PLANS":
+
+                return listPlans();
+
+            case "PROPOSALS":
+
+                return listProposals();
+
+            case "PACKAGES":
+
+                return listPackages();
+
+            case "EXPORT":
+
+                return exportBuildState();
+
+            case "START":
+
+                start();
+
+                return status();
+
+            case "STOP":
+
+                stop();
+
+                return status();
+
+            default:
+
+                return {
+
+                    success:
+                        false,
+
+                    error:
+                        "UNKNOWN_BUILD_COMMAND"
+                };
+        }
+    }
+
+    /* ============================================================
+       PUBLIC API
+       ============================================================ */
+
+    const API = {
+
+        protocol:
+            CONFIG.protocol,
+
+        version:
+            CONFIG.version,
+
+        config:
+            CONFIG,
+
+        state:
+            STATE,
+
+        status:
+            status,
+
+        requirement:
+            createRequirement,
+
+        createRequirement:
+            createRequirement,
+
+        architecture:
+            discoverArchitecture,
+
+        discoverArchitecture:
+            discoverArchitecture,
+
+        dependency:
+            createDependency,
+
+        plan:
+            createBuildPlan,
+
+        createBuildPlan:
+            createBuildPlan,
+
+        planRequirement:
+            planRequirement,
+
+        proposal:
+            createCodeProposal,
+
+        createCodeProposal:
+            createCodeProposal,
+
+        validate:
+            validateProposal,
+
+        safety:
+            safetyCheck,
+
+        package:
+            packageProposal,
+
+        build:
+            buildFromPlan,
+
+        generateTemplate:
+            generateModuleTemplate,
+
+        generateFromKnowledge:
+            generateFromKnowledge,
+
+        ingestEvolution:
+            ingestEvolutionProposals,
+
+        verifyPackage:
+            verifyPackage,
+
+        getRequirement:
+            getRequirement,
+
+        getPlan:
+            getPlan,
+
+        getProposal:
+            getProposal,
+
+        getPackage:
+            getPackage,
+
+        plans:
+            listPlans,
+
+        proposals:
+            listProposals,
+
+        packages:
+            listPackages,
+
+        export:
+            exportBuildState,
+
+        command:
+            command,
+
+        cycle:
+            cycle,
+
+        start:
+            start,
+
+        stop:
+            stop
+    };
+
+    /* ============================================================
+       GLOBAL REGISTRATION
+       ============================================================ */
+
+    global.CHIROMBE_BUILD =
+        API;
+
+    global.CHIROMBE_BUILD_ENGINE =
+        API;
+
+    /* ============================================================
+       WORKER REGISTRATION
+       ============================================================ */
+
+    function registerWorkers() {
+
+        if (
+            !WORKERS ||
+            typeof WORKERS.register !==
+                "function"
+        ) {
+            return;
+        }
+
+        try {
+
+            WORKERS.register(
+                "BUILD_DISCOVERY",
+                async function () {
+
+                    return discoverArchitecture();
+                },
+                {
+                    priority:
+                        50
+                }
+            );
+
+            WORKERS.register(
+                "BUILD_PLANNER",
+                async function (
+                    payload
+                ) {
+
+                    if (
+                        payload &&
+                        payload.requirementId
+                    ) {
+
+                        return planRequirement(
+                            payload.requirementId
+                        );
+                    }
+
+                    return cycle();
+                },
+                {
+                    priority:
+                        48
+                }
+            );
+
+            WORKERS.register(
+                "BUILD_VALIDATOR",
+                async function (
+                    payload
+                ) {
+
+                    if (
+                        payload &&
+                        payload.proposalId
+                    ) {
+
+                        return validateProposal(
+                            payload.proposalId
+                        );
+                    }
+
+                    return {
+                        success:
+                            false,
+
+                        reason:
+                            "PROPOSAL_ID_REQUIRED"
+                    };
+                },
+                {
+                    priority:
+                        46
+                }
+            );
+
+            WORKERS.register(
+                "BUILD_PACKAGER",
+                async function (
+                    payload
+                ) {
+
+                    if (
+                        payload &&
+                        payload.proposalId
+                    ) {
+
+                        return packageProposal(
+                            payload.proposalId
+                        );
+                    }
+
+                    return {
+                        success:
+                            false,
+
+                        reason:
+                            "PROPOSAL_ID_REQUIRED"
+                    };
+                },
+                {
+                    priority:
+                        44
+                }
+            );
+
+            WORKERS.register(
+                "BUILD_STATUS",
+                async function () {
+
+                    return status();
+                },
+                {
+                    priority:
+                        40
+                }
+            );
+
+        } catch (e) {
+
+            console.warn(
+                "[CHIROMBE BUILD] Worker registration:",
+                e.message
+            );
+        }
+    }
+
+    /* ============================================================
+       BOOT
+       ============================================================ */
+
+    async function boot() {
+
+        if (
+            STATE.booted
+        ) {
+
+            return API;
+        }
+
+        STATE.booted =
+            true;
+
+        console.log(
+            "================================================"
+        );
+
+        console.log(
+            "CHIROMBE BUILD INTELLIGENCE ENGINE"
+        );
+
+        console.log(
+            "Protocol:",
+            CONFIG.protocol
+        );
+
+        console.log(
+            "Version:",
+            CONFIG.version
+        );
+
+        console.log(
+            "Booting controlled build layer..."
+        );
+
+        await discoverArchitecture();
+
+        /*
+         * Create the first internal requirement describing
+         * the build engine itself.
+         */
+
+        const internalRequirement =
+            await createRequirement({
+
+                title:
+                    "Controlled CHIROMBE build synthesis",
+
+                description:
+                    "Generate structured implementation proposals from system knowledge while preserving validation and rollback boundaries.",
+
+                category:
+                    "BUILD",
+
+                priority:
+                    "HIGH",
+
+                source:
+                    "SYSTEM",
+
+                confidence:
+                    1,
+
+                acceptanceCriteria:
+                    [
+                        "Architecture dependencies are known.",
+                        "Build proposals are traceable.",
+                        "Validation occurs before packaging.",
+                        "Protected production modules require review.",
+                        "Packages contain integrity metadata.",
+                        "Rollback information is retained."
+                    ]
+            });
+
+        await planRequirement(
+            internalRequirement.id
+        );
+
+        registerWorkers();
+
+        start();
+
+        emit(
+            "BUILD_BOOTED",
+            status()
+        );
+
+        console.log(
+            "Build intelligence online."
+        );
+
+        console.log(
+            "Architecture discovery active."
+        );
+
+        console.log(
+            "Requirement engine active."
+        );
+
+        console.log(
+            "Build planning active."
+        );
+
+        console.log(
+            "Code proposal engine active."
+        );
+
+        console.log(
+            "Validation layer active."
+        );
+
+        console.log(
+            "Package integrity layer active."
+        );
+
+        console.log(
+            "Automatic production deployment remains LOCKED."
+        );
+
+        console.log(
+            "================================================"
+        );
+
+        return API;
+    }
+
+    boot().catch(
+        function (e) {
+
+            console.error(
+                "[CHIROMBE BUILD] BOOT FAILURE:",
+                e
+            );
+        }
+    );
+
+})(window);
+
+/* ================================================================
+   END CHIROMBE BUILD INTELLIGENCE ENGINE
    ================================================================ */
