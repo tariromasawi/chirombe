@@ -9,4 +9,5 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: node scripts/self-check.mjs
+      - run: node --test tests/engine-integration.test.mjs
       - run: node engine/headless-runner.mjs

@@ -33,6 +33,11 @@ cd chirombe
 node scripts/bootstrap.mjs
 ```
 
+## Engine
+Integration console: https://tariromasawi.github.io/chirombe/engine.html
+`CHIROMBE_ENGINE.status()` and `CHIROMBE_ENGINE.command("SELF_TEST")`.
+The preserved file `chirombe engine` is not loaded. See `docs/ENGINE_AUDIT.md` and `docs/ENGINE_INTEGRATION.md`.
+
 ## Commands
 `window.ChirombeBus.executeCommand("status")`
 `window.ZCCA.command("activate system")`

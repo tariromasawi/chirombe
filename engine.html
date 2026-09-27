@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>CHIROMBE ENGINE</title>
+<style>
+  :root { color-scheme: dark; --ink:#07110d; --panel:#0c1a14; --line:#1d3a2c; --text:#d7f3e4; --dim:#7ea892; --amber:#e6c27a; --bad:#ff8f8f; }
+  * { box-sizing: border-box; }
+  html, body { margin:0; background:var(--ink); color:var(--text); font:15px/1.45 "Iowan Old Style", Palatino, "Palatino Linotype", serif; }
+  header { padding:18px 18px 12px; border-bottom:1px solid var(--line); }
+  h1 { margin:0; font-size:22px; letter-spacing:.12em; font-weight:600; }
+  h1 span { color:var(--amber); letter-spacing:.18em; font-size:12px; display:block; margin-bottom:4px; }
+  .flags { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+  .flags i { font-style:normal; border:1px solid var(--line); padding:3px 8px; color:var(--dim); font:11px/1.3 ui-monospace, monospace; }
+  nav { display:flex; flex-wrap:wrap; gap:8px; padding:12px 18px; }
+  a { color:var(--amber); }
+  button { background:#10261c; color:var(--text); border:1px solid var(--line); padding:8px 10px; font:12px/1 ui-monospace, monospace; cursor:pointer; }
+  button:hover { border-color:var(--amber); }
+  main { display:grid; grid-template-columns:1fr; gap:12px; padding:0 18px 28px; }
+  @media (min-width:900px) { main { grid-template-columns:1fr 1fr; } .wide { grid-column:1 / -1; } }
+  section { background:var(--panel); border:1px solid var(--line); padding:12px; min-width:0; }
+  h2 { margin:0 0 8px; font-size:13px; letter-spacing:.14em; color:var(--amber); font-weight:600; }
+  pre, ol { margin:0; white-space:pre-wrap; word-break:break-word; font:12px/1.45 ui-monospace, monospace; color:#cfe7da; }
+  ol { padding-left:18px; }
+  table { width:100%; border-collapse:collapse; font:12px/1.35 ui-monospace, monospace; }
+  th, td { text-align:left; padding:4px 6px; border-bottom:1px solid var(--line); vertical-align:top; }
+  td.pass { color:#9be7b8; } td.fail { color:var(--bad); } td.na { color:var(--dim); }
+</style>
+</head>
+<body>
+<header>
+  <h1><span>PRESERVE · CONNECT · VERIFY</span>CHIROMBE ENGINE</h1>
+  <div class="flags">
+    <i>PRESERVATION ACTIVE</i><i>REWRITE BLOCKED</i><i>MEMORY ERASURE BLOCKED</i><i>BLIND DEPLOY BLOCKED</i>
+  </div>
+  <p id="lead" style="color:#7ea892;margin:8px 0 0">Integration layer. The preserved file “chirombe engine” is not executed.</p>
+</header>
+<nav>
+  <a href="./app.html">survivable core</a>
+  <a href="./">legacy index</a>
+  <a href="./zcca.html">zcca</a>
+</nav>
+<main>
+  <section>
+    <h2>BOOT</h2>
+    <ol id="boot"></ol>
+  </section>
+  <section>
+    <h2>SELF-TEST</h2>
+    <table id="tests"><thead><tr><th>component</th><th>verdict</th><th>ms</th></tr></thead><tbody></tbody></table>
+  </section>
+  <section class="wide">
+    <h2>COMMANDS</h2>
+    <div id="cmds" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px"></div>
+    <pre id="out">Waiting for the engine.</pre>
+  </section>
+</main>
+<script src="js/boot.js"></script>
+<script src="js/command-bus.js"></script>
+<script src="js/state-store.js"></script>
+<script src="js/audit-chain.js"></script>
+<script src="js/health.js"></script>
+<script src="js/watchdog.js"></script>
+<script src="js/zion-protection-core.js"></script>
+<script src="js/mwarindimwari-covenant.js"></script>
+<script src="js/resonance-engine.js"></script>
+<script src="js/chirombe-core.js"></script>
+<script src="js/engine/policy.js"></script>
+<script src="js/engine/ledger.js"></script>
+<script src="js/engine/adapters.js"></script>
+<script src="js/engine/chirombe-engine.js"></script>
+<script>
+(function () {
+  var out = document.getElementById("out");
+  var commands = ["STATUS","DISCOVER","HEALTH","INTEGRITY","MEMORY","KNOWLEDGE","EVOLUTION","BLOODLINE","INTENTION","RESONANCE","RECOVERY","ERRORS","LEARN","SELF_TEST","AUDIT","EXTERNAL_AI","VERSION"];
+  var box = document.getElementById("cmds");
+  commands.forEach(function (name) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.textContent = name;
+    b.onclick = function () { run(name); };
+    box.appendChild(b);
+  });
+  function paint(report) {
+    var log = document.getElementById("boot");
+    log.innerHTML = "";
+    (CHIROMBE_ENGINE.bootLog() || []).forEach(function (row) {
+      var li = document.createElement("li");
+      li.textContent = row.text;
+      log.appendChild(li);
+    });
+    var body = document.querySelector("#tests tbody");
+    body.innerHTML = "";
+    ((report && report.result && report.result.results) || (CHIROMBE_ENGINE.selfTest().results) || []).forEach(function (row) {
+      var tr = document.createElement("tr");
+      var cls = row.verdict === "PASS" ? "pass" : (row.verdict === "FAILURE" ? "fail" : "na");
+      tr.innerHTML = "<td>" + row.component + "</td><td class='" + cls + "'>" + row.verdict + "</td><td>" + row.responseTime + "</td>";
+      body.appendChild(tr);
+    });
+  }
+  function run(name) {
+    var pending = CHIROMBE_ENGINE.command(name);
+    Promise.resolve(pending).then(function (report) {
+      out.textContent = JSON.stringify(report, null, 2);
+      if (name === "SELF_TEST" || name === "STATUS") paint(name === "SELF_TEST" ? report : null);
+    });
+  }
+  Promise.resolve(CHIROMBE_ENGINE.boot()).then(function () {
+    paint(null);
+    run("STATUS");
+  }).catch(function (e) {
+    out.textContent = String(e && e.stack || e);
+  });
+})();
+</script>
+</body>
+</html>
