@@ -26,6 +26,7 @@
   load("./js/cm90-tonal-continuous.js");
   load("./js/celestial-support.js");
   load("./js/celestial-autostart-on-index.js");
+  load("./chirombe-audio-living-liturgy.js");
   function loadOrdered(list){
     var i=0;
     function next(){

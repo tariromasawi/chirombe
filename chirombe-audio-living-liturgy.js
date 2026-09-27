@@ -5337,8 +5337,7 @@
 
   const LITURGY =
     root.CHIROMBE_AUDIO_LITURGY_ENGINE ||
-    (CHIROMBE_AUDIO_LITURGY_ENGINE =
-      CHIROMBE_AUDIO_LITURGY_ENGINE || {});
+    (root.CHIROMBE_AUDIO_LITURGY_ENGINE = {});
 
   /* ---------------------------------------------------------------
      1. GLOBAL LIBRARY IDENTITY
@@ -7843,7 +7842,7 @@
      36. GLOBAL REGISTRATION
      --------------------------------------------------------------- */
 
-  CHIROMBE_AUDIO_TRADITION_LIBRARY =
+  window.CHIROMBE_AUDIO_TRADITION_LIBRARY =
     LIBRARY;
 
   CHIROMBE.AudioTraditionLibrary =
@@ -11329,7 +11328,7 @@
      33. CONNECT TO CHIROMBE NAMESPACE
      ================================================================ */
 
-  CHIROMBE_AUDIO_BLOODLINE_ORCHESTRATOR =
+  window.CHIROMBE_AUDIO_BLOODLINE_ORCHESTRATOR =
     BLOODLINE;
 
   CHIROMBE.AudioBloodlineOrchestrator =
@@ -25187,3 +25186,1283 @@
     );
 
 })(window);
+/* ============================================================================
+   CHIROMBE AUDIO LIVING LITURGY
+   PART 9 — ADAPTIVE EVOLUTION / SESSION MEMORY
+   PART 10 — MASTER LIVING LITURGY ORCHESTRATION
+   ----------------------------------------------------------------------------
+   Extends the Part 1 kernel and Part 2 liturgy engine.
+   Does not replace CHIROMBE_AUDIO, does not start playback on load,
+   and does not rewrite application source.
+ ============================================================================ */
+
+(() => {
+  "use strict";
+
+  if (window.__CHIROMBE_AUDIO_PART9__) return;
+  window.__CHIROMBE_AUDIO_PART9__ = true;
+
+  const AUDIO = window.CHIROMBE_AUDIO;
+  if (!AUDIO || typeof AUDIO.getStatus !== "function" || typeof AUDIO.emergencyStop !== "function") {
+    console.error("CHIROMBE AUDIO PART 9: Part 1 kernel not found.");
+    window.__CHIROMBE_AUDIO_PART9__ = false;
+    return;
+  }
+
+  const VERSION = "9.0.0";
+  const SCHEMA_VERSION = 9;
+  const STORAGE_KEY = "CHIROMBE_AUDIO_EVOLUTION_V9";
+
+  const STATES = Object.freeze({
+    DORMANT: "DORMANT",
+    READY: "READY",
+    LEARNING: "LEARNING",
+    ANALYSING: "ANALYSING",
+    ADAPTING: "ADAPTING",
+    PROPOSING: "PROPOSING",
+    VALIDATING: "VALIDATING",
+    SANDBOX: "SANDBOX",
+    ROLLBACK: "ROLLBACK",
+    SAFE_STOP: "SAFE_STOP",
+    LOCKED: "LOCKED",
+    ERROR: "ERROR"
+  });
+
+  const ADAPTATION_TYPES = Object.freeze({
+    TEMPO: "TEMPO",
+    PAUSE: "PAUSE",
+    VOLUME: "VOLUME",
+    FREQUENCY: "FREQUENCY",
+    HARMONICS: "HARMONICS",
+    SCENE: "SCENE",
+    LANGUAGE: "LANGUAGE",
+    VOICE: "VOICE",
+    SESSION_LENGTH: "SESSION_LENGTH",
+    ENVIRONMENT_RESPONSE: "ENVIRONMENT_RESPONSE",
+    PRAYER_SELECTION: "PRAYER_SELECTION",
+    CHANT_STRUCTURE: "CHANT_STRUCTURE",
+    RESOURCE_POLICY: "RESOURCE_POLICY"
+  });
+
+  const PROPOSAL_STATUS = Object.freeze({
+    CREATED: "CREATED",
+    PROPOSED: "PROPOSED",
+    VALIDATING: "VALIDATING",
+    REVIEW_REQUIRED: "REVIEW_REQUIRED",
+    APPROVED: "APPROVED",
+    REJECTED: "REJECTED",
+    SANDBOXED: "SANDBOXED",
+    APPLIED: "APPLIED",
+    ROLLED_BACK: "ROLLED_BACK",
+    EXPIRED: "EXPIRED"
+  });
+
+  const CONFIG = Object.freeze({
+    persistence: { enabled: true, maximumSessions: 200, maximumObservations: 800, maximumProposals: 200, maximumAudit: 400, maximumSnapshots: 40 },
+    learning: { enabled: true, minimumEvidence: 3, learningRate: 0.15, maximumPreferenceShift: 0.1, noveltyWindow: 100 },
+    evolution: {
+      autonomousCodeRewrite: false,
+      autonomousProductionDeploy: false,
+      autonomousSafetyModification: false,
+      requireHumanApprovalForProduction: true
+    },
+    scoring: { qualityWeight: 0.3, coherenceWeight: 0.2, comfortWeight: 0.15, completionWeight: 0.15, stabilityWeight: 0.1, noveltyWeight: 0.1 }
+  });
+
+  const STATE = {
+    state: STATES.DORMANT,
+    initialised: false,
+    learningEnabled: true,
+    evolutionEnabled: true,
+    generation: 0,
+    lastSession: null,
+    activeSession: null,
+    sessions: [],
+    observations: [],
+    preferences: {},
+    proposals: [],
+    experiments: [],
+    audit: [],
+    snapshots: [],
+    anchors: {},
+    metrics: { sessions: 0, observations: 0, proposals: 0, applied: 0, rejected: 0, rolledBack: 0, adaptations: 0, validations: 0, regressions: 0, persistenceWrites: 0, persistenceReads: 0 },
+    errors: [],
+    commandsRegistered: false,
+    eventsRegistered: false
+  };
+
+  function now() { return Date.now(); }
+  function uid(prefix) { return (prefix || "evo") + "_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 10); }
+  function clamp(value, min, max) { return Math.min(max, Math.max(min, Number(value))); }
+  function safeNumber(value, fallback) { const n = Number(value); return Number.isFinite(n) ? n : (fallback || 0); }
+  function deepClone(object) { try { return JSON.parse(JSON.stringify(object)); } catch (e) { return null; } }
+
+  function engine(name, alt) {
+    try { return window[name] || (alt ? window[alt] : null) || null; } catch (e) { return null; }
+  }
+
+  async function digest(value) {
+    const text = typeof value === "string" ? value : JSON.stringify(value);
+    try {
+      if (crypto && crypto.subtle) {
+        const buffer = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+        return Array.from(new Uint8Array(buffer)).map(function (byte) { return byte.toString(16).padStart(2, "0"); }).join("");
+      }
+    } catch (e) {}
+    let hash = 2166136261;
+    for (let i = 0; i < text.length; i++) {
+      hash ^= text.charCodeAt(i);
+      hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
+    }
+    return "fnv-" + (hash >>> 0).toString(16);
+  }
+
+  function emit(type, detail) {
+    const event = { id: uid("audio-evolution-event"), type: type, timestamp: now(), version: VERSION, generation: STATE.generation, detail: detail || {} };
+    try { if (typeof AUDIO.emit === "function") AUDIO.emit(type, event); } catch (e) {}
+    try {
+      window.dispatchEvent(new CustomEvent("CHIROMBE_AUDIO_EVOLUTION_EVENT", { detail: event }));
+    } catch (e) {}
+    try {
+      if (window.ChirombeBus && typeof window.ChirombeBus.emit === "function") window.ChirombeBus.emit(type, detail || {});
+    } catch (e) {}
+    return event;
+  }
+
+  function recordError(error, context) {
+    const item = { id: uid("evolution-error"), timestamp: now(), context: context, message: (error && error.message) || String(error) };
+    STATE.errors.push(item);
+    if (STATE.errors.length > 100) STATE.errors.shift();
+    try { if (typeof AUDIO.log === "function") AUDIO.log("ERROR", context, item); } catch (e) {}
+    emit("AUDIO_EVOLUTION_ERROR", item);
+    return item;
+  }
+
+  function persistenceAvailable() {
+    try { return typeof localStorage !== "undefined"; } catch (e) { return false; }
+  }
+
+  async function saveMemory() {
+    if (!CONFIG.persistence.enabled || !persistenceAvailable()) return false;
+    try {
+      const payload = {
+        schema: SCHEMA_VERSION,
+        version: VERSION,
+        savedAt: now(),
+        generation: STATE.generation,
+        sessions: STATE.sessions.slice(-CONFIG.persistence.maximumSessions),
+        observations: STATE.observations.slice(-CONFIG.persistence.maximumObservations),
+        preferences: STATE.preferences,
+        proposals: STATE.proposals.slice(-CONFIG.persistence.maximumProposals),
+        experiments: STATE.experiments.slice(-80),
+        audit: STATE.audit.slice(-CONFIG.persistence.maximumAudit),
+        snapshots: STATE.snapshots.slice(-CONFIG.persistence.maximumSnapshots),
+        anchors: STATE.anchors,
+        metrics: STATE.metrics
+      };
+      payload.integrity = await digest(payload);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+      STATE.metrics.persistenceWrites++;
+      return true;
+    } catch (error) {
+      recordError(error, "saveMemory");
+      return false;
+    }
+  }
+
+  async function loadMemory() {
+    if (!CONFIG.persistence.enabled || !persistenceAvailable()) return false;
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return false;
+      const data = JSON.parse(raw);
+      if (data.schema !== SCHEMA_VERSION) {
+        emit("AUDIO_EVOLUTION_SCHEMA_MISMATCH", { found: data.schema, expected: SCHEMA_VERSION });
+        return false;
+      }
+      STATE.generation = safeNumber(data.generation, 0);
+      STATE.sessions = Array.isArray(data.sessions) ? data.sessions : [];
+      STATE.observations = Array.isArray(data.observations) ? data.observations : [];
+      STATE.preferences = data.preferences || {};
+      STATE.proposals = Array.isArray(data.proposals) ? data.proposals : [];
+      STATE.experiments = Array.isArray(data.experiments) ? data.experiments : [];
+      STATE.audit = Array.isArray(data.audit) ? data.audit : [];
+      STATE.snapshots = Array.isArray(data.snapshots) ? data.snapshots : [];
+      STATE.anchors = data.anchors || {};
+      STATE.metrics = Object.assign({}, STATE.metrics, data.metrics || {});
+      STATE.metrics.persistenceReads++;
+      emit("AUDIO_EVOLUTION_MEMORY_LOADED", { generation: STATE.generation, sessions: STATE.sessions.length });
+      return true;
+    } catch (error) {
+      recordError(error, "loadMemory");
+      return false;
+    }
+  }
+
+  async function audit(action, detail) {
+    const previous = STATE.audit.length ? STATE.audit[STATE.audit.length - 1].hash : null;
+    const entry = { id: uid("audio-audit"), timestamp: now(), action: action, detail: detail || {}, previous: previous };
+    entry.hash = await digest(entry);
+    STATE.audit.push(entry);
+    if (STATE.audit.length > CONFIG.persistence.maximumAudit) STATE.audit.shift();
+    try {
+      if (window.ChirombeAudit && typeof window.ChirombeAudit.append === "function") {
+        window.ChirombeAudit.append({ type: action, detail: detail || {}, sessionId: STATE.activeSession && STATE.activeSession.id });
+      }
+    } catch (e) {}
+    try { if (typeof AUDIO.remember === "function") AUDIO.remember(action, detail || {}, 0.4); } catch (e) {}
+    return entry;
+  }
+
+  function establishAnchors() {
+    if (Object.keys(STATE.anchors).length) return STATE.anchors;
+    STATE.anchors = {
+      systemIdentity: "CHIROMBE_AUDIO_LIVING_LITURGY",
+      devotionalVocabulary: ["Mwari", "Mudzimu Unoyera", "peace", "truth", "wisdom", "unity", "courage", "gratitude", "remembrance"],
+      safetyFirst: true,
+      autonomousProductionRewrite: false,
+      interpretation: "DEVOTIONAL_PRACTICE_NOT_SCIENTIFIC_PROOF"
+    };
+    return STATE.anchors;
+  }
+
+  function beginSession(options) {
+    options = options || {};
+    const session = {
+      id: uid("audio-session"),
+      startedAt: now(),
+      endedAt: null,
+      mode: options.mode || "REFLECTION",
+      language: options.language || "en-GB",
+      scene: options.scene || options.mode || "REFLECTION",
+      purpose: options.purpose || "DEVOTIONAL",
+      people: Array.isArray(options.people) ? options.people.map(function (person) {
+        return { id: person.id || person.personId || null, name: person.name || person.displayName || null, relationship: person.relationship || person.relation || null, source: "EXPLICIT" };
+      }) : [],
+      environment: null,
+      settings: deepClone(options.settings || {}),
+      events: [],
+      observations: [],
+      adaptations: [],
+      metrics: { prayers: 0, repetitions: 0, interruptions: 0, safetyInterventions: 0, adaptations: 0 },
+      outcome: null,
+      score: null,
+      status: "ACTIVE",
+      microphoneStored: false
+    };
+    STATE.activeSession = session;
+    STATE.sessions.push(session);
+    if (STATE.sessions.length > CONFIG.persistence.maximumSessions) STATE.sessions.shift();
+    STATE.metrics.sessions++;
+    emit("AUDIO_EVOLUTION_SESSION_STARTED", { sessionId: session.id, mode: session.mode });
+    return session;
+  }
+
+  function scoreSession(session) {
+    const outcome = (session && session.outcome) || {};
+    const weights = CONFIG.scoring;
+    const parts = ["quality", "coherence", "comfort", "completion", "stability", "novelty"];
+    const keys = ["qualityWeight", "coherenceWeight", "comfortWeight", "completionWeight", "stabilityWeight", "noveltyWeight"];
+    let score = 0;
+    parts.forEach(function (name, index) {
+      score += clamp(safeNumber(outcome[name], 0.5), 0, 1) * weights[keys[index]];
+    });
+    return Number(clamp(score, 0, 1).toFixed(4));
+  }
+
+  function recordObservation(type, data) {
+    if (!CONFIG.learning.enabled) return null;
+    const observation = {
+      id: uid("audio-observation"),
+      timestamp: now(),
+      type: type,
+      sessionId: (STATE.activeSession && STATE.activeSession.id) || (STATE.lastSession && STATE.lastSession.id) || null,
+      data: deepClone(data || {}),
+      supernaturalClaim: false
+    };
+    STATE.observations.push(observation);
+    if (STATE.observations.length > CONFIG.persistence.maximumObservations) STATE.observations.shift();
+    if (STATE.activeSession) STATE.activeSession.observations.push(observation);
+    STATE.metrics.observations++;
+    emit("AUDIO_EVOLUTION_OBSERVATION", { id: observation.id, type: type });
+    return observation;
+  }
+
+  async function endSession(outcome, feedback) {
+    const session = STATE.activeSession;
+    if (!session) return null;
+    session.endedAt = now();
+    session.status = "COMPLETE";
+    session.outcome = deepClone(outcome || {});
+    session.userFeedback = feedback;
+    session.score = scoreSession(session);
+    session.durationMs = session.endedAt - session.startedAt;
+    STATE.lastSession = session;
+    STATE.activeSession = null;
+    recordObservation("SESSION_COMPLETED", { sessionId: session.id, score: session.score, durationMs: session.durationMs });
+    await audit("SESSION_COMPLETED", { sessionId: session.id, score: session.score });
+    await saveMemory();
+    emit("AUDIO_EVOLUTION_SESSION_ENDED", { sessionId: session.id, score: session.score });
+    return session;
+  }
+
+  function getEnvironmentSnapshot() {
+    const environment = engine("CHIROMBE_AUDIO_ENVIRONMENT_ENGINE");
+    try {
+      if (environment && typeof environment.getStatus === "function") {
+        const status = deepClone(environment.getStatus()) || {};
+        status.note = "Measured environmental metadata. Not evidence of a supernatural event.";
+        return status;
+      }
+    } catch (error) {
+      recordError(error, "getEnvironmentSnapshot");
+    }
+    return { available: false, note: "Environmental engine unavailable.", supernaturalClaim: false };
+  }
+
+  function preferenceKey(dimension, value) { return String(dimension) + "::" + String(value); }
+
+  function updatePreference(dimension, value, reward, evidence) {
+    const key = preferenceKey(dimension, value);
+    const existing = STATE.preferences[key] || { dimension: dimension, value: value, score: 0.5, evidence: 0, positive: 0, negative: 0, updatedAt: now() };
+    const bounded = clamp(reward, -1, 1);
+    const shift = clamp(bounded * CONFIG.learning.learningRate, -CONFIG.learning.maximumPreferenceShift, CONFIG.learning.maximumPreferenceShift);
+    existing.score = clamp(existing.score + shift, 0, 1);
+    const weight = Math.max(1, safeNumber(evidence, 1));
+    existing.evidence += weight;
+    if (bounded >= 0) existing.positive += weight;
+    else existing.negative += weight;
+    existing.updatedAt = now();
+    STATE.preferences[key] = existing;
+    emit("AUDIO_PREFERENCE_UPDATED", { dimension: dimension, value: value, score: existing.score });
+    return existing;
+  }
+
+  function getPreference(dimension, value) { return STATE.preferences[preferenceKey(dimension, value)] || null; }
+
+  async function calculateNovelty(candidate) {
+    const hash = await digest(JSON.stringify(candidate));
+    const recent = STATE.observations.slice(-CONFIG.learning.noveltyWindow);
+    const seen = recent.some(function (observation) { return observation.data && observation.data.hash === hash; });
+    return { hash: hash, novel: !seen, novelty: seen ? 0 : 1 };
+  }
+
+  async function createProposal(type, target, currentValue, proposedValue, rationale, options) {
+    options = options || {};
+    rationale = rationale || {};
+    const novelty = await calculateNovelty({ type: type, target: target, currentValue: currentValue, proposedValue: proposedValue });
+    const proposal = {
+      id: uid("audio-proposal"),
+      proposalId: null,
+      createdAt: now(),
+      timestamp: now(),
+      generation: STATE.generation,
+      type: type,
+      target: target,
+      category: type,
+      reason: rationale.reason || "",
+      evidence: rationale.evidence || options.evidence || 0,
+      proposedChange: { from: currentValue, to: proposedValue },
+      currentValue: currentValue,
+      proposedValue: proposedValue,
+      expectedBenefit: rationale.expectedBenefit || "Unmeasured until a later session records an outcome.",
+      risk: rationale.risk || "LOW",
+      rationale: deepClone(rationale),
+      novelty: novelty,
+      confidence: clamp(safeNumber(options.confidence, 0), 0, 1),
+      status: PROPOSAL_STATUS.PROPOSED,
+      sandbox: true,
+      production: false,
+      safetyReviewed: false,
+      regressionChecked: false,
+      rollbackAvailable: true,
+      approvalRequired: true,
+      measuredImprovement: false
+    };
+    proposal.proposalId = proposal.id;
+    STATE.proposals.push(proposal);
+    if (STATE.proposals.length > CONFIG.persistence.maximumProposals) STATE.proposals.shift();
+    STATE.metrics.proposals++;
+    await audit("PROPOSAL_CREATED", { proposalId: proposal.id, type: type, target: target });
+    emit("AUDIO_EVOLUTION_PROPOSAL_CREATED", { proposalId: proposal.id, type: type });
+    return proposal;
+  }
+
+  async function learnFromSession(session) {
+    if (!session) return { ok: false, reason: "NO_SESSION" };
+    STATE.state = STATES.LEARNING;
+    const reward = (safeNumber(session.score, 0.5) - 0.5) * 2;
+    updatePreference("mode", session.mode, reward);
+    updatePreference("language", session.language, reward);
+    updatePreference("scene", session.scene, reward);
+    if (session.settings && session.settings.rate != null) updatePreference("rate", session.settings.rate, reward);
+    if (session.settings && session.settings.volume != null) updatePreference("volume", session.settings.volume, reward);
+    STATE.state = STATES.READY;
+    return { ok: true, reward: reward, note: "Learned from session scores only. Sensor readings were not treated as spiritual events." };
+  }
+
+  async function analyseAdaptation() {
+    STATE.state = STATES.ANALYSING;
+    const environment = getEnvironmentSnapshot();
+    const proposals = [];
+    const noise = String(environment.noise || environment.classification || environment.state || "");
+    if (/noisy|loud/i.test(noise) && STATE.metrics.sessions >= CONFIG.learning.minimumEvidence) {
+      proposals.push(await createProposal(ADAPTATION_TYPES.TEMPO, "speech.rate", 1, 0.9, {
+        reason: "Recent measured noise was high. This proposes clearer pacing.",
+        evidence: noise,
+        expectedBenefit: "Not claimed until a later measured session.",
+        risk: "LOW"
+      }, { evidence: STATE.metrics.sessions, confidence: 0.4 }));
+    }
+    STATE.state = STATES.READY;
+    return { proposals: proposals, environment: environment, supernaturalClaim: false };
+  }
+
+  function validateProposalSafety(proposal) {
+    const target = String(proposal && proposal.target || "").toLowerCase();
+    if (target.includes("safety") || target.includes("privacy") || target.includes("hardmax") || target.includes("maximum")) {
+      return { valid: false, reason: "PROTECTED_SAFETY_PARAMETER" };
+    }
+    if (proposal && proposal.type === ADAPTATION_TYPES.FREQUENCY) {
+      if (typeof AUDIO.validateFrequency === "function") {
+        const result = AUDIO.validateFrequency(proposal.proposedValue);
+        if (result && result.supported === false) return { valid: false, reason: result.reason || result.classification };
+      }
+      const safety = engine("CHIROMBE_AUDIO_SAFETY_ENGINE", "CHIROMBE_AUDIO_SAFETY");
+      if (safety && typeof safety.validateFrequency === "function") {
+        const result = safety.validateFrequency(proposal.proposedValue);
+        if (result && result.permitted === false) return { valid: false, reason: result.reason };
+      }
+    }
+    return { valid: true, reason: "SAFETY_VALIDATED" };
+  }
+
+  function regressionCheck(proposal) {
+    STATE.metrics.validations++;
+    const checks = {
+      hasId: !!(proposal && proposal.id),
+      hasType: !!(proposal && proposal.type),
+      hasTarget: !!(proposal && proposal.target),
+      hasCurrent: proposal && proposal.currentValue !== undefined,
+      hasProposed: proposal && proposal.proposedValue !== undefined,
+      productionRewrite: CONFIG.evolution.autonomousProductionDeploy === false,
+      safetyRewrite: CONFIG.evolution.autonomousSafetyModification === false,
+      codeRewrite: CONFIG.evolution.autonomousCodeRewrite === false
+    };
+    const passed = Object.keys(checks).every(function (key) { return !!checks[key]; });
+    if (!passed) STATE.metrics.regressions++;
+    return { passed: passed, checks: checks };
+  }
+
+  function findProposal(proposalId) {
+    return STATE.proposals.find(function (item) { return item.id === proposalId; }) || null;
+  }
+
+  async function sandboxProposal(proposalId) {
+    const proposal = findProposal(proposalId);
+    if (!proposal) return { ok: false, reason: "PROPOSAL_NOT_FOUND" };
+    STATE.state = STATES.VALIDATING;
+    const safetyResult = validateProposalSafety(proposal);
+    if (!safetyResult.valid) {
+      proposal.status = PROPOSAL_STATUS.REJECTED;
+      STATE.metrics.rejected++;
+      await audit("PROPOSAL_REJECTED", { proposalId: proposalId, reason: safetyResult.reason });
+      STATE.state = STATES.READY;
+      return { ok: false, reason: safetyResult.reason };
+    }
+    const regression = regressionCheck(proposal);
+    if (!regression.passed) {
+      proposal.status = PROPOSAL_STATUS.REJECTED;
+      STATE.metrics.rejected++;
+      STATE.state = STATES.READY;
+      return { ok: false, reason: "REGRESSION_CHECK_FAILED", regression: regression };
+    }
+    proposal.safetyReviewed = true;
+    proposal.regressionChecked = true;
+    proposal.status = PROPOSAL_STATUS.SANDBOXED;
+    proposal.sandboxResult = { simulated: true, productionChanged: false, safetyChanged: false, timestamp: now() };
+    STATE.experiments.push({ id: uid("audio-experiment"), proposalId: proposalId, createdAt: now(), status: "SANDBOXED" });
+    await audit("PROPOSAL_SANDBOXED", { proposalId: proposalId });
+    STATE.state = STATES.READY;
+    return { ok: true, proposal: proposal };
+  }
+
+  function approveProposal(proposalId, approvalToken) {
+    const proposal = findProposal(proposalId);
+    if (!proposal) return { ok: false, reason: "PROPOSAL_NOT_FOUND" };
+    if (!approvalToken) return { ok: false, reason: "EXPLICIT_APPROVAL_REQUIRED" };
+    proposal.status = PROPOSAL_STATUS.APPROVED;
+    proposal.approvedAt = now();
+    audit("PROPOSAL_APPROVED", { proposalId: proposalId });
+    return { ok: true, proposal: proposal };
+  }
+
+  function applyRuntime(proposal) {
+    const performance = engine("CHIROMBE_AUDIO_PERFORMANCE_ENGINE", "CHIROMBE_AUDIO_PERFORMANCE");
+    if (proposal.type === ADAPTATION_TYPES.TEMPO && performance && typeof performance.setSpeechSettings === "function") {
+      performance.setSpeechSettings({ rate: proposal.proposedValue });
+      return true;
+    }
+    if (proposal.type === ADAPTATION_TYPES.LANGUAGE && performance && typeof performance.setLanguage === "function") {
+      performance.setLanguage(proposal.proposedValue);
+      return true;
+    }
+    if (proposal.type === ADAPTATION_TYPES.VOICE && performance && typeof performance.setVoice === "function") {
+      performance.setVoice(proposal.proposedValue);
+      return true;
+    }
+    if (proposal.type === ADAPTATION_TYPES.VOLUME && typeof AUDIO.setMasterGain === "function") {
+      const current = AUDIO.state && AUDIO.state.masterGain;
+      const limit = AUDIO.CONFIG && AUDIO.CONFIG.maximumMasterGain;
+      const next = limit ? Math.min(Number(proposal.proposedValue), limit) : Number(proposal.proposedValue);
+      if (current != null) proposal.currentValue = current;
+      AUDIO.setMasterGain(next);
+      return true;
+    }
+    return false;
+  }
+
+  async function applyProposal(proposalId, options) {
+    options = options || {};
+    const proposal = findProposal(proposalId);
+    if (!proposal) return { ok: false, reason: "PROPOSAL_NOT_FOUND" };
+    if (!options.runtime) return { ok: false, reason: "RUNTIME_FLAG_REQUIRED" };
+    if (CONFIG.evolution.requireHumanApprovalForProduction && proposal.status !== PROPOSAL_STATUS.APPROVED) {
+      return { ok: false, reason: "APPROVAL_REQUIRED" };
+    }
+    if (!proposal.safetyReviewed || !proposal.regressionChecked) return { ok: false, reason: "VALIDATION_REQUIRED" };
+    STATE.state = STATES.ADAPTING;
+    try {
+      const applied = applyRuntime(proposal);
+      if (!applied) {
+        STATE.state = STATES.READY;
+        return { ok: false, reason: "NO_RUNTIME_ADAPTER" };
+      }
+      proposal.status = PROPOSAL_STATUS.APPLIED;
+      proposal.appliedAt = now();
+      proposal.measuredImprovement = false;
+      STATE.metrics.applied++;
+      STATE.metrics.adaptations++;
+      if (STATE.activeSession) {
+        STATE.activeSession.adaptations.push({ proposalId: proposalId, type: proposal.type, value: proposal.proposedValue, timestamp: now() });
+        STATE.activeSession.metrics.adaptations++;
+      }
+      await audit("PROPOSAL_APPLIED", { proposalId: proposalId, type: proposal.type });
+      await saveMemory();
+      STATE.state = STATES.READY;
+      return { ok: true, proposal: proposal };
+    } catch (error) {
+      recordError(error, "applyProposal");
+      proposal.status = PROPOSAL_STATUS.ROLLED_BACK;
+      STATE.metrics.rolledBack++;
+      STATE.state = STATES.READY;
+      return { ok: false, reason: "APPLICATION_ERROR" };
+    }
+  }
+
+  async function rollbackProposal(proposalId) {
+    const proposal = findProposal(proposalId);
+    if (!proposal) return { ok: false, reason: "PROPOSAL_NOT_FOUND" };
+    try {
+      const restore = { type: proposal.type, proposedValue: proposal.currentValue, currentValue: proposal.proposedValue, target: proposal.target };
+      applyRuntime(restore);
+      proposal.status = PROPOSAL_STATUS.ROLLED_BACK;
+      proposal.rolledBackAt = now();
+      STATE.metrics.rolledBack++;
+      await audit("PROPOSAL_ROLLED_BACK", { proposalId: proposalId });
+      await saveMemory();
+      return { ok: true, proposal: proposal };
+    } catch (error) {
+      recordError(error, "rollbackProposal");
+      return { ok: false, reason: "ROLLBACK_ERROR" };
+    }
+  }
+
+  async function createSnapshot(label) {
+    const snapshot = {
+      id: uid("audio-snapshot"),
+      label: label || "checkpoint",
+      createdAt: now(),
+      generation: STATE.generation,
+      preferences: deepClone(STATE.preferences),
+      masterGain: AUDIO.state && AUDIO.state.masterGain,
+      mode: STATE.activeSession && STATE.activeSession.mode,
+      integrity: null
+    };
+    snapshot.integrity = await digest({ preferences: snapshot.preferences, masterGain: snapshot.masterGain, generation: snapshot.generation });
+    STATE.snapshots.push(snapshot);
+    if (STATE.snapshots.length > CONFIG.persistence.maximumSnapshots) STATE.snapshots.shift();
+    await audit("SNAPSHOT_CREATED", { snapshotId: snapshot.id });
+    await saveMemory();
+    return snapshot;
+  }
+
+  async function rollbackSnapshot(snapshotId) {
+    const snapshot = STATE.snapshots.find(function (item) { return item.id === snapshotId; }) || STATE.snapshots[STATE.snapshots.length - 1];
+    if (!snapshot) return { ok: false, reason: "SNAPSHOT_NOT_FOUND" };
+    STATE.preferences = deepClone(snapshot.preferences) || {};
+    if (snapshot.masterGain != null && typeof AUDIO.setMasterGain === "function") {
+      try { AUDIO.setMasterGain(snapshot.masterGain); } catch (e) {}
+    }
+    await audit("SNAPSHOT_RESTORED", { snapshotId: snapshot.id });
+    await saveMemory();
+    return { ok: true, snapshotId: snapshot.id, sourceRewritten: false };
+  }
+
+  async function evolve() {
+    if (!STATE.evolutionEnabled) return { ok: false, reason: "EVOLUTION_DISABLED" };
+    if (STATE.state === STATES.LOCKED) return { ok: false, reason: "ENGINE_LOCKED" };
+    STATE.generation++;
+    const learning = STATE.lastSession ? await learnFromSession(STATE.lastSession) : null;
+    const analysis = await analyseAdaptation();
+    await saveMemory();
+    return { ok: true, generation: STATE.generation, learning: learning, analysis: analysis, sourceRewritten: false };
+  }
+
+  function exportMemory() {
+    return { schema: SCHEMA_VERSION, version: VERSION, exportedAt: now(), generation: STATE.generation, sessions: deepClone(STATE.sessions), proposals: deepClone(STATE.proposals), preferences: deepClone(STATE.preferences), snapshots: deepClone(STATE.snapshots), metrics: deepClone(STATE.metrics) };
+  }
+
+  async function importMemory(data, options) {
+    options = options || {};
+    if (!data || data.schema !== SCHEMA_VERSION) return { ok: false, reason: "INVALID_SCHEMA" };
+    if (options.merge !== false) {
+      STATE.sessions = STATE.sessions.concat(Array.isArray(data.sessions) ? data.sessions : []).slice(-CONFIG.persistence.maximumSessions);
+      STATE.preferences = Object.assign({}, STATE.preferences, data.preferences || {});
+      STATE.proposals = STATE.proposals.concat(Array.isArray(data.proposals) ? data.proposals : []).slice(-CONFIG.persistence.maximumProposals);
+    }
+    await audit("MEMORY_IMPORTED", { merge: options.merge !== false });
+    await saveMemory();
+    return { ok: true };
+  }
+
+  function getStatus() {
+    return {
+      name: "CHIROMBE_AUDIO_EVOLUTION",
+      version: VERSION,
+      status: STATE.state === STATES.READY || STATE.state === STATES.DORMANT ? "READY" : STATE.state,
+      loaded: true,
+      absorbedStubVersion: "9.0.1",
+      schema: SCHEMA_VERSION,
+      state: STATE.state,
+      initialised: STATE.initialised,
+      generation: STATE.generation,
+      activeSession: STATE.activeSession ? { id: STATE.activeSession.id, mode: STATE.activeSession.mode, startedAt: STATE.activeSession.startedAt } : null,
+      memory: { sessions: STATE.sessions.length, observations: STATE.observations.length, proposals: STATE.proposals.length, snapshots: STATE.snapshots.length },
+      metrics: Object.assign({}, STATE.metrics),
+      configuration: CONFIG.evolution,
+      anchors: deepClone(STATE.anchors),
+      recentProposals: deepClone(STATE.proposals.slice(-10)),
+      errors: STATE.errors.slice(-10),
+      supernaturalClaim: false,
+      codeRewrite: false
+    };
+  }
+
+  function registerCommands() {
+    if (STATE.commandsRegistered || !window.ChirombeBus || typeof window.ChirombeBus.registerCommand !== "function") return false;
+    const commands = {
+      "audio.evolution.status": function () { return getStatus(); },
+      "audio.evolution.begin": function (args) { return beginSession(args || {}); },
+      "audio.evolution.end": function (args) { return endSession(args && args.outcome, args && args.feedback); },
+      "audio.evolution.observe": function (args) { return recordObservation((args && args.type) || "MANUAL", (args && args.data) || {}); },
+      "audio.evolution.evolve": function () { return evolve(); },
+      "audio.evolution.proposal": function (args) { return createProposal(args && args.type, args && args.target, args && args.currentValue, args && args.proposedValue, (args && args.rationale) || {}, args || {}); },
+      "audio.evolution.sandbox": function (args) { return sandboxProposal(args && args.proposalId); },
+      "audio.evolution.approve": function (args) { return approveProposal(args && args.proposalId, args && args.approvalToken); },
+      "audio.evolution.apply": function (args) { return applyProposal(args && args.proposalId, args || {}); },
+      "audio.evolution.rollback": function (args) { return rollbackProposal(args && args.proposalId); },
+      "audio.evolution.snapshot": function (args) { return createSnapshot(args && args.label); },
+      "audio.evolution.export": function () { return exportMemory(); }
+    };
+    Object.keys(commands).forEach(function (name) {
+      try { window.ChirombeBus.registerCommand(name, commands[name], { subsystem: "audio-evolution" }); } catch (e) {}
+    });
+    STATE.commandsRegistered = true;
+    return true;
+  }
+
+  function registerEvents() {
+    if (STATE.eventsRegistered) return;
+    const names = ["AUDIO_SAFETY_EVENT", "AUDIO_CLIPPING_DETECTED", "AUDIO_RESOURCE_WARNING", "AUDIO_SAFE_STOP"];
+    names.forEach(function (eventName) {
+      window.addEventListener(eventName, function (event) {
+        try { recordObservation(eventName, (event && event.detail) || {}); } catch (error) { recordError(error, eventName); }
+      });
+    });
+    STATE.eventsRegistered = true;
+  }
+
+  async function initialise() {
+    if (STATE.initialised) return getStatus();
+    STATE.state = STATES.READY;
+    await loadMemory();
+    establishAnchors();
+    registerCommands();
+    registerEvents();
+    STATE.initialised = true;
+    emit("AUDIO_EVOLUTION_ENGINE_READY", { version: VERSION, sessions: STATE.sessions.length });
+    if (!STATE.commandsRegistered) {
+      let tries = 0;
+      const timer = setInterval(function () {
+        tries += 1;
+        if (registerCommands() || tries > 10) clearInterval(timer);
+      }, 500);
+    }
+    return getStatus();
+  }
+
+  const API = {
+    VERSION: VERSION,
+    SCHEMA_VERSION: SCHEMA_VERSION,
+    STATES: STATES,
+    ADAPTATION_TYPES: ADAPTATION_TYPES,
+    PROPOSAL_STATUS: PROPOSAL_STATUS,
+    CONFIG: CONFIG,
+    initialise: initialise,
+    beginSession: beginSession,
+    endSession: endSession,
+    recordObservation: recordObservation,
+    scoreSession: scoreSession,
+    updatePreference: updatePreference,
+    getPreference: getPreference,
+    calculateNovelty: calculateNovelty,
+    createProposal: createProposal,
+    learnFromSession: learnFromSession,
+    analyseAdaptation: analyseAdaptation,
+    validateProposalSafety: validateProposalSafety,
+    regressionCheck: regressionCheck,
+    sandboxProposal: sandboxProposal,
+    approveProposal: approveProposal,
+    applyProposal: applyProposal,
+    rollbackProposal: rollbackProposal,
+    createSnapshot: createSnapshot,
+    rollbackSnapshot: rollbackSnapshot,
+    evolve: evolve,
+    getEnvironmentSnapshot: getEnvironmentSnapshot,
+    establishAnchors: establishAnchors,
+    saveMemory: saveMemory,
+    loadMemory: loadMemory,
+    exportMemory: exportMemory,
+    importMemory: importMemory,
+    getStatus: getStatus
+  };
+
+  const priorEvolution = window.CHIROMBE_AUDIO_EVOLUTION;
+  if (!(priorEvolution && typeof priorEvolution.beginSession === "function")) {
+    window.CHIROMBE_AUDIO_EVOLUTION_ENGINE = API;
+    window.CHIROMBE_AUDIO_EVOLUTION = API;
+    AUDIO.Evolution = API;
+  }
+
+  initialise().catch(function (error) {
+    recordError(error, "initialise");
+    STATE.state = STATES.ERROR;
+  });
+})();
+
+(() => {
+  "use strict";
+
+  const AUDIO = window.CHIROMBE_AUDIO;
+  if (!AUDIO || AUDIO.master || typeof AUDIO.emergencyStop !== "function") return;
+
+  const VERSION = "10.0.0";
+  const LIFECYCLE = Object.freeze({
+    DORMANT: "DORMANT",
+    READY: "READY",
+    ARMED: "ARMED",
+    INITIALISING: "INITIALISING",
+    ACTIVE: "ACTIVE",
+    MONITORING: "MONITORING",
+    ADAPTING: "ADAPTING",
+    REFLECTION: "REFLECTION",
+    CLOSING: "CLOSING",
+    SAFE_STOP: "SAFE_STOP",
+    RECOVERY: "RECOVERY",
+    ERROR: "ERROR"
+  });
+  const MODES = Object.freeze(["PROTECTION", "PEACE", "COURAGE", "UNITY", "GRATITUDE", "REMEMBRANCE", "FAMILY_BLESSING", "REFLECTION", "NIGHT_WATCH", "DAWN", "EVENING", "RECOVERY", "ALERT", "SILENT_WATCH", "CLOSING"]);
+
+  const master = {
+    version: VERSION,
+    state: LIFECYCLE.DORMANT,
+    initialised: false,
+    session: null,
+    privacy: true,
+    adaptive: true,
+    watch: false,
+    loop: null,
+    watchTimer: null,
+    bound: false,
+    commandsRegistered: false,
+    capabilities: {},
+    errors: [],
+    warnings: [],
+    resourceSkips: 0
+  };
+  AUDIO.master = master;
+
+  function evolution() { return window.CHIROMBE_AUDIO_EVOLUTION || AUDIO.Evolution || null; }
+  function liturgy() { return AUDIO.Liturgy || window.CHIROMBE_AUDIO_LITURGY_ENGINE || null; }
+
+  function present(name) {
+    try { return !!window[name]; } catch (e) { return false; }
+  }
+
+  function discover() {
+    master.capabilities = {
+      core: !!(window.CHIROMBE || window.ChirombeCore),
+      bus: !!window.ChirombeBus,
+      state: !!window.ChirombeState,
+      audit: !!window.ChirombeAudit,
+      watchdog: !!window.ChirombeWatchdog,
+      health: !!window.ChirombeHealth,
+      zcca: !!window.ZCCA,
+      zion: !!window.ZionProtect,
+      covenant: !!window.MwarindiCovenant,
+      resonance: !!window.ChirombeResonance,
+      autostart: !!window.CHIROMBE_AUTOSTART,
+      tonal: present("CHIROMBE_AUDIO_TONAL_ENGINE"),
+      environment: present("CHIROMBE_AUDIO_ENVIRONMENT_ENGINE"),
+      performance: present("CHIROMBE_AUDIO_PERFORMANCE_ENGINE"),
+      safety: present("CHIROMBE_AUDIO_SAFETY_ENGINE") || typeof AUDIO.emergencyStop === "function",
+      evolution: !!(evolution() && typeof evolution().beginSession === "function"),
+      liturgy: !!liturgy(),
+      bloodline: present("CHIROMBE_AUDIO_BLOODLINE_ORCHESTRATOR") || !!(window.CHIROMBE && window.CHIROMBE.AudioBloodlineOrchestrator),
+      approvedFamily: !!(liturgy() && liturgy().getStatus && liturgy().getStatus().bloodlineAvailable),
+      kernel: true
+    };
+    return master.capabilities;
+  }
+
+  function emit(type, payload) {
+    const event = { eventId: "living_" + Date.now().toString(36), timestamp: new Date().toISOString(), sessionId: master.session && master.session.sessionId, type: type, payload: payload || {} };
+    try { if (typeof AUDIO.emit === "function") AUDIO.emit(type, event); } catch (e) {}
+    try { window.dispatchEvent(new CustomEvent(type, { detail: event })); } catch (e) {}
+    return event;
+  }
+
+  function remember(action, detail) {
+    try { if (typeof AUDIO.remember === "function") AUDIO.remember(action, detail || {}, 0.5); } catch (e) {}
+    try {
+      if (window.ChirombeAudit && typeof window.ChirombeAudit.append === "function") window.ChirombeAudit.append({ type: action, detail: detail || {}, sessionId: master.session && master.session.sessionId });
+    } catch (e) {}
+  }
+
+  function fail(error, context) {
+    const item = { at: new Date().toISOString(), context: context, message: (error && error.message) || String(error) };
+    master.errors.push(item);
+    if (master.errors.length > 80) master.errors.shift();
+    emit("audio.living.error", item);
+    return item;
+  }
+
+  function browserCaps() {
+    const caps = { webAudio: false, speech: false, microphone: false, gestureRequired: true };
+    try { caps.webAudio = !!(window.AudioContext || window.webkitAudioContext); } catch (e) {}
+    try { caps.speech = "speechSynthesis" in window; } catch (e) {}
+    try { caps.microphone = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia); } catch (e) {}
+    return caps;
+  }
+
+  function safetyState() {
+    const safety = window.CHIROMBE_AUDIO_SAFETY_ENGINE;
+    try {
+      if (safety && typeof safety.getStatus === "function") return safety.getStatus();
+    } catch (e) { fail(e, "safetyState"); }
+    return { available: typeof AUDIO.emergencyStop === "function", authority: "PART_1_KERNEL", emergency: false };
+  }
+
+  function createLivingLiturgySession(options) {
+    options = options || {};
+    const mode = MODES.indexOf(options.mode) >= 0 ? options.mode : "REFLECTION";
+    const evo = evolution();
+    const evoSession = evo && typeof evo.beginSession === "function" ? evo.beginSession({ mode: mode, language: options.language, people: options.people, settings: options.settings, purpose: "DEVOTIONAL" }) : null;
+    const session = {
+      sessionId: (evoSession && evoSession.id) || ("living_" + Date.now().toString(36)),
+      createdAt: new Date().toISOString(),
+      startedAt: null,
+      endedAt: null,
+      mode: mode,
+      intention: options.intention || mode,
+      language: options.language || "en-GB",
+      participants: Array.isArray(options.people) ? options.people : [],
+      inventedPeople: false,
+      prayerSequence: [],
+      tonalScene: mode,
+      safetyState: safetyState(),
+      environmentSnapshot: evo && evo.getEnvironmentSnapshot ? evo.getEnvironmentSnapshot() : { available: false },
+      adaptations: [],
+      metrics: { prayers: 0, interruptions: 0, adaptations: 0 },
+      events: [],
+      errors: [],
+      outcome: null,
+      evolutionProposals: [],
+      snapshotId: null,
+      speak: false,
+      microphone: false
+    };
+    master.session = session;
+    return session;
+  }
+
+  function selectLiturgy(session, options) {
+    const engine = liturgy();
+    if (!engine || !engine.commands) return { available: false, provenance: "UNKNOWN_SOURCE" };
+    try {
+      let content = null;
+      if (session.mode === "FAMILY_BLESSING" && options.useApprovedFamily === true && typeof engine.commands.bloodline === "function") {
+        content = engine.commands.bloodline({ mode: session.mode });
+      } else if (session.participants.length && typeof engine.commands.personPrayer === "function") {
+        content = engine.commands.personPrayer(session.participants[0], { mode: session.mode });
+      } else if (typeof engine.commands.adaptive === "function") {
+        content = engine.commands.adaptive({ mode: session.mode, purpose: session.intention });
+      }
+      if (content) {
+        session.prayerSequence.push({ provenance: content.provenance || "ORIGINAL_GENERATED", id: content.id || null });
+        session.metrics.prayers++;
+      }
+      return { available: true, content: content, spoken: false };
+    } catch (error) {
+      fail(error, "selectLiturgy");
+      return { available: false, reason: "LITURGY_FAILED" };
+    }
+  }
+
+  function stopLoop() {
+    if (master.loop) { clearInterval(master.loop); master.loop = null; }
+  }
+
+  function tick() {
+    if (!master.session || master.state !== LIFECYCLE.ACTIVE && master.state !== LIFECYCLE.MONITORING && master.state !== LIFECYCLE.ADAPTING) return;
+    try {
+      if (document && document.hidden) return;
+    } catch (e) {}
+    const kernel = AUDIO.state || {};
+    if ((kernel.activeNodes || 0) > 24 || (kernel.errors || 0) > 12) {
+      master.resourceSkips++;
+      master.warnings.push({ at: new Date().toISOString(), code: "RESOURCE_PRESSURE" });
+      if (master.warnings.length > 40) master.warnings.shift();
+      return;
+    }
+    master.state = LIFECYCLE.MONITORING;
+    const evo = evolution();
+    if (evo && master.adaptive) {
+      try {
+        const environment = evo.getEnvironmentSnapshot();
+        master.session.environmentSnapshot = environment;
+        evo.recordObservation("ORCHESTRATOR_TICK", { mode: master.session.mode, environmentAvailable: !!environment.available, supernaturalClaim: false });
+      } catch (error) { fail(error, "tick"); }
+    }
+    master.state = LIFECYCLE.ACTIVE;
+  }
+
+  function startLoop() {
+    if (master.loop) return;
+    master.loop = setInterval(tick, 8000);
+  }
+
+  async function startLivingLiturgy(options) {
+    options = options || {};
+    if (master.session && master.state === LIFECYCLE.ACTIVE) return { ok: false, state: "ALREADY_ACTIVE", sessionId: master.session.sessionId };
+    discover();
+    const safety = safetyState();
+    if (safety && safety.emergency) return safeStop("SAFETY_EMERGENCY");
+    master.state = LIFECYCLE.ARMED;
+    const session = createLivingLiturgySession(options);
+    session.startedAt = new Date().toISOString();
+    master.state = LIFECYCLE.INITIALISING;
+    selectLiturgy(session, options);
+    if (options.gesture === true && typeof AUDIO.unlockAudio === "function") {
+      try { await AUDIO.unlockAudio(); } catch (error) { fail(error, "unlockAudio"); }
+    }
+    session.speak = false;
+    session.microphone = false;
+    master.state = LIFECYCLE.ACTIVE;
+    startLoop();
+    remember("LIVING_LITURGY_STARTED", { sessionId: session.sessionId, mode: session.mode });
+    emit("audio.living.started", { sessionId: session.sessionId, mode: session.mode });
+    return { ok: true, state: master.state, sessionId: session.sessionId, playbackStarted: false, microphoneStarted: false };
+  }
+
+  function pauseLivingLiturgy() {
+    if (!master.session) return { ok: false, reason: "NO_SESSION" };
+    stopLoop();
+    master.state = LIFECYCLE.REFLECTION;
+    emit("audio.living.paused", { sessionId: master.session.sessionId });
+    return { ok: true, state: master.state };
+  }
+
+  function resumeLivingLiturgy() {
+    if (!master.session) return { ok: false, reason: "NO_SESSION" };
+    if (master.state === LIFECYCLE.SAFE_STOP) return { ok: false, reason: "SAFE_STOP" };
+    master.state = LIFECYCLE.ACTIVE;
+    startLoop();
+    emit("audio.living.resumed", { sessionId: master.session.sessionId });
+    return { ok: true, state: master.state };
+  }
+
+  async function closeLivingLiturgySession(outcome) {
+    master.state = LIFECYCLE.CLOSING;
+    stopLoop();
+    const session = master.session;
+    if (session) {
+      session.endedAt = new Date().toISOString();
+      session.outcome = outcome || { completion: 1, quality: 0.5, comfort: 0.5, coherence: 0.5, stability: 0.5, novelty: 0.5 };
+    }
+    const evo = evolution();
+    let closed = null;
+    if (evo && typeof evo.endSession === "function") {
+      try { closed = await evo.endSession(session && session.outcome, null); } catch (error) { fail(error, "endSession"); }
+    }
+    if (session && evo && typeof evo.analyseAdaptation === "function") {
+      try {
+        const analysis = await evo.analyseAdaptation();
+        session.evolutionProposals = (analysis && analysis.proposals) || [];
+      } catch (error) { fail(error, "analyse"); }
+    }
+    master.session = null;
+    master.state = LIFECYCLE.READY;
+    emit("audio.living.completed", { sessionId: session && session.sessionId });
+    return { ok: true, session: closed || session };
+  }
+
+  function stopLivingLiturgy() { return closeLivingLiturgySession({ completion: 1, quality: 0.5 }); }
+
+  function safeStop(reason) {
+    stopLoop();
+    stopQuietWatch();
+    try { AUDIO.emergencyStop(reason || "ORCHESTRATOR_SAFE_STOP"); } catch (error) { fail(error, "emergencyStop"); }
+    const safety = window.CHIROMBE_AUDIO_SAFETY_ENGINE;
+    try { if (safety && typeof safety.safeStop === "function") safety.safeStop(reason); } catch (error) { fail(error, "safety.safeStop"); }
+    if (master.session) master.session.metrics.interruptions++;
+    master.state = LIFECYCLE.SAFE_STOP;
+    emit("audio.living.safeStop", { reason: reason || "USER" });
+    return { ok: true, state: master.state };
+  }
+
+  async function adaptLivingLiturgy() {
+    if (!master.session) return { ok: false, reason: "NO_SESSION" };
+    const evo = evolution();
+    if (!evo) return { ok: false, reason: "EVOLUTION_UNAVAILABLE" };
+    master.state = LIFECYCLE.ADAPTING;
+    const analysis = await evo.analyseAdaptation();
+    master.session.adaptations.push({ at: new Date().toISOString(), proposals: (analysis.proposals || []).length, applied: false });
+    master.state = LIFECYCLE.ACTIVE;
+    emit("audio.living.evolutionProposal", { count: (analysis.proposals || []).length });
+    return { ok: true, applied: false, analysis: analysis };
+  }
+
+  async function createSnapshot(label) {
+    const evo = evolution();
+    if (!evo || typeof evo.createSnapshot !== "function") return { ok: false, reason: "EVOLUTION_UNAVAILABLE" };
+    const snapshot = await evo.createSnapshot(label || (master.session && master.session.mode));
+    if (master.session) master.session.snapshotId = snapshot.id;
+    emit("audio.living.snapshot", { snapshotId: snapshot.id });
+    return { ok: true, snapshot: snapshot };
+  }
+
+  async function rollback(snapshotId) {
+    const evo = evolution();
+    if (!evo || typeof evo.rollbackSnapshot !== "function") return { ok: false, reason: "EVOLUTION_UNAVAILABLE" };
+    const result = await evo.rollbackSnapshot(snapshotId);
+    emit("audio.living.recovery", result);
+    return result;
+  }
+
+  function startQuietWatch() {
+    if (master.watchTimer) return { ok: true, state: "ALREADY_WATCHING", recording: false };
+    master.watch = true;
+    master.watchTimer = setInterval(function () {
+      try {
+        if (document && document.hidden && master.resourceSkips > 0) return;
+      } catch (e) {}
+      discover();
+      const safety = safetyState();
+      if (safety && safety.emergency) safeStop("WATCH_SAFETY");
+      remember("LIVING_WATCH_PULSE", { modules: master.capabilities, recording: false, microphone: false });
+    }, 30000);
+    emit("audio.living.watch", { recording: false });
+    return { ok: true, recording: false, microphone: false };
+  }
+
+  function stopQuietWatch() {
+    if (master.watchTimer) { clearInterval(master.watchTimer); master.watchTimer = null; }
+    master.watch = false;
+    return { ok: true };
+  }
+
+  function publicStatus() {
+    return {
+      version: VERSION,
+      state: master.state,
+      session: master.session ? { sessionId: master.session.sessionId, mode: master.session.mode, startedAt: master.session.startedAt, microphone: false } : null,
+      watch: master.watch,
+      privacy: master.privacy,
+      adaptive: master.adaptive,
+      capabilities: master.capabilities,
+      errors: master.errors.slice(-8),
+      playbackOnLoad: false,
+      supernaturalClaim: false
+    };
+  }
+
+  function getDiagnostics() {
+    const kernel = typeof AUDIO.getStatus === "function" ? null : null;
+    let audioState = "unknown";
+    try { audioState = AUDIO.state && AUDIO.state.audioContextState; } catch (e) {}
+    return {
+      browser: browserCaps(),
+      audioContext: audioState,
+      modules: discover(),
+      safety: safetyState(),
+      evolution: evolution() && evolution().getStatus ? evolution().getStatus() : { available: false },
+      liturgy: liturgy() && liturgy().getStatus ? liturgy().getStatus() : { available: false },
+      session: publicStatus(),
+      watch: { active: master.watch, recording: false },
+      resources: { skips: master.resourceSkips, activeNodes: AUDIO.state && AUDIO.state.activeNodes },
+      errors: master.errors.slice(-8),
+      warnings: master.warnings.slice(-8)
+    };
+  }
+
+  function runTests() {
+    const results = [];
+    function row(name, ok, detail) { results.push({ name: name, ok: !!ok, detail: detail || null }); }
+    row("namespace", !!window.CHIROMBE_AUDIO);
+    row("kernel status", typeof AUDIO.getStatus === "function");
+    row("emergency stop", typeof AUDIO.emergencyStop === "function");
+    row("living watch preserved", typeof AUDIO.startLivingWatch === "function");
+    row("liturgy", !!(liturgy() && liturgy().commands && liturgy().commands.prayer));
+    row("evolution", !!(evolution() && evolution().beginSession && evolution().createSnapshot));
+    row("orchestrator", typeof AUDIO.startLivingLiturgy === "function");
+    row("safe stop", typeof AUDIO.safeStop === "function" && typeof AUDIO.emergencyStop === "function");
+    row("bus discovered", true, window.ChirombeBus ? "present" : "not on this page");
+    row("no microphone flag", !master.session || master.session.microphone === false);
+    row("single bind", master.bound === true);
+    return { ok: results.every(function (item) { return item.ok; }), results: results, destructive: false };
+  }
+
+  function registerCommands() {
+    if (master.commandsRegistered || !window.ChirombeBus || typeof window.ChirombeBus.registerCommand !== "function") return false;
+    const commands = {
+      "audio.living.start": function (args) { return startLivingLiturgy(args || {}); },
+      "audio.living.pause": function () { return pauseLivingLiturgy(); },
+      "audio.living.resume": function () { return resumeLivingLiturgy(); },
+      "audio.living.stop": function () { return stopLivingLiturgy(); },
+      "audio.living.safeStop": function (args) { return safeStop(args && args.reason); },
+      "audio.living.status": function () { return publicStatus(); },
+      "audio.living.capabilities": function () { return discover(); },
+      "audio.living.session": function () { return master.session; },
+      "audio.living.adapt": function () { return adaptLivingLiturgy(); },
+      "audio.living.snapshot": function (args) { return createSnapshot(args && args.label); },
+      "audio.living.rollback": function (args) { return rollback(args && args.snapshotId); },
+      "audio.living.tests": function () { return runTests(); },
+      "audio.living.diagnostics": function () { return getDiagnostics(); },
+      "audio.living.watch.start": function () { return startQuietWatch(); },
+      "audio.living.watch.stop": function () { return stopQuietWatch(); }
+    };
+    Object.keys(commands).forEach(function (name) {
+      try { window.ChirombeBus.registerCommand(name, commands[name], { subsystem: "living-liturgy" }); } catch (e) {}
+    });
+    master.commandsRegistered = true;
+    return true;
+  }
+
+  function initialise() {
+    if (master.initialised) return publicStatus();
+    discover();
+    registerCommands();
+    master.initialised = true;
+    master.state = LIFECYCLE.READY;
+    master.bound = true;
+    emit("audio.living.ready", { version: VERSION, autoplay: false });
+    if (!master.commandsRegistered) {
+      let tries = 0;
+      const timer = setInterval(function () {
+        tries += 1;
+        if (registerCommands() || tries > 10) clearInterval(timer);
+      }, 500);
+    }
+    return publicStatus();
+  }
+
+  function reset() {
+    stopLoop();
+    stopQuietWatch();
+    master.session = null;
+    master.errors = [];
+    master.state = LIFECYCLE.READY;
+    return { ok: true, state: master.state };
+  }
+
+  AUDIO.startLivingLiturgy = startLivingLiturgy;
+  AUDIO.pauseLivingLiturgy = pauseLivingLiturgy;
+  AUDIO.resumeLivingLiturgy = resumeLivingLiturgy;
+  AUDIO.stopLivingLiturgy = stopLivingLiturgy;
+  AUDIO.getLivingLiturgyStatus = publicStatus;
+  AUDIO.adaptLivingLiturgy = adaptLivingLiturgy;
+  AUDIO.createLivingLiturgySession = createLivingLiturgySession;
+  AUDIO.closeLivingLiturgySession = closeLivingLiturgySession;
+  AUDIO.runLivingLiturgyDiagnostics = getDiagnostics;
+  AUDIO.runLivingLiturgyTests = runTests;
+  AUDIO.createEvolutionProposal = function (spec) {
+    const evo = evolution();
+    if (!evo) return { ok: false, reason: "EVOLUTION_UNAVAILABLE" };
+    return evo.createProposal(spec && spec.type, spec && spec.target, spec && spec.currentValue, spec && spec.proposedValue, spec || {}, spec || {});
+  };
+  AUDIO.createSnapshot = createSnapshot;
+  AUDIO.rollbackLivingSnapshot = rollback;
+  if (typeof AUDIO.safeStop !== "function") AUDIO.safeStop = safeStop;
+  if (typeof AUDIO.getCapabilities !== "function") AUDIO.getCapabilities = discover;
+  if (typeof AUDIO.getDiagnostics !== "function") AUDIO.getDiagnostics = getDiagnostics;
+  if (typeof AUDIO.runTests !== "function") AUDIO.runTests = runTests;
+  if (typeof AUDIO.reset !== "function") AUDIO.reset = reset;
+  if (typeof AUDIO.start !== "function") AUDIO.start = startLivingLiturgy;
+  if (typeof AUDIO.pause !== "function") AUDIO.pause = pauseLivingLiturgy;
+  if (typeof AUDIO.resume !== "function") AUDIO.resume = resumeLivingLiturgy;
+  if (typeof AUDIO.stop !== "function") AUDIO.stop = stopLivingLiturgy;
+  AUDIO.LIVING_LITURGY_ORCHESTRATOR = {
+    VERSION: VERSION,
+    LIFECYCLE: LIFECYCLE,
+    MODES: MODES,
+    initialise: initialise,
+    start: startLivingLiturgy,
+    pause: pauseLivingLiturgy,
+    resume: resumeLivingLiturgy,
+    stop: stopLivingLiturgy,
+    safeStop: safeStop,
+    reset: reset,
+    getStatus: publicStatus,
+    getCapabilities: discover,
+    getDiagnostics: getDiagnostics,
+    runTests: runTests,
+    getSession: function () { return master.session; },
+    createSession: createLivingLiturgySession,
+    closeSession: closeLivingLiturgySession,
+    adapt: adaptLivingLiturgy,
+    snapshot: createSnapshot,
+    rollback: rollback,
+    getEvolution: evolution,
+    getEnvironment: function () { return window.CHIROMBE_AUDIO_ENVIRONMENT_ENGINE || null; },
+    getSafety: function () { return window.CHIROMBE_AUDIO_SAFETY_ENGINE || null; },
+    getPerformance: function () { return window.CHIROMBE_AUDIO_PERFORMANCE_ENGINE || null; },
+    getTonal: function () { return window.CHIROMBE_AUDIO_TONAL_ENGINE || null; },
+    startQuietWatch: startQuietWatch,
+    stopQuietWatch: stopQuietWatch
+  };
+
+  const previousStatus = AUDIO.getStatus;
+  if (typeof previousStatus === "function" && !AUDIO.__livingStatusWrapped) {
+    AUDIO.getStatus = function () {
+      const base = previousStatus();
+      base.livingLiturgy = publicStatus();
+      base.evolutionLayer = evolution() && evolution().getStatus ? evolution().getStatus() : null;
+      return base;
+    };
+    AUDIO.__livingStatusWrapped = true;
+  }
+
+  initialise();
+})();
