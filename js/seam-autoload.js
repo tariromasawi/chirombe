@@ -28,9 +28,9 @@
         '<span>Open Seam</span><small id="seam-gate-note">running behind this page</small>';
       var style = document.createElement("style");
       style.textContent =
-        "#seam-gate{position:fixed;right:16px;bottom:16px;z-index:2147483000;display:flex;flex-direction:column;justify-content:center;min-height:44px;padding:8px 16px;border-radius:999px;background:#d4b36a;color:#070b08;text-decoration:none;font:600 15px/1.2 Georgia,serif;box-shadow:0 12px 32px rgba(0,0,0,.4)}" +
+        "#seam-gate{position:fixed;right:12px;bottom:12px;z-index:30;display:flex;flex-direction:column;justify-content:center;width:auto;max-width:46vw;min-height:44px;padding:8px 14px;border-radius:999px;background:#d4b36a;color:#070b08;text-decoration:none;font:600 14px/1.2 Georgia,serif;box-shadow:0 12px 32px rgba(0,0,0,.4)}" +
         "#seam-gate small{font:500 11px/1.3 Georgia,serif;letter-spacing:.02em;opacity:.75}" +
-        "@media(max-width:700px){#seam-gate{left:16px;right:16px;align-items:center}}";
+        "@media(max-width:700px){#seam-gate{left:auto;right:10px;bottom:10px;width:auto;max-width:42vw;align-items:flex-start}body{padding-bottom:72px}}";
       document.head.appendChild(style);
       document.body.appendChild(gate);
     }

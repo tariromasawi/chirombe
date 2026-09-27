@@ -105,8 +105,12 @@ test("the main page loads one audio organ and does not keep a second CM90 contex
   assert.doesNotMatch(liturgy, /Audio Evolution 9A loaded/);
   assert.match(liturgy, /usesKernelContext/);
   assert.match(liturgy, /recoverFromSafeStop/);
-  assert.match(fs.readFileSync("sw.js", "utf8"), /CHIROMBE_STATIC_v8/);
-  assert.match(fs.readFileSync("js/engine/activation.js", "utf8"), /CHIROMBE_STATIC_v8/);
+  assert.match(liturgy, /nextLivingStage/);
+  assert.match(fs.readFileSync("js/chirombe-audio-install.js", "utf8"), /CHIROMBE AUDIO COMMAND CENTRE/);
+  assert.match(fs.readFileSync("sw.js", "utf8"), /CHIROMBE_STATIC_v9/);
+  assert.match(fs.readFileSync("js/engine/activation.js", "utf8"), /CHIROMBE_STATIC_v9/);
+  assert.match(fs.readFileSync("js/seam-autoload.js", "utf8"), /max-width:42vw/);
+  assert.doesNotMatch(fs.readFileSync("js/seam-autoload.js", "utf8"), /z-index:2147483000/);
 });
 
 test("installation binds the kernel, one evolution API, and emergency stop", async () => {

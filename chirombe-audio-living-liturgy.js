@@ -26144,7 +26144,10 @@
       evolutionProposals: [],
       snapshotId: null,
       speak: false,
-      microphone: false
+      microphone: false,
+      stages: ["OPENING", "DECLARATION", "PRAYER", "CHANT", "REFLECTION", "CALL", "RESPONSE", "REMEMBRANCE", "CLOSING"],
+      stageIndex: 0,
+      stage: "OPENING"
     };
     master.session = session;
     return session;
@@ -26269,6 +26272,24 @@
     master.state = LIFECYCLE.READY;
     emit("audio.living.completed", { sessionId: session && session.sessionId });
     return { ok: true, session: closed || session };
+  }
+
+  function nextLivingStage() {
+    if (!master.session) return { ok: false, reason: "NO_SESSION" };
+    const stages = master.session.stages || [];
+    if (!stages.length) return { ok: false, reason: "NO_STAGES" };
+    master.session.stageIndex = Math.min(stages.length - 1, (master.session.stageIndex || 0) + 1);
+    master.session.stage = stages[master.session.stageIndex];
+    master.session.events.push({ at: new Date().toISOString(), type: "STAGE", stage: master.session.stage });
+    emit("audio.living.stage", { stage: master.session.stage });
+    return { ok: true, stage: master.session.stage, index: master.session.stageIndex };
+  }
+
+  function repeatLivingStage() {
+    if (!master.session) return { ok: false, reason: "NO_SESSION" };
+    master.session.events.push({ at: new Date().toISOString(), type: "REPEAT", stage: master.session.stage || "OPENING" });
+    emit("audio.living.repeat", { stage: master.session.stage });
+    return { ok: true, stage: master.session.stage, repeated: true };
   }
 
   function stopLivingLiturgy() { return closeLivingLiturgySession({ completion: 1, quality: 0.5 }); }
@@ -26444,6 +26465,8 @@
   AUDIO.pauseLivingLiturgy = pauseLivingLiturgy;
   AUDIO.resumeLivingLiturgy = resumeLivingLiturgy;
   AUDIO.stopLivingLiturgy = stopLivingLiturgy;
+  AUDIO.nextLivingStage = nextLivingStage;
+  AUDIO.repeatLivingStage = repeatLivingStage;
   AUDIO.getLivingLiturgyStatus = publicStatus;
   AUDIO.adaptLivingLiturgy = adaptLivingLiturgy;
   AUDIO.createLivingLiturgySession = createLivingLiturgySession;
@@ -26475,6 +26498,8 @@
     pause: pauseLivingLiturgy,
     resume: resumeLivingLiturgy,
     stop: stopLivingLiturgy,
+    next: nextLivingStage,
+    repeat: repeatLivingStage,
     safeStop: safeStop,
     reset: reset,
     getStatus: publicStatus,

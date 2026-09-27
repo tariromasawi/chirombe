@@ -1,4 +1,4 @@
-const STATIC="CHIROMBE_STATIC_v8";
+const STATIC="CHIROMBE_STATIC_v9";
 const DATA="CHIROMBE_DATA_v2";
 const CORE=["./","./app.html","./engine.html","./inspect.html","./zcca.html","./chirombe-audio-living-liturgy.js","./js/chirombe-audio-install.js","./js/cm90-tonal-continuous.js","./js/boot.js","./js/command-bus.js","./js/zcca.js","./js/engine/policy.js","./js/engine/ledger.js","./js/engine/adapters.js","./js/engine/chirombe-engine.js","./js/engine/kernel-bridge.js","./js/engine/activation.js","./js/engine/recovery.js","./engine/chep-03-worker-swarm.js","./data/trusted-manifest.json","./css/zcca.css","./data/family.json","./data/version.json"];
 self.addEventListener("install",e=>{e.waitUntil(caches.open(STATIC).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting()))});
