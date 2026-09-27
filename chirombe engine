@@ -34686,4 +34686,2891 @@ Promise.resolve()
     ]
 });
 
-console.log(intention);
+console.log(intention);/* ================================================================
+   CHIROMBE — CHEP-15
+   INTENTIONAL RESONANCE CHAMBER
+   ================================================================
+   PURPOSE
+   ----------------------------------------------------------------
+   A controlled symbolic / computational resonance environment
+   connecting:
+
+       HUMAN INTENTION
+             ↓
+       CHEP-14 INTENTION
+             ↓
+       CRYPTOGRAPHIC SIGNATURE
+             ↓
+       RESONANCE PARAMETERS
+             ↓
+       AUDIO + VISUAL FIELD
+             ↓
+       OPTIONAL SENSOR OBSERVATION
+             ↓
+       BEFORE / DURING / AFTER MEASUREMENT
+             ↓
+       SESSION LEDGER
+             ↓
+       CHEP-14 FEEDBACK
+             ↓
+       LEARNING / REPEATABILITY
+
+   IMPORTANT INTERPRETATION
+   ----------------------------------------------------------------
+   This system does not claim that software, sound, mathematics,
+   frequencies or sensors have scientifically demonstrated ability
+   to enter, manipulate or control a supernatural realm.
+
+   "Spiritual resonance" is represented here as a symbolic and
+   computational model. Physical measurements are kept separate
+   from spiritual interpretation.
+
+   ================================================================ */
+
+(function (global) {
+
+    "use strict";
+
+    const CORE =
+        global.CHIROMBE ||
+        global.CHIROMBE_CORE ||
+        null;
+
+    const MEMORY =
+        global.CHIROMBE_MEMORY ||
+        null;
+
+    const WORKERS =
+        global.CHIROMBE_WORKERS ||
+        null;
+
+    const INTENTION =
+        global.CHIROMBE_INTENTION ||
+        global.CHIROMBE_SPIRITUAL_INTERFACE ||
+        null;
+
+    const DEFENCE =
+        global.CHIROMBE_DEFENCE ||
+        global.CHIROMBE_DEFENSE ||
+        null;
+
+    const WATCHDOG =
+        global.CHIROMBE_WATCHDOG ||
+        global.CHIROMBE_WATCHDOG_ENGINE ||
+        null;
+
+    const BLOODLINE =
+        global.CHIROMBE_BLOODLINE ||
+        null;
+
+    const LEGACY =
+        global.CHIROMBE_LEGACY ||
+        null;
+
+    const CONFIG = {
+
+        protocol: "CHEP-15",
+
+        version: "1.0.0",
+
+        name:
+            "CHIROMBE INTENTIONAL RESONANCE CHAMBER",
+
+        scanInterval:
+            15000,
+
+        observationInterval:
+            5000,
+
+        maximumSessions:
+            10000,
+
+        maximumObservations:
+            100000,
+
+        maximumEvents:
+            100000,
+
+        maximumSignatures:
+            50000,
+
+        defaultDuration:
+            180000,
+
+        minimumFrequency:
+            20,
+
+        maximumFrequency:
+            20000,
+
+        defaultFrequency:
+            432,
+
+        defaultVolume:
+            0.08,
+
+        maximumVolume:
+            0.20,
+
+        visualResolution:
+            64,
+
+        symbolicMode:
+            true,
+
+        cryptographicMode:
+            true,
+
+        sensorMode:
+            true,
+
+        audioMode:
+            true,
+
+        visualMode:
+            true,
+
+        automaticExternalAction:
+            false,
+
+        automaticProductionModification:
+            false,
+
+        automaticDeployment:
+            false,
+
+        destructiveAction:
+            false,
+
+        protectedMode:
+            true
+    };
+
+    const STATE = {
+
+        booted:
+            false,
+
+        active:
+            false,
+
+        audioActive:
+            false,
+
+        visualActive:
+            false,
+
+        sensorActive:
+            false,
+
+        startedAt:
+            null,
+
+        currentSession:
+            null,
+
+        lastSession:
+            null,
+
+        sessions:
+            {},
+
+        observations:
+            [],
+
+        events:
+            [],
+
+        signatures:
+            {},
+
+        resonance:
+            null,
+
+        baseline:
+            null,
+
+        environmentalState:
+            null,
+
+        metrics: {
+
+            sessions:
+                0,
+
+            observations:
+                0,
+
+            audioActivations:
+                0,
+
+            visualFrames:
+                0,
+
+            sensorSamples:
+                0,
+
+            signatures:
+                0,
+
+            resonanceCalculations:
+                0,
+
+            shifts:
+                0,
+
+            completedSessions:
+                0,
+
+            cancelledSessions:
+                0,
+
+            selfTests:
+                0
+        },
+
+        timers: {
+
+            observation:
+                null,
+
+            scan:
+                null
+        }
+    };
+
+    /* ============================================================
+       UTILITY LAYER
+       ============================================================ */
+
+    function uid(prefix) {
+
+        return (
+
+            prefix +
+
+            "_" +
+
+            Date.now().toString(36) +
+
+            "_" +
+
+            Math.random()
+                .toString(36)
+                .slice(2, 12)
+
+        ).toUpperCase();
+    }
+
+    function now() {
+
+        return new Date().toISOString();
+
+    }
+
+    function clamp(value, min, max) {
+
+        value =
+            Number(value);
+
+        if (!Number.isFinite(value)) {
+
+            value = min;
+
+        }
+
+        return Math.max(
+            min,
+            Math.min(max, value)
+        );
+    }
+
+    function clone(value) {
+
+        try {
+
+            return JSON.parse(
+                JSON.stringify(value)
+            );
+
+        } catch (error) {
+
+            return value;
+
+        }
+    }
+
+    function text(value) {
+
+        if (
+            value === null ||
+            value === undefined
+        ) {
+
+            return "";
+
+        }
+
+        return String(value);
+
+    }
+
+    function emit(event, data) {
+
+        const packet = {
+
+            id:
+                uid("EVENT"),
+
+            event:
+                event,
+
+            timestamp:
+                now(),
+
+            data:
+                clone(data || {})
+
+        };
+
+        STATE.events.push(packet);
+
+        if (
+            STATE.events.length >
+            CONFIG.maximumEvents
+        ) {
+
+            STATE.events.splice(
+                0,
+                STATE.events.length -
+                CONFIG.maximumEvents
+            );
+
+        }
+
+        try {
+
+            if (
+                CORE &&
+                typeof CORE.emit === "function"
+            ) {
+
+                CORE.emit(
+                    "CHEP15_" + event,
+                    packet
+                );
+
+            }
+
+        } catch (error) {}
+
+        return packet;
+
+    }
+
+    async function digest(value) {
+
+        const source =
+            typeof value === "string"
+                ? value
+                : JSON.stringify(value);
+
+        try {
+
+            if (
+                global.crypto &&
+                global.crypto.subtle
+            ) {
+
+                const bytes =
+                    new TextEncoder()
+                        .encode(source);
+
+                const hash =
+                    await global.crypto.subtle
+                        .digest(
+                            "SHA-256",
+                            bytes
+                        );
+
+                return Array
+                    .from(
+                        new Uint8Array(hash)
+                    )
+                    .map(
+                        byte =>
+                            byte
+                                .toString(16)
+                                .padStart(2, "0")
+                    )
+                    .join("");
+
+            }
+
+        } catch (error) {}
+
+        let hash =
+            2166136261;
+
+        for (
+            let i = 0;
+            i < source.length;
+            i++
+        ) {
+
+            hash ^=
+                source.charCodeAt(i);
+
+            hash +=
+                (hash << 1) +
+                (hash << 4) +
+                (hash << 7) +
+                (hash << 8) +
+                (hash << 24);
+
+        }
+
+        return (
+            "FNV1A-" +
+            (
+                hash >>> 0
+            )
+                .toString(16)
+                .padStart(8, "0")
+        );
+
+    }
+
+    async function persist(
+        namespace,
+        record
+    ) {
+
+        try {
+
+            if (
+                MEMORY &&
+                typeof MEMORY.write ===
+                    "function"
+            ) {
+
+                return await MEMORY.write(
+                    namespace,
+                    record
+                );
+
+            }
+
+        } catch (error) {
+
+            emit(
+                "MEMORY_WRITE_ERROR",
+                {
+                    namespace,
+                    error:
+                        text(error.message)
+                }
+            );
+
+        }
+
+        return null;
+
+    }
+
+    /* ============================================================
+       DOM / VISUAL LAYER
+       ============================================================ */
+
+    let canvas =
+        null;
+
+    let ctx =
+        null;
+
+    let animationFrame =
+        null;
+
+    let audioContext =
+        null;
+
+    let oscillator =
+        null;
+
+    let gainNode =
+        null;
+
+    let analyser =
+        null;
+
+    let microphoneStream =
+        null;
+
+    function ensureCanvas() {
+
+        if (
+            typeof document ===
+                "undefined"
+        ) {
+
+            return null;
+
+        }
+
+        canvas =
+            document.getElementById(
+                "chirombe-resonance-canvas"
+            );
+
+        if (!canvas) {
+
+            canvas =
+                document.createElement(
+                    "canvas"
+                );
+
+            canvas.id =
+                "chirombe-resonance-canvas";
+
+            canvas.width =
+                900;
+
+            canvas.height =
+                900;
+
+            canvas.style.width =
+                "100%";
+
+            canvas.style.maxWidth =
+                "900px";
+
+            canvas.style.aspectRatio =
+                "1 / 1";
+
+            canvas.style.display =
+                "block";
+
+            canvas.style.margin =
+                "20px auto";
+
+            canvas.style.borderRadius =
+                "50%";
+
+            canvas.style.background =
+                "#000";
+
+            canvas.style.boxShadow =
+                "0 0 40px rgba(255,255,255,.12)";
+
+            document.body.appendChild(
+                canvas
+            );
+
+        }
+
+        ctx =
+            canvas.getContext(
+                "2d"
+            );
+
+        return canvas;
+
+    }
+
+    function renderField(
+        phase = 0,
+        resonance = 0.5
+    ) {
+
+        if (!ctx || !canvas) {
+
+            ensureCanvas();
+
+        }
+
+        if (!ctx || !canvas) {
+
+            return;
+
+        }
+
+        const width =
+            canvas.width;
+
+        const height =
+            canvas.height;
+
+        const cx =
+            width / 2;
+
+        const cy =
+            height / 2;
+
+        const radius =
+            Math.min(
+                width,
+                height
+            ) * 0.42;
+
+        ctx.clearRect(
+            0,
+            0,
+            width,
+            height
+        );
+
+        ctx.fillStyle =
+            "rgba(0,0,0,0.18)";
+
+        ctx.fillRect(
+            0,
+            0,
+            width,
+            height
+        );
+
+        const rings =
+            12;
+
+        for (
+            let r = 1;
+            r <= rings;
+            r++
+        ) {
+
+            const rr =
+                radius *
+                (r / rings);
+
+            const wave =
+                Math.sin(
+                    phase * 0.02 +
+                    r *
+                    resonance *
+                    2
+                );
+
+            const distortion =
+                wave *
+                10;
+
+            ctx.beginPath();
+
+            for (
+                let i = 0;
+                i <= 360;
+                i += 3
+            ) {
+
+                const angle =
+                    i *
+                    Math.PI /
+                    180;
+
+                const local =
+                    rr +
+                    distortion *
+                    Math.sin(
+                        angle * 7 +
+                        phase
+                    );
+
+                const x =
+                    cx +
+                    Math.cos(angle) *
+                    local;
+
+                const y =
+                    cy +
+                    Math.sin(angle) *
+                    local;
+
+                if (i === 0) {
+
+                    ctx.moveTo(
+                        x,
+                        y
+                    );
+
+                } else {
+
+                    ctx.lineTo(
+                        x,
+                        y
+                    );
+
+                }
+
+            }
+
+            ctx.closePath();
+
+            ctx.strokeStyle =
+                "rgba(255,255,255," +
+                (
+                    0.05 +
+                    resonance *
+                    0.12
+                ) +
+                ")";
+
+            ctx.lineWidth =
+                1 +
+                resonance *
+                2;
+
+            ctx.stroke();
+
+        }
+
+        const nodes =
+            Math.max(
+                12,
+                Math.floor(
+                    CONFIG.visualResolution *
+                    resonance
+                )
+            );
+
+        for (
+            let i = 0;
+            i < nodes;
+            i++
+        ) {
+
+            const angle =
+                (
+                    i /
+                    nodes
+                ) *
+                Math.PI *
+                2 +
+                phase *
+                0.01;
+
+            const distance =
+                radius *
+                (
+                    0.25 +
+                    0.55 *
+                    (
+                        0.5 +
+                        0.5 *
+                        Math.sin(
+                            phase +
+                            i
+                        )
+                    )
+                );
+
+            const x =
+                cx +
+                Math.cos(angle) *
+                distance;
+
+            const y =
+                cy +
+                Math.sin(angle) *
+                distance;
+
+            ctx.beginPath();
+
+            ctx.arc(
+                x,
+                y,
+                2 +
+                resonance * 5,
+                0,
+                Math.PI * 2
+            );
+
+            ctx.fillStyle =
+                "rgba(255,255,255," +
+                (
+                    0.2 +
+                    resonance *
+                    0.5
+                ) +
+                ")";
+
+            ctx.fill();
+
+        }
+
+        STATE.metrics.visualFrames++;
+
+    }
+
+    function startVisualField() {
+
+        ensureCanvas();
+
+        if (
+            !canvas ||
+            animationFrame
+        ) {
+
+            return;
+
+        }
+
+        STATE.visualActive =
+            true;
+
+        const loop =
+            timestamp => {
+
+                if (
+                    !STATE.active
+                ) {
+
+                    animationFrame =
+                        null;
+
+                    return;
+
+                }
+
+                const resonance =
+                    STATE.resonance
+                        ? STATE.resonance.value
+                        : 0.5;
+
+                renderField(
+                    timestamp / 20,
+                    resonance
+                );
+
+                animationFrame =
+                    requestAnimationFrame(
+                        loop
+                    );
+
+            };
+
+        animationFrame =
+            requestAnimationFrame(
+                loop
+            );
+
+        emit(
+            "VISUAL_FIELD_STARTED",
+            {}
+        );
+
+    }
+
+    function stopVisualField() {
+
+        if (
+            animationFrame &&
+            typeof cancelAnimationFrame ===
+                "function"
+        ) {
+
+            cancelAnimationFrame(
+                animationFrame
+            );
+
+        }
+
+        animationFrame =
+            null;
+
+        STATE.visualActive =
+            false;
+
+        emit(
+            "VISUAL_FIELD_STOPPED",
+            {}
+        );
+
+    }
+
+    /* ============================================================
+       AUDIO ENGINE
+       ============================================================ */
+
+    async function initialiseAudio(
+        frequency
+    ) {
+
+        if (
+            typeof window ===
+                "undefined"
+        ) {
+
+            return false;
+
+        }
+
+        try {
+
+            const AudioContextClass =
+                window.AudioContext ||
+                window.webkitAudioContext;
+
+            if (!AudioContextClass) {
+
+                return false;
+
+            }
+
+            if (!audioContext) {
+
+                audioContext =
+                    new AudioContextClass();
+
+            }
+
+            if (
+                audioContext.state ===
+                "suspended"
+            ) {
+
+                await audioContext.resume();
+
+            }
+
+            oscillator =
+                audioContext.createOscillator();
+
+            gainNode =
+                audioContext.createGain();
+
+            analyser =
+                audioContext.createAnalyser();
+
+            oscillator.type =
+                "sine";
+
+            oscillator.frequency.value =
+                clamp(
+                    frequency,
+                    CONFIG.minimumFrequency,
+                    CONFIG.maximumFrequency
+                );
+
+            gainNode.gain.value =
+                0;
+
+            oscillator.connect(
+                gainNode
+            );
+
+            gainNode.connect(
+                analyser
+            );
+
+            analyser.connect(
+                audioContext.destination
+            );
+
+            oscillator.start();
+
+            gainNode.gain.linearRampToValueAtTime(
+                CONFIG.defaultVolume,
+                audioContext.currentTime +
+                1
+            );
+
+            STATE.audioActive =
+                true;
+
+            STATE.metrics.audioActivations++;
+
+            emit(
+                "AUDIO_STARTED",
+                {
+                    frequency
+                }
+            );
+
+            return true;
+
+        } catch (error) {
+
+            emit(
+                "AUDIO_ERROR",
+                {
+                    error:
+                        text(error.message)
+                }
+            );
+
+            return false;
+
+        }
+
+    }
+
+    function changeFrequency(
+        frequency
+    ) {
+
+        frequency =
+            clamp(
+                frequency,
+                CONFIG.minimumFrequency,
+                CONFIG.maximumFrequency
+            );
+
+        if (
+            oscillator &&
+            audioContext
+        ) {
+
+            oscillator.frequency.setTargetAtTime(
+                frequency,
+                audioContext.currentTime,
+                0.05
+            );
+
+        }
+
+        emit(
+            "FREQUENCY_CHANGED",
+            {
+                frequency
+            }
+        );
+
+        return frequency;
+
+    }
+
+    function stopAudio() {
+
+        try {
+
+            if (
+                gainNode &&
+                audioContext
+            ) {
+
+                gainNode.gain.cancelScheduledValues(
+                    audioContext.currentTime
+                );
+
+                gainNode.gain.setTargetAtTime(
+                    0,
+                    audioContext.currentTime,
+                    0.2
+                );
+
+            }
+
+            setTimeout(
+                () => {
+
+                    try {
+
+                        if (oscillator) {
+
+                            oscillator.stop();
+
+                        }
+
+                    } catch (error) {}
+
+                    oscillator =
+                        null;
+
+                },
+                500
+            );
+
+        } catch (error) {}
+
+        STATE.audioActive =
+            false;
+
+        emit(
+            "AUDIO_STOPPED",
+            {}
+        );
+
+    }
+
+    /* ============================================================
+       SENSOR LAYER
+       ============================================================ */
+
+    async function requestSensors() {
+
+        const result = {
+
+            microphone:
+                false,
+
+            motion:
+                false,
+
+            orientation:
+                false,
+
+            camera:
+                false
+
+        };
+
+        if (
+            typeof navigator ===
+                "undefined"
+        ) {
+
+            return result;
+
+        }
+
+        try {
+
+            if (
+                navigator.mediaDevices &&
+                navigator.mediaDevices.getUserMedia
+            ) {
+
+                microphoneStream =
+                    await navigator.mediaDevices
+                        .getUserMedia({
+                            audio: true
+                        });
+
+                result.microphone =
+                    true;
+
+                STATE.sensorActive =
+                    true;
+
+            }
+
+        } catch (error) {
+
+            emit(
+                "MICROPHONE_PERMISSION_UNAVAILABLE",
+                {
+                    message:
+                        text(error.message)
+                }
+            );
+
+        }
+
+        try {
+
+            if (
+                typeof DeviceMotionEvent !==
+                    "undefined" &&
+                typeof DeviceMotionEvent
+                    .requestPermission ===
+                    "function"
+            ) {
+
+                const permission =
+                    await DeviceMotionEvent
+                        .requestPermission();
+
+                result.motion =
+                    permission ===
+                    "granted";
+
+            } else {
+
+                result.motion =
+                    "DeviceMotionEvent"
+                    in global;
+
+            }
+
+        } catch (error) {}
+
+        try {
+
+            if (
+                typeof DeviceOrientationEvent !==
+                    "undefined" &&
+                typeof DeviceOrientationEvent
+                    .requestPermission ===
+                    "function"
+            ) {
+
+                const permission =
+                    await DeviceOrientationEvent
+                        .requestPermission();
+
+                result.orientation =
+                    permission ===
+                    "granted";
+
+            } else {
+
+                result.orientation =
+                    "DeviceOrientationEvent"
+                    in global;
+
+            }
+
+        } catch (error) {}
+
+        emit(
+            "SENSOR_STATUS",
+            result
+        );
+
+        return result;
+
+    }
+
+    function collectSensorSnapshot() {
+
+        const snapshot = {
+
+            timestamp:
+                now(),
+
+            performance:
+
+                typeof performance !==
+                    "undefined"
+                    ? performance.now()
+                    : null,
+
+            visibility:
+
+                typeof document !==
+                    "undefined"
+                    ? document.visibilityState
+                    : null,
+
+            network:
+
+                typeof navigator !==
+                    "undefined" &&
+                navigator.connection
+                    ? {
+                        effectiveType:
+                            navigator
+                                .connection
+                                .effectiveType,
+
+                        downlink:
+                            navigator
+                                .connection
+                                .downlink,
+
+                        rtt:
+                            navigator
+                                .connection
+                                .rtt
+                    }
+                    : null,
+
+            screen:
+
+                typeof screen !==
+                    "undefined"
+                    ? {
+                        width:
+                            screen.width,
+
+                        height:
+                            screen.height,
+
+                        pixelRatio:
+                            global.devicePixelRatio ||
+                            1
+                    }
+                    : null
+        };
+
+        STATE.environmentalState =
+            snapshot;
+
+        STATE.metrics.sensorSamples++;
+
+        return snapshot;
+
+    }
+
+    /* ============================================================
+       INTENTION INTEGRATION
+       ============================================================ */
+
+    async function resolveIntention(
+        intentionId
+    ) {
+
+        if (
+            intentionId &&
+            INTENTION &&
+            INTENTION.state &&
+            INTENTION.state.intentions
+        ) {
+
+            return (
+                INTENTION.state
+                    .intentions[intentionId]
+                ||
+                null
+            );
+
+        }
+
+        if (
+            INTENTION &&
+            typeof INTENTION.status ===
+                "function"
+        ) {
+
+            const status =
+                INTENTION.status();
+
+            if (
+                status &&
+                status.lastIntention
+            ) {
+
+                return status.lastIntention;
+
+            }
+
+        }
+
+        return null;
+
+    }
+
+    /* ============================================================
+       RESONANCE CALCULATION
+       ============================================================ */
+
+    async function createSessionSignature(
+        session
+    ) {
+
+        const payload = {
+
+            protocol:
+                CONFIG.protocol,
+
+            intention:
+                session.intentionId,
+
+            declaration:
+                session.declaration,
+
+            frequency:
+                session.frequency,
+
+            duration:
+                session.duration,
+
+            created:
+                session.createdAt,
+
+            values:
+                session.values
+
+        };
+
+        const hash =
+            await digest(payload);
+
+        const signature = {
+
+            id:
+                uid("SIG15"),
+
+            algorithm:
+                hash.startsWith("FNV")
+                    ? "FNV1A-FALLBACK"
+                    : "SHA-256",
+
+            hash:
+                hash,
+
+            scientificMeaning:
+                "DIGITAL_SESSION_INTEGRITY",
+
+            symbolicMeaning:
+                "SYMBOLIC_INTENTION_MARKER",
+
+            createdAt:
+                now()
+
+        };
+
+        STATE.signatures[
+            signature.id
+        ] = signature;
+
+        STATE.metrics.signatures++;
+
+        return signature;
+
+    }
+
+    function calculateResonanceValue(
+        session,
+        environment
+    ) {
+
+        const intensity =
+            clamp(
+                session.intensity,
+                0,
+                1
+            );
+
+        const confidence =
+            clamp(
+                session.confidence,
+                0,
+                1
+            );
+
+        const repetition =
+            clamp(
+                session.repetition / 10,
+                0,
+                1
+            );
+
+        const stability =
+            environment &&
+            environment.visibility ===
+                "visible"
+                ? 1
+                : 0.85;
+
+        const resonance =
+            clamp(
+                (
+                    intensity * 0.40
+                ) +
+                (
+                    confidence * 0.30
+                ) +
+                (
+                    repetition * 0.15
+                ) +
+                (
+                    stability * 0.15
+                ),
+                0,
+                1
+            );
+
+        STATE.metrics.resonanceCalculations++;
+
+        return resonance;
+
+    }
+
+    async function calculateResonance() {
+
+        const session =
+            STATE.currentSession ||
+            STATE.lastSession;
+
+        if (!session) {
+
+            return null;
+
+        }
+
+        const environment =
+            collectSensorSnapshot();
+
+        const value =
+            calculateResonanceValue(
+                session,
+                environment
+            );
+
+        const result = {
+
+            id:
+                uid("RES15"),
+
+            sessionId:
+                session.id,
+
+            value:
+                value,
+
+            frequency:
+                session.frequency,
+
+            intensity:
+                session.intensity,
+
+            confidence:
+                session.confidence,
+
+            environment:
+                environment,
+
+            timestamp:
+                now(),
+
+            interpretation:
+                "COMPUTATIONAL_SYMBOLIC_RESONANCE"
+
+        };
+
+        STATE.resonance =
+            result;
+
+        await persist(
+            "SPIRITUAL_RESONANCE",
+            result
+        );
+
+        emit(
+            "RESONANCE_CALCULATED",
+            result
+        );
+
+        return result;
+
+    }
+
+    /* ============================================================
+       BEFORE / AFTER EXPERIMENTAL MEASUREMENT
+       ============================================================ */
+
+    function establishBaseline(
+        session
+    ) {
+
+        const snapshot =
+            collectSensorSnapshot();
+
+        STATE.baseline = {
+
+            sessionId:
+                session.id,
+
+            timestamp:
+                now(),
+
+            snapshot:
+                snapshot,
+
+            resonance:
+                STATE.resonance
+                    ? STATE.resonance.value
+                    : null
+
+        };
+
+        return STATE.baseline;
+
+    }
+
+    async function measureShift(
+        session
+    ) {
+
+        const current =
+            collectSensorSnapshot();
+
+        const before =
+            STATE.baseline;
+
+        const beforeResonance =
+            before &&
+            Number.isFinite(
+                before.resonance
+            )
+                ? before.resonance
+                : null;
+
+        const afterResonance =
+            STATE.resonance
+                ? STATE.resonance.value
+                : null;
+
+        let delta =
+            null;
+
+        if (
+            beforeResonance !== null &&
+            afterResonance !== null
+        ) {
+
+            delta =
+                afterResonance -
+                beforeResonance;
+
+        }
+
+        const shift = {
+
+            id:
+                uid("SHIFT15"),
+
+            sessionId:
+                session.id,
+
+            before:
+                beforeResonance,
+
+            after:
+                afterResonance,
+
+            delta:
+                delta,
+
+            environmentBefore:
+                before
+                    ? before.snapshot
+                    : null,
+
+            environmentAfter:
+                current,
+
+            timestamp:
+                now(),
+
+            classification:
+                delta === null
+                    ? "UNMEASURED"
+                    : delta > 0.05
+                        ? "POSITIVE_COMPUTATIONAL_SHIFT"
+                        : delta < -0.05
+                            ? "NEGATIVE_COMPUTATIONAL_SHIFT"
+                            : "STABLE_COMPUTATIONAL_STATE",
+
+            scientificInterpretation:
+                "Observed computational/environmental difference only",
+
+            spiritualInterpretation:
+                "Symbolic interpretation must remain distinct from physical measurement"
+
+        };
+
+        STATE.metrics.shifts++;
+
+        await persist(
+            "RESONANCE_SHIFTS",
+            shift
+        );
+
+        emit(
+            "SHIFT_DETECTED",
+            shift
+        );
+
+        return shift;
+
+    }
+
+    /* ============================================================
+       SESSION ENGINE
+       ============================================================ */
+
+    async function createSession(
+        options = {}
+    ) {
+
+        const intention =
+            await resolveIntention(
+                options.intentionId
+            );
+
+        const session = {
+
+            id:
+                uid("SESSION15"),
+
+            intentionId:
+                options.intentionId ||
+                (
+                    intention
+                        ? intention.id
+                        : null
+                ),
+
+            declaration:
+                text(
+                    options.declaration ||
+                    (
+                        intention
+                            ? intention.title
+                            : "CHIROMBE INTENTIONAL RESONANCE"
+                    )
+                ),
+
+            purpose:
+                text(
+                    options.purpose ||
+                    "PROTECTION_CONTINUITY_RESILIENCE"
+                ),
+
+            frequency:
+                clamp(
+                    Number(
+                        options.frequency ||
+                        CONFIG.defaultFrequency
+                    ),
+                    CONFIG.minimumFrequency,
+                    CONFIG.maximumFrequency
+                ),
+
+            volume:
+                clamp(
+                    Number(
+                        options.volume ||
+                        CONFIG.defaultVolume
+                    ),
+                    0,
+                    CONFIG.maximumVolume
+                ),
+
+            duration:
+                Number(
+                    options.duration ||
+                    CONFIG.defaultDuration
+                ),
+
+            intensity:
+                clamp(
+                    Number(
+                        options.intensity ??
+                        (
+                            intention &&
+                            intention
+                                .symbolicIntensity
+                        ) ||
+                        1
+                    ),
+                    0,
+                    1
+                ),
+
+            confidence:
+                clamp(
+                    Number(
+                        options.confidence ??
+                        (
+                            intention &&
+                            intention.confidence
+                        ) ||
+                        0.9
+                    ),
+                    0,
+                    1
+                ),
+
+            repetition:
+                Number(
+                    options.repetition ||
+                    1
+                ),
+
+            values:
+                clone(
+                    options.values ||
+                    (
+                        intention &&
+                        intention.values
+                    ) ||
+                    [
+                        "PROTECTION",
+                        "UNITY",
+                        "TRUTH",
+                        "CONTINUITY",
+                        "RESILIENCE",
+                        "LEGACY"
+                    ]
+                ),
+
+            mode:
+                options.mode ||
+                "SYMBOLIC_CONTROLLED_SESSION",
+
+            status:
+                "CREATED",
+
+            createdAt:
+                now(),
+
+            startedAt:
+                null,
+
+            endedAt:
+                null,
+
+            signature:
+                null,
+
+            baseline:
+                null,
+
+            observations:
+                [],
+
+            resonance:
+                null,
+
+            shift:
+                null
+
+        };
+
+        session.signature =
+            await createSessionSignature(
+                session
+            );
+
+        STATE.sessions[
+            session.id
+        ] = session;
+
+        STATE.lastSession =
+            session;
+
+        STATE.metrics.sessions++;
+
+        await persist(
+            "RESONANCE_SESSIONS",
+            session
+        );
+
+        emit(
+            "SESSION_CREATED",
+            session
+        );
+
+        return session;
+
+    }
+
+    async function startSession(
+        sessionOrOptions = {}
+    ) {
+
+        if (STATE.active) {
+
+            return {
+
+                success:
+                    false,
+
+                error:
+                    "A resonance session is already active",
+
+                session:
+                    STATE.currentSession
+
+            };
+
+        }
+
+        let session;
+
+        if (
+            sessionOrOptions &&
+            sessionOrOptions.id
+        ) {
+
+            session =
+                STATE.sessions[
+                    sessionOrOptions.id
+                ];
+
+        } else {
+
+            session =
+                await createSession(
+                    sessionOrOptions
+                );
+
+        }
+
+        if (!session) {
+
+            return {
+
+                success:
+                    false,
+
+                error:
+                    "Session unavailable"
+
+            };
+
+        }
+
+        STATE.active =
+            true;
+
+        STATE.startedAt =
+            now();
+
+        STATE.currentSession =
+            session;
+
+        session.status =
+            "RUNNING";
+
+        session.startedAt =
+            STATE.startedAt;
+
+        establishBaseline(
+            session
+        );
+
+        session.baseline =
+            clone(
+                STATE.baseline
+            );
+
+        const audio =
+            await initialiseAudio(
+                session.frequency
+            );
+
+        startVisualField();
+
+        await requestSensors();
+
+        session.audio =
+            audio;
+
+        emit(
+            "SESSION_STARTED",
+            {
+                sessionId:
+                    session.id,
+
+                audio,
+
+                frequency:
+                    session.frequency,
+
+                intentionId:
+                    session.intentionId
+            }
+        );
+
+        await persist(
+            "RESONANCE_SESSIONS",
+            session
+        );
+
+        return session;
+
+    }
+
+    async function endSession(
+        reason = "COMPLETED"
+    ) {
+
+        const session =
+            STATE.currentSession;
+
+        if (!session) {
+
+            return null;
+
+        }
+
+        const resonance =
+            await calculateResonance();
+
+        session.resonance =
+            resonance;
+
+        session.shift =
+            await measureShift(
+                session
+            );
+
+        session.endedAt =
+            now();
+
+        session.status =
+            reason === "CANCELLED"
+                ? "CANCELLED"
+                : "COMPLETE";
+
+        if (
+            session.status ===
+            "COMPLETE"
+        ) {
+
+            STATE.metrics
+                .completedSessions++;
+
+        } else {
+
+            STATE.metrics
+                .cancelledSessions++;
+
+        }
+
+        stopAudio();
+
+        stopVisualField();
+
+        if (
+            microphoneStream
+        ) {
+
+            microphoneStream
+                .getTracks()
+                .forEach(
+                    track =>
+                        track.stop()
+                );
+
+            microphoneStream =
+                null;
+
+        }
+
+        STATE.active =
+            false;
+
+        STATE.currentSession =
+            null;
+
+        STATE.lastSession =
+            session;
+
+        await persist(
+            "RESONANCE_SESSIONS",
+            session
+        );
+
+        emit(
+            "SESSION_ENDED",
+            session
+        );
+
+        return session;
+
+    }
+
+    /* ============================================================
+       OBSERVATION ENGINE
+       ============================================================ */
+
+    async function observe() {
+
+        const observation = {
+
+            id:
+                uid("OBS15"),
+
+            sessionId:
+                STATE.currentSession
+                    ? STATE.currentSession.id
+                    : null,
+
+            timestamp:
+                now(),
+
+            active:
+                STATE.active,
+
+            audioActive:
+                STATE.audioActive,
+
+            visualActive:
+                STATE.visualActive,
+
+            sensorActive:
+                STATE.sensorActive,
+
+            frequency:
+                oscillator
+                    ? oscillator.frequency.value
+                    : null,
+
+            resonance:
+                STATE.resonance
+                    ? STATE.resonance.value
+                    : null,
+
+            environment:
+                collectSensorSnapshot(),
+
+            memoryAvailable:
+                !!MEMORY,
+
+            intentionAvailable:
+                !!INTENTION,
+
+            defenceAvailable:
+                !!DEFENCE,
+
+            watchdogAvailable:
+                !!WATCHDOG,
+
+            bloodlineAvailable:
+                !!BLOODLINE,
+
+            legacyAvailable:
+                !!LEGACY
+
+        };
+
+        STATE.observations.push(
+            observation
+        );
+
+        if (
+            STATE.observations.length >
+            CONFIG.maximumObservations
+        ) {
+
+            STATE.observations.splice(
+                0,
+                STATE.observations.length -
+                CONFIG.maximumObservations
+            );
+
+        }
+
+        STATE.metrics.observations++;
+
+        if (
+            STATE.currentSession
+        ) {
+
+            STATE.currentSession
+                .observations
+                .push(observation);
+
+        }
+
+        emit(
+            "OBSERVATION",
+            observation
+        );
+
+        return observation;
+
+    }
+
+    /* ============================================================
+       CHEP-14 FEEDBACK
+       ============================================================ */
+
+    async function reinforceIntention() {
+
+        const session =
+            STATE.currentSession ||
+            STATE.lastSession;
+
+        if (
+            !session ||
+            !INTENTION
+        ) {
+
+            return null;
+
+        }
+
+        try {
+
+            if (
+                typeof INTENTION
+                    .reinforceIntention ===
+                "function"
+            ) {
+
+                const result =
+                    await INTENTION
+                        .reinforceIntention(
+                            session.intentionId
+                        );
+
+                emit(
+                    "INTENTION_REINFORCED",
+                    {
+                        sessionId:
+                            session.id,
+
+                        intention:
+                            result
+                    }
+                );
+
+                return result;
+
+            }
+
+        } catch (error) {
+
+            emit(
+                "INTENTION_REINFORCEMENT_ERROR",
+                {
+                    error:
+                        text(error.message)
+                }
+            );
+
+        }
+
+        return null;
+
+    }
+
+    /* ============================================================
+       COMPLETE RESONANCE CYCLE
+       ============================================================ */
+
+    async function cycle(
+        options = {}
+    ) {
+
+        const session =
+            await startSession(
+                options
+            );
+
+        if (
+            !session ||
+            session.success === false
+        ) {
+
+            return session;
+
+        }
+
+        await observe();
+
+        await calculateResonance();
+
+        await reinforceIntention();
+
+        const result = {
+
+            protocol:
+                CONFIG.protocol,
+
+            sessionId:
+                session.id,
+
+            intentionId:
+                session.intentionId,
+
+            signature:
+                session.signature,
+
+            resonance:
+                STATE.resonance,
+
+            status:
+                "ACTIVE",
+
+            timestamp:
+                now()
+
+        };
+
+        emit(
+            "CYCLE_COMPLETE",
+            result
+        );
+
+        return result;
+
+    }
+
+    /* ============================================================
+       SELF TEST
+       ============================================================ */
+
+    async function selfTest() {
+
+        STATE.metrics.selfTests++;
+
+        const checks = {
+
+            core:
+                !!CORE,
+
+            memory:
+                !!MEMORY,
+
+            intention:
+                !!INTENTION,
+
+            crypto:
+                !!(
+                    global.crypto &&
+                    global.crypto.subtle
+                ),
+
+            canvas:
+                !!ensureCanvas(),
+
+            audioAPI:
+                !!(
+                    global.AudioContext ||
+                    global.webkitAudioContext
+                ),
+
+            localStorage:
+                (() => {
+
+                    try {
+
+                        const key =
+                            "__CHEP15_TEST__";
+
+                        global.localStorage
+                            .setItem(
+                                key,
+                                "1"
+                            );
+
+                        global.localStorage
+                            .removeItem(
+                                key
+                            );
+
+                        return true;
+
+                    } catch (error) {
+
+                        return false;
+
+                    }
+
+                })()
+
+        };
+
+        const passed =
+            Object
+                .values(checks)
+                .filter(Boolean)
+                .length;
+
+        const total =
+            Object.keys(checks)
+                .length;
+
+        const result = {
+
+            protocol:
+                CONFIG.protocol,
+
+            checks:
+
+                checks,
+
+            passed:
+                passed,
+
+            total:
+                total,
+
+            score:
+                passed / total,
+
+            timestamp:
+                now()
+
+        };
+
+        await persist(
+            "SYSTEM",
+            {
+                type:
+                    "CHEP15_SELF_TEST",
+
+                result
+            }
+        );
+
+        emit(
+            "SELF_TEST",
+            result
+        );
+
+        return result;
+
+    }
+
+    /* ============================================================
+       STATUS
+       ============================================================ */
+
+    function status() {
+
+        return {
+
+            protocol:
+                CONFIG.protocol,
+
+            version:
+                CONFIG.version,
+
+            name:
+                CONFIG.name,
+
+            booted:
+                STATE.booted,
+
+            active:
+                STATE.active,
+
+            audioActive:
+                STATE.audioActive,
+
+            visualActive:
+                STATE.visualActive,
+
+            sensorActive:
+                STATE.sensorActive,
+
+            currentSession:
+                clone(
+                    STATE.currentSession
+                ),
+
+            lastSession:
+                clone(
+                    STATE.lastSession
+                ),
+
+            resonance:
+                clone(
+                    STATE.resonance
+                ),
+
+            baseline:
+                clone(
+                    STATE.baseline
+                ),
+
+            environmentalState:
+                clone(
+                    STATE.environmentalState
+                ),
+
+            metrics:
+                clone(
+                    STATE.metrics
+                ),
+
+            integrations: {
+
+                core:
+                    !!CORE,
+
+                memory:
+                    !!MEMORY,
+
+                workers:
+                    !!WORKERS,
+
+                intention:
+                    !!INTENTION,
+
+                defence:
+                    !!DEFENCE,
+
+                watchdog:
+                    !!WATCHDOG,
+
+                bloodline:
+                    !!BLOODLINE,
+
+                legacy:
+                    !!LEGACY
+
+            },
+
+            timestamp:
+                now()
+
+        };
+
+    }
+
+    /* ============================================================
+       EXPORT
+       ============================================================ */
+
+    async function exportState() {
+
+        const payload = {
+
+            protocol:
+                CONFIG.protocol,
+
+            version:
+                CONFIG.version,
+
+            exportedAt:
+                now(),
+
+            state:
+                clone(STATE)
+
+        };
+
+        payload.integrity =
+            await digest(
+                payload
+            );
+
+        return payload;
+
+    }
+
+    /* ============================================================
+       WORKER REGISTRATION
+       ============================================================ */
+
+    function registerWorkers() {
+
+        if (
+            !WORKERS ||
+            typeof WORKERS.register !==
+                "function"
+        ) {
+
+            return;
+
+        }
+
+        const workers = [
+
+            [
+                "RESONANCE_CHAMBER_STATUS",
+                async () =>
+                    status()
+            ],
+
+            [
+                "RESONANCE_CHAMBER_OBSERVER",
+                async () =>
+                    observe()
+            ],
+
+            [
+                "RESONANCE_CHAMBER_ANALYST",
+                async () =>
+                    calculateResonance()
+            ],
+
+            [
+                "RESONANCE_CHAMBER_INTEGRITY",
+                async () =>
+                    selfTest()
+            ],
+
+            [
+                "RESONANCE_CHAMBER_SESSION",
+                async payload =>
+                    cycle(
+                        payload || {}
+                    )
+            ]
+
+        ];
+
+        workers.forEach(
+            ([name, handler]) => {
+
+                try {
+
+                    WORKERS.register(
+                        name,
+                        handler
+                    );
+
+                } catch (error) {}
+
+            }
+        );
+
+    }
+
+    /* ============================================================
+       TIMER ENGINE
+       ============================================================ */
+
+    function startTimers() {
+
+        stopTimers();
+
+        STATE.timers.observation =
+            setInterval(
+                () => {
+
+                    observe()
+                        .catch(
+                            () => {}
+                        );
+
+                },
+                CONFIG.observationInterval
+            );
+
+        STATE.timers.scan =
+            setInterval(
+                () => {
+
+                    if (
+                        STATE.active
+                    ) {
+
+                        calculateResonance()
+                            .catch(
+                                () => {}
+                            );
+
+                    }
+
+                },
+                CONFIG.scanInterval
+            );
+
+    }
+
+    function stopTimers() {
+
+        if (
+            STATE.timers.observation
+        ) {
+
+            clearInterval(
+                STATE.timers.observation
+            );
+
+        }
+
+        if (
+            STATE.timers.scan
+        ) {
+
+            clearInterval(
+                STATE.timers.scan
+            );
+
+        }
+
+        STATE.timers.observation =
+            null;
+
+        STATE.timers.scan =
+            null;
+
+    }
+
+    /* ============================================================
+       COMMAND INTERFACE
+       ============================================================ */
+
+    async function command(
+        action,
+        payload = {}
+    ) {
+
+        switch (
+            text(action)
+                .toUpperCase()
+        ) {
+
+            case "STATUS":
+                return status();
+
+            case "SELF_TEST":
+                return selfTest();
+
+            case "CREATE":
+                return createSession(
+                    payload
+                );
+
+            case "START":
+                return startSession(
+                    payload
+                );
+
+            case "STOP":
+            case "END":
+                return endSession(
+                    "COMPLETED"
+                );
+
+            case "CANCEL":
+                return endSession(
+                    "CANCELLED"
+                );
+
+            case "OBSERVE":
+                return observe();
+
+            case "RESONANCE":
+                return calculateResonance();
+
+            case "CYCLE":
+                return cycle(
+                    payload
+                );
+
+            case "FREQUENCY":
+                return changeFrequency(
+                    payload.frequency
+                );
+
+            case "SENSORS":
+                return requestSensors();
+
+            case "REINFORCE":
+                return reinforceIntention();
+
+            case "EXPORT":
+                return exportState();
+
+            default:
+
+                return {
+
+                    success:
+                        false,
+
+                    error:
+                        "Unknown CHEP-15 command",
+
+                    supported: [
+
+                        "STATUS",
+                        "SELF_TEST",
+                        "CREATE",
+                        "START",
+                        "STOP",
+                        "END",
+                        "CANCEL",
+                        "OBSERVE",
+                        "RESONANCE",
+                        "CYCLE",
+                        "FREQUENCY",
+                        "SENSORS",
+                        "REINFORCE",
+                        "EXPORT"
+
+                    ]
+
+                };
+
+        }
+
+    }
+
+    /* ============================================================
+       BOOT
+       ============================================================ */
+
+    function boot() {
+
+        if (STATE.booted) {
+
+            return status();
+
+        }
+
+        STATE.booted =
+            true;
+
+        STATE.startedAt =
+            now();
+
+        ensureCanvas();
+
+        registerWorkers();
+
+        startTimers();
+
+        emit(
+            "BOOT",
+            {
+                protocol:
+                    CONFIG.protocol,
+
+                version:
+                    CONFIG.version
+            }
+        );
+
+        return status();
+
+    }
+
+    /* ============================================================
+       PUBLIC ENGINE
+       ============================================================ */
+
+    const ENGINE = {
+
+        CONFIG,
+
+        STATE,
+
+        boot,
+
+        status,
+
+        selfTest,
+
+        createSession,
+
+        startSession,
+
+        endSession,
+
+        cycle,
+
+        observe,
+
+        calculateResonance,
+
+        establishBaseline,
+
+        measureShift,
+
+        requestSensors,
+
+        changeFrequency,
+
+        reinforceIntention,
+
+        exportState,
+
+        command,
+
+        startTimers,
+
+        stopTimers
+
+    };
+
+    global.CHIROMBE_RESONANCE_CHAMBER =
+        ENGINE;
+
+    global.CHIROMBE_RESONANCE =
+        ENGINE;
+
+    global.CHIROMBE_CHEP15 =
+        ENGINE;
+
+    boot();
+
+})(globalThis);
+
+
+/* ================================================================
+   CHEP-15 END
+   ================================================================ */
