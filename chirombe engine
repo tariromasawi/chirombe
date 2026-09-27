@@ -16471,4 +16471,3416 @@
 
 /* ================================================================
    END CHIROMBE BUILD INTELLIGENCE ENGINE
+   ================================================================ *//* ================================================================
+   CHIROMBE MASTER ORCHESTRATOR
+   ================================================================
+   File: chirombe-orchestrator.js
+
+   Protocol: CHEP-09
+   Version: 1.0.0
+
+   PURPOSE
+   -------
+   Master coordination layer for:
+
+      CORE
+        ↓
+      MEMORY
+        ↓
+      WORKERS
+        ↓
+      EVOLUTION
+        ↓
+      PATHWAYS
+        ↓
+      WATCHDOG
+        ↓
+      KNOWLEDGE
+        ↓
+      BUILD
+        ↓
+      ORCHESTRATOR
+        ↓
+      PART 10 BACKEND / EXTERNAL AI BRIDGE
+
+   MODEL
+   -----
+   OBSERVE
+      ↓
+   UNDERSTAND
+      ↓
+   DECOMPOSE
+      ↓
+   PRIORITISE
+      ↓
+   ROUTE
+      ↓
+   EXECUTE
+      ↓
+   VERIFY
+      ↓
+   REMEMBER
+      ↓
+   LEARN
+      ↓
+   REPLAN
+
+   IMPORTANT
+   ---------
+   This is a controlled orchestration engine.
+
+   It does NOT:
+   - blindly overwrite production files
+   - silently deploy arbitrary code
+   - claim scientific proof for spiritual/quantum concepts
+   - create unrestricted self-modifying production code
+
+   It DOES:
+   - coordinate modules
+   - create objectives
+   - decompose objectives into tasks
+   - route tasks
+   - coordinate workers
+   - use health information
+   - maintain execution state
+   - record decisions
+   - create controlled build/evolution pathways
+   - prepare external-AI handoffs
+   - preserve auditability
    ================================================================ */
+
+(function (global) {
+    "use strict";
+
+    /* -------------------------------------------------------------
+       DEPENDENCY CHECK
+       ------------------------------------------------------------- */
+
+    const CORE = global.CHIROMBE || global.CHIROMBE_CORE;
+    const MEMORY = global.CHIROMBE_MEMORY;
+    const WORKERS = global.CHIROMBE_WORKERS;
+    const EVOLUTION = global.CHIROMBE_EVOLUTION ||
+                      global.CHIROMBE_EVOLUTION_ENGINE;
+    const PATHWAYS = global.CHIROMBE_PATHWAYS ||
+                     global.CHIROMBE_PATHWAY_ENGINE;
+    const WATCHDOG = global.CHIROMBE_WATCHDOG ||
+                     global.CHIROMBE_WATCHDOG_ENGINE;
+    const KNOWLEDGE = global.CHIROMBE_KNOWLEDGE ||
+                      global.CHIROMBE_KNOWLEDGE_ENGINE;
+    const BUILD = global.CHIROMBE_BUILD ||
+                  global.CHIROMBE_BUILD_ENGINE;
+
+    if (!CORE) {
+        console.error(
+            "[CHIROMBE ORCHESTRATOR] Core not found. " +
+            "Load chirombe-core.js first."
+        );
+        return;
+    }
+
+    /* -------------------------------------------------------------
+       CONFIGURATION
+       ------------------------------------------------------------- */
+
+    const CONFIG = {
+        protocol: "CHEP-09",
+        version: "1.0.0",
+
+        name: "CHIROMBE MASTER ORCHESTRATOR",
+
+        namespace: "ORCHESTRATOR",
+
+        schedulerInterval: 60000,
+
+        maxObjectives: 1000,
+        maxTasks: 5000,
+        maxHistory: 10000,
+        maxEvents: 5000,
+
+        maxRetries: 3,
+
+        confidenceThreshold: 0.70,
+
+        automaticPlanning: true,
+        automaticRouting: true,
+        automaticExecution: true,
+
+        requireHealthCheck: true,
+        requireValidation: true,
+
+        productionAutoDeploy: false,
+        unrestrictedSelfRewrite: false,
+
+        browserExecutionOnly: true,
+
+        protectedModules: [
+            "chirombe-core.js",
+            "chirombe-memory.js",
+            "chirombe-workers.js",
+            "chirombe-evolution.js",
+            "chirombe-pathways.js",
+            "chirombe-watchdog.js",
+            "chirombe-knowledge.js",
+            "chirombe-build.js",
+            "chirombe-orchestrator.js"
+        ]
+    };
+
+    /* -------------------------------------------------------------
+       STATE
+       ------------------------------------------------------------- */
+
+    const STATE = {
+
+        booted: false,
+
+        running: true,
+
+        paused: false,
+
+        cycle: 0,
+
+        lastCycle: null,
+
+        objectives: {},
+
+        tasks: {},
+
+        routes: {},
+
+        executions: {},
+
+        workflows: {},
+
+        events: [],
+
+        history: [],
+
+        incidents: [],
+
+        checkpoints: {},
+
+        metrics: {
+            objectivesCreated: 0,
+            objectivesCompleted: 0,
+            objectivesFailed: 0,
+
+            tasksCreated: 0,
+            tasksCompleted: 0,
+            tasksFailed: 0,
+
+            executions: 0,
+            successfulExecutions: 0,
+            failedExecutions: 0,
+
+            retries: 0,
+
+            routesCreated: 0,
+
+            recoveryEvents: 0,
+
+            externalHandoffs: 0
+        },
+
+        timers: {
+            scheduler: null
+        }
+    };
+
+    /* -------------------------------------------------------------
+       UTILITIES
+       ------------------------------------------------------------- */
+
+    function uid(prefix) {
+        return (
+            prefix +
+            "_" +
+            Date.now().toString(36) +
+            "_" +
+            Math.random().toString(36).slice(2, 10)
+        ).toUpperCase();
+    }
+
+    function now() {
+        return new Date().toISOString();
+    }
+
+    function clone(value) {
+        try {
+            return JSON.parse(JSON.stringify(value));
+        } catch (error) {
+            return value;
+        }
+    }
+
+    function clamp(value, min, max) {
+        const number = Number(value);
+
+        if (!Number.isFinite(number)) {
+            return min;
+        }
+
+        return Math.max(min, Math.min(max, number));
+    }
+
+    function normalizeText(value) {
+        return String(value || "")
+            .trim()
+            .replace(/\s+/g, " ");
+    }
+
+    function emit(event, payload) {
+
+        const record = {
+            id: uid("EVENT"),
+            event,
+            timestamp: now(),
+            payload: clone(payload || {})
+        };
+
+        STATE.events.unshift(record);
+
+        if (STATE.events.length > CONFIG.maxEvents) {
+            STATE.events.length = CONFIG.maxEvents;
+        }
+
+        try {
+            if (CORE && typeof CORE.emit === "function") {
+                CORE.emit(event, payload);
+            }
+        } catch (error) {}
+
+        return record;
+    }
+
+    function log(message, data) {
+
+        try {
+            if (CORE && typeof CORE.log === "function") {
+                CORE.log(
+                    "[ORCHESTRATOR] " + message,
+                    data
+                );
+                return;
+            }
+        } catch (error) {}
+
+        console.log(
+            "[CHIROMBE ORCHESTRATOR]",
+            message,
+            data || ""
+        );
+    }
+
+    /* -------------------------------------------------------------
+       SAFE MODULE ACCESS
+       ------------------------------------------------------------- */
+
+    function safeCall(module, method, args) {
+
+        try {
+
+            if (!module) {
+                return {
+                    ok: false,
+                    error: "MODULE_UNAVAILABLE"
+                };
+            }
+
+            if (typeof module[method] !== "function") {
+                return {
+                    ok: false,
+                    error: "METHOD_UNAVAILABLE",
+                    module: method
+                };
+            }
+
+            return {
+                ok: true,
+                value: module[method].apply(module, args || [])
+            };
+
+        } catch (error) {
+
+            return {
+                ok: false,
+                error: error.message || String(error)
+            };
+        }
+    }
+
+    /* -------------------------------------------------------------
+       MEMORY
+       ------------------------------------------------------------- */
+
+    async function remember(key, value) {
+
+        try {
+
+            if (
+                MEMORY &&
+                typeof MEMORY.write === "function"
+            ) {
+
+                return await MEMORY.write(
+                    CONFIG.namespace,
+                    key,
+                    value
+                );
+            }
+
+        } catch (error) {
+
+            log(
+                "Memory write failed",
+                error.message
+            );
+        }
+
+        return null;
+    }
+
+    async function rememberRecord(type, data) {
+
+        const key =
+            type +
+            "_" +
+            Date.now().toString(36);
+
+        return remember(
+            key,
+            {
+                type,
+                timestamp: now(),
+                data: clone(data)
+            }
+        );
+    }
+
+    /* -------------------------------------------------------------
+       OBJECTIVE ENGINE
+       ------------------------------------------------------------- */
+
+    function createObjective(input) {
+
+        input = input || {};
+
+        const id = uid("OBJ");
+
+        const objective = {
+
+            id,
+
+            title:
+                normalizeText(
+                    input.title ||
+                    "Unnamed Chirombe Objective"
+                ),
+
+            description:
+                normalizeText(
+                    input.description ||
+                    ""
+                ),
+
+            category:
+                String(
+                    input.category ||
+                    "GENERAL"
+                ).toUpperCase(),
+
+            priority:
+                String(
+                    input.priority ||
+                    "NORMAL"
+                ).toUpperCase(),
+
+            confidence:
+                clamp(
+                    input.confidence == null
+                        ? 0.80
+                        : input.confidence,
+                    0,
+                    1
+                ),
+
+            status: "PENDING",
+
+            progress: 0,
+
+            createdAt: now(),
+
+            updatedAt: now(),
+
+            requirements:
+                Array.isArray(input.requirements)
+                    ? clone(input.requirements)
+                    : [],
+
+            acceptanceCriteria:
+                Array.isArray(input.acceptanceCriteria)
+                    ? clone(input.acceptanceCriteria)
+                    : [],
+
+            tasks: [],
+
+            completedTasks: [],
+
+            failedTasks: [],
+
+            metadata:
+                clone(input.metadata || {}),
+
+            history: []
+        };
+
+        STATE.objectives[id] = objective;
+
+        STATE.metrics.objectivesCreated++;
+
+        addObjectiveHistory(
+            objective,
+            "CREATED",
+            {
+                source: "ORCHESTRATOR"
+            }
+        );
+
+        emit(
+            "ORCHESTRATOR_OBJECTIVE_CREATED",
+            objective
+        );
+
+        rememberRecord(
+            "OBJECTIVE_CREATED",
+            objective
+        );
+
+        trimState();
+
+        return clone(objective);
+    }
+
+    function addObjectiveHistory(
+        objective,
+        event,
+        data
+    ) {
+
+        if (!objective) {
+            return;
+        }
+
+        objective.history =
+            objective.history || [];
+
+        objective.history.push({
+            event,
+            timestamp: now(),
+            data: clone(data || {})
+        });
+
+        if (
+            objective.history.length >
+            100
+        ) {
+            objective.history.shift();
+        }
+
+        objective.updatedAt = now();
+    }
+
+    function getObjective(id) {
+
+        return STATE.objectives[id]
+            ? clone(STATE.objectives[id])
+            : null;
+    }
+
+    function objectives() {
+
+        return Object.values(
+            STATE.objectives
+        ).map(clone);
+    }
+
+    /* -------------------------------------------------------------
+       TASK ENGINE
+       ------------------------------------------------------------- */
+
+    function createTask(input) {
+
+        input = input || {};
+
+        const id = uid("TASK");
+
+        const task = {
+
+            id,
+
+            objectiveId:
+                input.objectiveId || null,
+
+            title:
+                normalizeText(
+                    input.title ||
+                    "Unnamed Task"
+                ),
+
+            description:
+                normalizeText(
+                    input.description ||
+                    ""
+                ),
+
+            type:
+                String(
+                    input.type ||
+                    "GENERAL"
+                ).toUpperCase(),
+
+            category:
+                String(
+                    input.category ||
+                    input.type ||
+                    "GENERAL"
+                ).toUpperCase(),
+
+            priority:
+                String(
+                    input.priority ||
+                    "NORMAL"
+                ).toUpperCase(),
+
+            status: "PENDING",
+
+            progress: 0,
+
+            confidence:
+                clamp(
+                    input.confidence == null
+                        ? 0.80
+                        : input.confidence,
+                    0,
+                    1
+                ),
+
+            retries: 0,
+
+            maxRetries:
+                input.maxRetries == null
+                    ? CONFIG.maxRetries
+                    : Math.max(
+                        0,
+                        Number(input.maxRetries)
+                    ),
+
+            dependencies:
+                Array.isArray(input.dependencies)
+                    ? clone(input.dependencies)
+                    : [],
+
+            worker:
+                input.worker || null,
+
+            route:
+                input.route || null,
+
+            payload:
+                clone(input.payload || {}),
+
+            result: null,
+
+            error: null,
+
+            createdAt: now(),
+
+            updatedAt: now(),
+
+            startedAt: null,
+
+            completedAt: null
+        };
+
+        STATE.tasks[id] = task;
+
+        STATE.metrics.tasksCreated++;
+
+        if (task.objectiveId) {
+
+            const objective =
+                STATE.objectives[
+                    task.objectiveId
+                ];
+
+            if (objective) {
+
+                objective.tasks.push(id);
+
+                addObjectiveHistory(
+                    objective,
+                    "TASK_CREATED",
+                    {
+                        taskId: id
+                    }
+                );
+            }
+        }
+
+        emit(
+            "ORCHESTRATOR_TASK_CREATED",
+            task
+        );
+
+        rememberRecord(
+            "TASK_CREATED",
+            task
+        );
+
+        trimState();
+
+        return clone(task);
+    }
+
+    function getTask(id) {
+
+        return STATE.tasks[id]
+            ? clone(STATE.tasks[id])
+            : null;
+    }
+
+    function tasks() {
+
+        return Object.values(
+            STATE.tasks
+        ).map(clone);
+    }
+
+    /* -------------------------------------------------------------
+       PRIORITY ENGINE
+       ------------------------------------------------------------- */
+
+    function priorityWeight(priority) {
+
+        const map = {
+            CRITICAL: 1.00,
+            URGENT: 0.95,
+            HIGH: 0.80,
+            NORMAL: 0.55,
+            LOW: 0.30,
+            BACKGROUND: 0.10
+        };
+
+        return map[
+            String(priority || "NORMAL")
+                .toUpperCase()
+        ] || 0.55;
+    }
+
+    function calculateTaskScore(task) {
+
+        if (!task) {
+            return 0;
+        }
+
+        const priority =
+            priorityWeight(task.priority);
+
+        const confidence =
+            clamp(task.confidence, 0, 1);
+
+        const dependencyBonus =
+            dependenciesSatisfied(task)
+                ? 0.10
+                : 0;
+
+        const retryPenalty =
+            Math.min(
+                0.30,
+                Number(task.retries || 0) * 0.08
+            );
+
+        return clamp(
+            priority * 0.55 +
+            confidence * 0.35 +
+            dependencyBonus -
+            retryPenalty,
+            0,
+            1
+        );
+    }
+
+    /* -------------------------------------------------------------
+       DEPENDENCY ENGINE
+       ------------------------------------------------------------- */
+
+    function dependenciesSatisfied(task) {
+
+        if (
+            !task ||
+            !Array.isArray(task.dependencies) ||
+            task.dependencies.length === 0
+        ) {
+            return true;
+        }
+
+        return task.dependencies.every(
+            dependencyId => {
+
+                const dependency =
+                    STATE.tasks[dependencyId];
+
+                return (
+                    dependency &&
+                    dependency.status ===
+                    "COMPLETE"
+                );
+            }
+        );
+    }
+
+    function dependencyBlocked(task) {
+
+        if (!task) {
+            return false;
+        }
+
+        if (!Array.isArray(task.dependencies)) {
+            return false;
+        }
+
+        return task.dependencies.some(
+            dependencyId => {
+
+                const dependency =
+                    STATE.tasks[dependencyId];
+
+                return (
+                    !dependency ||
+                    dependency.status !==
+                    "COMPLETE"
+                );
+            }
+        );
+    }
+
+    /* -------------------------------------------------------------
+       ROUTING ENGINE
+       ------------------------------------------------------------- */
+
+    function determineRoute(task) {
+
+        if (!task) {
+            return {
+                engine: "NONE",
+                worker: null
+            };
+        }
+
+        const category =
+            String(
+                task.category ||
+                task.type ||
+                "GENERAL"
+            ).toUpperCase();
+
+        let engine = "WORKERS";
+        let worker = null;
+
+        switch (category) {
+
+            case "ANALYSE":
+            case "ANALYSIS":
+                engine = "KNOWLEDGE";
+                worker = "KNOWLEDGE_ANALYST";
+                break;
+
+            case "MEMORY":
+            case "PERSISTENCE":
+                engine = "MEMORY";
+                worker = "MEMORY_SEARCH";
+                break;
+
+            case "EVOLVE":
+            case "EVOLUTION":
+                engine = "EVOLUTION";
+                worker = "EVOLUTION_ENGINE";
+                break;
+
+            case "MAP":
+            case "PATHWAY":
+            case "PATHWAYS":
+                engine = "PATHWAYS";
+                worker = "PATHWAY_ANALYST";
+                break;
+
+            case "RECOVER":
+            case "RECOVERY":
+            case "INTEGRITY":
+                engine = "WATCHDOG";
+                worker = "WATCHDOG_RECOVERY";
+                break;
+
+            case "BUILD":
+            case "CODE":
+                engine = "BUILD";
+                worker = "BUILD_PLANNER";
+                break;
+
+            case "VALIDATE":
+            case "TEST":
+                engine = "BUILD";
+                worker = "BUILD_VALIDATOR";
+                break;
+
+            case "EXTERNAL_AI":
+            case "GROK":
+            case "AI":
+                engine = "EXTERNAL_AI";
+                worker = "GROK_BRIDGE";
+                break;
+
+            case "GENERAL":
+            default:
+                engine = "WORKERS";
+                worker = null;
+                break;
+        }
+
+        return {
+            engine,
+            worker
+        };
+    }
+
+    function routeTask(taskId) {
+
+        const task =
+            STATE.tasks[taskId];
+
+        if (!task) {
+            return null;
+        }
+
+        const route =
+            determineRoute(task);
+
+        const routeId =
+            uid("ROUTE");
+
+        const record = {
+
+            id: routeId,
+
+            taskId,
+
+            engine: route.engine,
+
+            worker: route.worker,
+
+            confidence:
+                task.confidence,
+
+            createdAt: now(),
+
+            status: "READY",
+
+            score:
+                calculateTaskScore(task)
+        };
+
+        STATE.routes[routeId] = record;
+
+        task.route = routeId;
+
+        task.worker =
+            route.worker;
+
+        task.status =
+            "READY";
+
+        task.updatedAt = now();
+
+        STATE.metrics.routesCreated++;
+
+        emit(
+            "ORCHESTRATOR_TASK_ROUTED",
+            record
+        );
+
+        rememberRecord(
+            "TASK_ROUTED",
+            record
+        );
+
+        return clone(record);
+    }
+
+    /* -------------------------------------------------------------
+       HEALTH GATE
+       ------------------------------------------------------------- */
+
+    function healthCheck() {
+
+        const report = {
+            timestamp: now(),
+            healthy: true,
+            modules: {},
+            warnings: [],
+            failures: []
+        };
+
+        const modules = {
+
+            CORE,
+
+            MEMORY,
+
+            WORKERS,
+
+            EVOLUTION,
+
+            PATHWAYS,
+
+            WATCHDOG,
+
+            KNOWLEDGE,
+
+            BUILD
+        };
+
+        Object.keys(modules).forEach(
+            name => {
+
+                const module =
+                    modules[name];
+
+                const available =
+                    !!module;
+
+                report.modules[name] = {
+                    available
+                };
+
+                if (!available) {
+
+                    report.warnings.push(
+                        name +
+                        "_UNAVAILABLE"
+                    );
+                }
+            }
+        );
+
+        if (
+            report.modules.CORE &&
+            !report.modules.WORKERS
+        ) {
+
+            report.healthy = false;
+
+            report.failures.push(
+                "WORKER_LAYER_UNAVAILABLE"
+            );
+        }
+
+        if (
+            report.failures.length
+        ) {
+            report.healthy = false;
+        }
+
+        return report;
+    }
+
+    /* -------------------------------------------------------------
+       EXECUTION ADAPTERS
+       ------------------------------------------------------------- */
+
+    async function executeViaEngine(
+        task
+    ) {
+
+        const category =
+            String(
+                task.category ||
+                task.type ||
+                "GENERAL"
+            ).toUpperCase();
+
+        const payload =
+            clone(task.payload || {});
+
+        /* BUILD */
+
+        if (
+            category === "BUILD" ||
+            category === "CODE"
+        ) {
+
+            if (
+                BUILD &&
+                typeof BUILD.cycle ===
+                "function"
+            ) {
+
+                return await BUILD.cycle(
+                    payload
+                );
+            }
+
+            if (
+                BUILD &&
+                typeof BUILD.status ===
+                "function"
+            ) {
+
+                return BUILD.status();
+            }
+        }
+
+        /* EVOLUTION */
+
+        if (
+            category === "EVOLVE" ||
+            category === "EVOLUTION"
+        ) {
+
+            if (
+                EVOLUTION &&
+                typeof EVOLUTION.cycle ===
+                "function"
+            ) {
+
+                return await EVOLUTION.cycle(
+                    payload
+                );
+            }
+
+            if (
+                EVOLUTION &&
+                typeof EVOLUTION.status ===
+                "function"
+            ) {
+
+                return EVOLUTION.status();
+            }
+        }
+
+        /* PATHWAYS */
+
+        if (
+            category === "MAP" ||
+            category === "PATHWAY" ||
+            category === "PATHWAYS"
+        ) {
+
+            if (
+                PATHWAYS &&
+                typeof PATHWAYS.analyse ===
+                "function"
+            ) {
+
+                return await PATHWAYS.analyse();
+            }
+
+            if (
+                PATHWAYS &&
+                typeof PATHWAYS.status ===
+                "function"
+            ) {
+
+                return PATHWAYS.status();
+            }
+        }
+
+        /* RECOVERY */
+
+        if (
+            category === "RECOVER" ||
+            category === "RECOVERY" ||
+            category === "INTEGRITY"
+        ) {
+
+            if (
+                WATCHDOG &&
+                typeof WATCHDOG.scan ===
+                "function"
+            ) {
+
+                return await WATCHDOG.scan();
+            }
+
+            if (
+                WATCHDOG &&
+                typeof WATCHDOG.status ===
+                "function"
+            ) {
+
+                return WATCHDOG.status();
+            }
+        }
+
+        /* KNOWLEDGE */
+
+        if (
+            category === "ANALYSE" ||
+            category === "ANALYSIS"
+        ) {
+
+            if (
+                KNOWLEDGE &&
+                typeof KNOWLEDGE.search ===
+                "function"
+            ) {
+
+                return await KNOWLEDGE.search(
+                    payload.query ||
+                    task.description ||
+                    task.title
+                );
+            }
+
+            if (
+                KNOWLEDGE &&
+                typeof KNOWLEDGE.status ===
+                "function"
+            ) {
+
+                return KNOWLEDGE.status();
+            }
+        }
+
+        /* MEMORY */
+
+        if (
+            category === "MEMORY" ||
+            category === "PERSISTENCE"
+        ) {
+
+            if (
+                MEMORY &&
+                typeof MEMORY.search ===
+                "function"
+            ) {
+
+                return await MEMORY.search(
+                    payload.query ||
+                    task.description ||
+                    task.title
+                );
+            }
+        }
+
+        /* GENERAL WORKER */
+
+        if (
+            WORKERS &&
+            typeof WORKERS.dispatch ===
+            "function"
+        ) {
+
+            try {
+
+                return await WORKERS.dispatch(
+                    task.worker,
+                    payload
+                );
+
+            } catch (error) {}
+        }
+
+        return {
+            status: "NO_ENGINE_ACTION",
+            taskId: task.id,
+            category
+        };
+    }
+
+    /* -------------------------------------------------------------
+       TASK EXECUTION
+       ------------------------------------------------------------- */
+
+    async function executeTask(taskId) {
+
+        const task =
+            STATE.tasks[taskId];
+
+        if (!task) {
+            return null;
+        }
+
+        if (
+            task.status === "COMPLETE"
+        ) {
+            return clone(task);
+        }
+
+        if (
+            task.status === "RUNNING"
+        ) {
+            return clone(task);
+        }
+
+        if (
+            dependencyBlocked(task)
+        ) {
+
+            task.status = "WAITING";
+
+            task.updatedAt = now();
+
+            return clone(task);
+        }
+
+        if (
+            CONFIG.requireHealthCheck
+        ) {
+
+            const health =
+                healthCheck();
+
+            if (!health.healthy) {
+
+                task.status =
+                    "WAITING";
+
+                task.error =
+                    "SYSTEM_HEALTH_GATE_FAILED";
+
+                task.updatedAt = now();
+
+                emit(
+                    "ORCHESTRATOR_HEALTH_GATE",
+                    {
+                        taskId,
+                        health
+                    }
+                );
+
+                return clone(task);
+            }
+        }
+
+        if (
+            task.confidence <
+            CONFIG.confidenceThreshold
+        ) {
+
+            task.status =
+                "WAITING";
+
+            task.error =
+                "CONFIDENCE_GATE_FAILED";
+
+            task.updatedAt = now();
+
+            return clone(task);
+        }
+
+        task.status =
+            "RUNNING";
+
+        task.startedAt =
+            now();
+
+        task.updatedAt =
+            now();
+
+        const executionId =
+            uid("EXEC");
+
+        const execution = {
+
+            id: executionId,
+
+            taskId,
+
+            startedAt: now(),
+
+            status: "RUNNING",
+
+            result: null,
+
+            error: null
+        };
+
+        STATE.executions[
+            executionId
+        ] = execution;
+
+        STATE.metrics.executions++;
+
+        emit(
+            "ORCHESTRATOR_TASK_STARTED",
+            {
+                executionId,
+                taskId
+            }
+        );
+
+        try {
+
+            const result =
+                await executeViaEngine(
+                    task
+                );
+
+            execution.status =
+                "COMPLETE";
+
+            execution.result =
+                clone(result);
+
+            execution.completedAt =
+                now();
+
+            task.result =
+                clone(result);
+
+            task.status =
+                "COMPLETE";
+
+            task.progress = 1;
+
+            task.completedAt =
+                now();
+
+            task.updatedAt =
+                now();
+
+            STATE.metrics.successfulExecutions++;
+
+            STATE.metrics.tasksCompleted++;
+
+            if (
+                task.objectiveId
+            ) {
+
+                updateObjectiveProgress(
+                    task.objectiveId
+                );
+            }
+
+            emit(
+                "ORCHESTRATOR_TASK_COMPLETE",
+                {
+                    executionId,
+                    taskId,
+                    result
+                }
+            );
+
+            await rememberRecord(
+                "TASK_COMPLETE",
+                {
+                    executionId,
+                    taskId,
+                    result
+                }
+            );
+
+        } catch (error) {
+
+            execution.status =
+                "FAILED";
+
+            execution.error =
+                error.message ||
+                String(error);
+
+            execution.completedAt =
+                now();
+
+            task.error =
+                execution.error;
+
+            task.retries =
+                Number(task.retries || 0) + 1;
+
+            STATE.metrics.failedExecutions++;
+
+            STATE.metrics.tasksFailed++;
+
+            STATE.metrics.retries++;
+
+            if (
+                task.retries <=
+                task.maxRetries
+            ) {
+
+                task.status =
+                    "PENDING";
+
+            } else {
+
+                task.status =
+                    "FAILED";
+
+                if (
+                    task.objectiveId
+                ) {
+
+                    const objective =
+                        STATE.objectives[
+                            task.objectiveId
+                        ];
+
+                    if (objective) {
+
+                        objective.failedTasks
+                            .push(task.id);
+
+                        addObjectiveHistory(
+                            objective,
+                            "TASK_FAILED",
+                            {
+                                taskId:
+                                    task.id,
+                                error:
+                                    task.error
+                            }
+                        );
+                    }
+                }
+            }
+
+            task.updatedAt =
+                now();
+
+            emit(
+                "ORCHESTRATOR_TASK_FAILED",
+                {
+                    executionId,
+                    taskId,
+                    error:
+                        execution.error
+                }
+            );
+
+            await rememberRecord(
+                "TASK_FAILURE",
+                {
+                    executionId,
+                    taskId,
+                    error:
+                        execution.error
+                }
+            );
+        }
+
+        return clone(task);
+    }
+
+    /* -------------------------------------------------------------
+       OBJECTIVE PROGRESS
+       ------------------------------------------------------------- */
+
+    function updateObjectiveProgress(
+        objectiveId
+    ) {
+
+        const objective =
+            STATE.objectives[
+                objectiveId
+            ];
+
+        if (!objective) {
+            return null;
+        }
+
+        const taskIds =
+            objective.tasks || [];
+
+        if (!taskIds.length) {
+
+            objective.progress = 1;
+
+            objective.status =
+                "COMPLETE";
+
+            return clone(objective);
+        }
+
+        const linkedTasks =
+            taskIds
+                .map(id => STATE.tasks[id])
+                .filter(Boolean);
+
+        const completed =
+            linkedTasks.filter(
+                task =>
+                    task.status ===
+                    "COMPLETE"
+            );
+
+        const failed =
+            linkedTasks.filter(
+                task =>
+                    task.status ===
+                    "FAILED"
+            );
+
+        objective.progress =
+            completed.length /
+            linkedTasks.length;
+
+        objective.completedTasks =
+            completed.map(
+                task => task.id
+            );
+
+        objective.failedTasks =
+            failed.map(
+                task => task.id
+            );
+
+        if (
+            objective.progress >= 1
+        ) {
+
+            objective.status =
+                "COMPLETE";
+
+            STATE.metrics.objectivesCompleted++;
+
+            addObjectiveHistory(
+                objective,
+                "COMPLETED",
+                {}
+            );
+
+            emit(
+                "ORCHESTRATOR_OBJECTIVE_COMPLETE",
+                objective
+            );
+
+        } else if (
+            failed.length ===
+            linkedTasks.length
+        ) {
+
+            objective.status =
+                "FAILED";
+
+            STATE.metrics.objectivesFailed++;
+
+            addObjectiveHistory(
+                objective,
+                "FAILED",
+                {}
+            );
+
+        } else {
+
+            objective.status =
+                "RUNNING";
+        }
+
+        objective.updatedAt =
+            now();
+
+        return clone(objective);
+    }
+
+    /* -------------------------------------------------------------
+       OBJECTIVE DECOMPOSITION
+       ------------------------------------------------------------- */
+
+    function decomposeObjective(
+        objectiveId
+    ) {
+
+        const objective =
+            STATE.objectives[
+                objectiveId
+            ];
+
+        if (!objective) {
+            return [];
+        }
+
+        if (
+            objective.tasks &&
+            objective.tasks.length
+        ) {
+
+            return objective.tasks
+                .map(
+                    id =>
+                        STATE.tasks[id]
+                )
+                .filter(Boolean)
+                .map(clone);
+        }
+
+        const category =
+            String(
+                objective.category ||
+                "GENERAL"
+            ).toUpperCase();
+
+        const tasks = [];
+
+        /* ANALYSIS OBJECTIVE */
+
+        if (
+            category === "ANALYSE" ||
+            category === "ANALYSIS"
+        ) {
+
+            tasks.push(
+                createTask({
+                    objectiveId,
+                    title:
+                        "Analyse knowledge and system state",
+                    description:
+                        objective.description,
+                    category:
+                        "ANALYSE",
+                    priority:
+                        objective.priority,
+                    confidence:
+                        objective.confidence
+                })
+            );
+        }
+
+        /* EVOLUTION OBJECTIVE */
+
+        if (
+            category === "EVOLVE" ||
+            category === "EVOLUTION"
+        ) {
+
+            tasks.push(
+                createTask({
+                    objectiveId,
+                    title:
+                        "Generate controlled evolution opportunities",
+                    description:
+                        objective.description,
+                    category:
+                        "EVOLUTION",
+                    priority:
+                        objective.priority,
+                    confidence:
+                        objective.confidence
+                })
+            );
+        }
+
+        /* PATHWAY OBJECTIVE */
+
+        if (
+            category === "MAP" ||
+            category === "PATHWAY"
+        ) {
+
+            tasks.push(
+                createTask({
+                    objectiveId,
+                    title:
+                        "Map system pathways",
+                    description:
+                        objective.description,
+                    category:
+                        "PATHWAY",
+                    priority:
+                        objective.priority,
+                    confidence:
+                        objective.confidence
+                })
+            );
+        }
+
+        /* BUILD OBJECTIVE */
+
+        if (
+            category === "BUILD" ||
+            category === "CODE"
+        ) {
+
+            const analysisTask =
+                createTask({
+                    objectiveId,
+                    title:
+                        "Analyse build requirement",
+                    description:
+                        objective.description,
+                    category:
+                        "ANALYSE",
+                    priority:
+                        objective.priority,
+                    confidence:
+                        objective.confidence
+                });
+
+            const buildTask =
+                createTask({
+                    objectiveId,
+                    title:
+                        "Generate controlled build proposal",
+                    description:
+                        objective.description,
+                    category:
+                        "BUILD",
+                    priority:
+                        objective.priority,
+                    confidence:
+                        objective.confidence,
+                    dependencies: [
+                        analysisTask.id
+                    ]
+                });
+
+            tasks.push(
+                analysisTask,
+                buildTask
+            );
+        }
+
+        /* RECOVERY OBJECTIVE */
+
+        if (
+            category === "RECOVER" ||
+            category === "RECOVERY"
+        ) {
+
+            tasks.push(
+                createTask({
+                    objectiveId,
+                    title:
+                        "Inspect system integrity and recovery state",
+                    description:
+                        objective.description,
+                    category:
+                        "RECOVERY",
+                    priority:
+                        "CRITICAL",
+                    confidence:
+                        objective.confidence
+                })
+            );
+        }
+
+        /* EXTERNAL AI OBJECTIVE */
+
+        if (
+            category === "AI" ||
+            category === "GROK" ||
+            category === "EXTERNAL_AI"
+        ) {
+
+            tasks.push(
+                createTask({
+                    objectiveId,
+                    title:
+                        "Prepare external AI handoff",
+                    description:
+                        objective.description,
+                    category:
+                        "EXTERNAL_AI",
+                    priority:
+                        objective.priority,
+                    confidence:
+                        objective.confidence
+                })
+            );
+        }
+
+        /* GENERAL FALLBACK */
+
+        if (!tasks.length) {
+
+            tasks.push(
+                createTask({
+                    objectiveId,
+                    title:
+                        objective.title,
+                    description:
+                        objective.description,
+                    category:
+                        "GENERAL",
+                    priority:
+                        objective.priority,
+                    confidence:
+                        objective.confidence
+                })
+            );
+        }
+
+        objective.status =
+            "PLANNING";
+
+        addObjectiveHistory(
+            objective,
+            "DECOMPOSED",
+            {
+                taskCount:
+                    tasks.length
+            }
+        );
+
+        return tasks.map(clone);
+    }
+
+    /* -------------------------------------------------------------
+       TASK PREPARATION
+       ------------------------------------------------------------- */
+
+    function prepareTask(taskId) {
+
+        const task =
+            STATE.tasks[taskId];
+
+        if (!task) {
+            return null;
+        }
+
+        if (
+            dependencyBlocked(task)
+        ) {
+
+            task.status =
+                "WAITING";
+
+            return clone(task);
+        }
+
+        if (!task.route) {
+
+            routeTask(taskId);
+        }
+
+        return clone(
+            STATE.tasks[taskId]
+        );
+    }
+
+    /* -------------------------------------------------------------
+       TASK SELECTION
+       ------------------------------------------------------------- */
+
+    function nextTask() {
+
+        const candidates =
+            Object.values(
+                STATE.tasks
+            )
+            .filter(
+                task =>
+                    task.status ===
+                        "PENDING" ||
+                    task.status ===
+                        "READY"
+            )
+            .filter(
+                task =>
+                    !dependencyBlocked(task)
+            )
+            .map(
+                task => ({
+                    task,
+                    score:
+                        calculateTaskScore(
+                            task
+                        )
+                })
+            )
+            .sort(
+                (a, b) =>
+                    b.score -
+                    a.score
+            );
+
+        return candidates.length
+            ? candidates[0].task
+            : null;
+    }
+
+    /* -------------------------------------------------------------
+       MAIN ORCHESTRATION CYCLE
+       ------------------------------------------------------------- */
+
+    async function cycle() {
+
+        if (
+            !STATE.running ||
+            STATE.paused
+        ) {
+            return status();
+        }
+
+        STATE.cycle++;
+
+        STATE.lastCycle =
+            now();
+
+        emit(
+            "ORCHESTRATOR_CYCLE_START",
+            {
+                cycle:
+                    STATE.cycle
+            }
+        );
+
+        const health =
+            healthCheck();
+
+        if (
+            CONFIG.requireHealthCheck &&
+            !health.healthy
+        ) {
+
+            STATE.incidents.push({
+                id:
+                    uid("INCIDENT"),
+                timestamp:
+                    now(),
+                type:
+                    "HEALTH_GATE_FAILURE",
+                health:
+                    clone(health)
+            });
+
+            STATE.metrics.recoveryEvents++;
+
+            emit(
+                "ORCHESTRATOR_HEALTH_FAILURE",
+                health
+            );
+
+            return status();
+        }
+
+        /* ---------------------------------------------------------
+           OBJECTIVE PLANNING
+           --------------------------------------------------------- */
+
+        if (
+            CONFIG.automaticPlanning
+        ) {
+
+            Object.values(
+                STATE.objectives
+            )
+            .filter(
+                objective =>
+                    objective.status ===
+                    "PENDING"
+            )
+            .forEach(
+                objective => {
+
+                    decomposeObjective(
+                        objective.id
+                    );
+                }
+            );
+        }
+
+        /* ---------------------------------------------------------
+           ROUTING
+           --------------------------------------------------------- */
+
+        if (
+            CONFIG.automaticRouting
+        ) {
+
+            Object.values(
+                STATE.tasks
+            )
+            .filter(
+                task =>
+                    task.status ===
+                        "PENDING" ||
+                    task.status ===
+                        "READY"
+            )
+            .forEach(
+                task => {
+
+                    if (
+                        !task.route &&
+                        !dependencyBlocked(task)
+                    ) {
+
+                        routeTask(task.id);
+                    }
+                }
+            );
+        }
+
+        /* ---------------------------------------------------------
+           EXECUTION
+           --------------------------------------------------------- */
+
+        if (
+            CONFIG.automaticExecution
+        ) {
+
+            const task =
+                nextTask();
+
+            if (task) {
+
+                prepareTask(
+                    task.id
+                );
+
+                await executeTask(
+                    task.id
+                );
+            }
+        }
+
+        /* ---------------------------------------------------------
+           OBJECTIVE RECALCULATION
+           --------------------------------------------------------- */
+
+        Object.values(
+            STATE.objectives
+        ).forEach(
+            objective => {
+
+                if (
+                    objective.tasks &&
+                    objective.tasks.length
+                ) {
+
+                    updateObjectiveProgress(
+                        objective.id
+                    );
+                }
+            }
+        );
+
+        emit(
+            "ORCHESTRATOR_CYCLE_COMPLETE",
+            {
+                cycle:
+                    STATE.cycle,
+                health
+            }
+        );
+
+        await rememberRecord(
+            "ORCHESTRATION_CYCLE",
+            {
+                cycle:
+                    STATE.cycle,
+                health,
+                metrics:
+                    clone(STATE.metrics)
+            }
+        );
+
+        return status();
+    }
+
+    /* -------------------------------------------------------------
+       WORKFLOW ENGINE
+       ------------------------------------------------------------- */
+
+    function defineWorkflow(
+        name,
+        steps
+    ) {
+
+        const id =
+            uid("WORKFLOW");
+
+        STATE.workflows[id] = {
+
+            id,
+
+            name:
+                normalizeText(name),
+
+            steps:
+                Array.isArray(steps)
+                    ? clone(steps)
+                    : [],
+
+            createdAt:
+                now(),
+
+            status:
+                "DEFINED"
+        };
+
+        emit(
+            "ORCHESTRATOR_WORKFLOW_DEFINED",
+            STATE.workflows[id]
+        );
+
+        return clone(
+            STATE.workflows[id]
+        );
+    }
+
+    function runWorkflow(
+        workflowId,
+        payload
+    ) {
+
+        const workflow =
+            STATE.workflows[
+                workflowId
+            ];
+
+        if (!workflow) {
+            return null;
+        }
+
+        let previousTask = null;
+
+        const createdTasks = [];
+
+        workflow.steps.forEach(
+            (step, index) => {
+
+                const task =
+                    createTask({
+                        title:
+                            step.title ||
+                            "Workflow Step " +
+                            (index + 1),
+
+                        description:
+                            step.description ||
+                            "",
+
+                        category:
+                            step.category ||
+                            "GENERAL",
+
+                        priority:
+                            step.priority ||
+                            "NORMAL",
+
+                        confidence:
+                            step.confidence ||
+                            0.80,
+
+                        dependencies:
+                            previousTask
+                                ? [
+                                    previousTask.id
+                                ]
+                                : [],
+
+                        payload:
+                            Object.assign(
+                                {},
+                                clone(payload || {}),
+                                clone(
+                                    step.payload ||
+                                    {}
+                                )
+                            )
+                    });
+
+                createdTasks.push(
+                    task
+                );
+
+                previousTask =
+                    task;
+            }
+        );
+
+        workflow.status =
+            "QUEUED";
+
+        workflow.updatedAt =
+            now();
+
+        workflow.tasks =
+            createdTasks.map(
+                task => task.id
+            );
+
+        return clone(workflow);
+    }
+
+    /* -------------------------------------------------------------
+       EXTERNAL AI HANDOFF
+       ------------------------------------------------------------- */
+
+    function createExternalAIHandoff(
+        taskId,
+        instructions
+    ) {
+
+        const task =
+            STATE.tasks[taskId];
+
+        if (!task) {
+            return null;
+        }
+
+        const handoff = {
+
+            id:
+                uid("AIHANDOFF"),
+
+            taskId,
+
+            protocol:
+                "CHEP-09-AI-HANDOFF",
+
+            timestamp:
+                now(),
+
+            instructions:
+                normalizeText(
+                    instructions ||
+                    task.description
+                ),
+
+            context: {
+
+                objective:
+                    task.objectiveId
+                        ? getObjective(
+                            task.objectiveId
+                        )
+                        : null,
+
+                task:
+                    clone(task),
+
+                system:
+                    status(),
+
+                safety: {
+
+                    productionAutoDeploy:
+                        false,
+
+                    unrestrictedSelfRewrite:
+                        false,
+
+                    protectedModules:
+                        clone(
+                            CONFIG.protectedModules
+                        )
+                }
+            },
+
+            status:
+                "READY_FOR_EXTERNAL_BRIDGE"
+        };
+
+        STATE.metrics.externalHandoffs++;
+
+        emit(
+            "ORCHESTRATOR_EXTERNAL_AI_HANDOFF",
+            handoff
+        );
+
+        rememberRecord(
+            "EXTERNAL_AI_HANDOFF",
+            handoff
+        );
+
+        return handoff;
+    }
+
+    /* -------------------------------------------------------------
+       CHECKPOINT ENGINE
+       ------------------------------------------------------------- */
+
+    function createCheckpoint(
+        label
+    ) {
+
+        const id =
+            uid("CHECKPOINT");
+
+        const checkpoint = {
+
+            id,
+
+            label:
+                normalizeText(
+                    label ||
+                    "Orchestrator Checkpoint"
+                ),
+
+            timestamp:
+                now(),
+
+            cycle:
+                STATE.cycle,
+
+            objectives:
+                clone(
+                    STATE.objectives
+                ),
+
+            tasks:
+                clone(
+                    STATE.tasks
+                ),
+
+            routes:
+                clone(
+                    STATE.routes
+                ),
+
+            metrics:
+                clone(
+                    STATE.metrics
+                )
+        };
+
+        STATE.checkpoints[id] =
+            checkpoint;
+
+        emit(
+            "ORCHESTRATOR_CHECKPOINT_CREATED",
+            {
+                id,
+                label:
+                    checkpoint.label
+            }
+        );
+
+        rememberRecord(
+            "CHECKPOINT",
+            checkpoint
+        );
+
+        return clone(checkpoint);
+    }
+
+    /* -------------------------------------------------------------
+       STATE TRIMMING
+       ------------------------------------------------------------- */
+
+    function trimState() {
+
+        const objectiveIds =
+            Object.keys(
+                STATE.objectives
+            );
+
+        if (
+            objectiveIds.length >
+            CONFIG.maxObjectives
+        ) {
+
+            const removeCount =
+                objectiveIds.length -
+                CONFIG.maxObjectives;
+
+            objectiveIds
+                .slice(0, removeCount)
+                .forEach(
+                    id =>
+                        delete STATE.objectives[id]
+                );
+        }
+
+        const taskIds =
+            Object.keys(
+                STATE.tasks
+            );
+
+        if (
+            taskIds.length >
+            CONFIG.maxTasks
+        ) {
+
+            const removeCount =
+                taskIds.length -
+                CONFIG.maxTasks;
+
+            taskIds
+                .slice(0, removeCount)
+                .forEach(
+                    id =>
+                        delete STATE.tasks[id]
+                );
+        }
+
+        if (
+            STATE.history.length >
+            CONFIG.maxHistory
+        ) {
+
+            STATE.history =
+                STATE.history.slice(
+                    -CONFIG.maxHistory
+                );
+        }
+    }
+
+    /* -------------------------------------------------------------
+       AUDIT
+       ------------------------------------------------------------- */
+
+    function audit() {
+
+        const report = {
+
+            timestamp:
+                now(),
+
+            cycle:
+                STATE.cycle,
+
+            health:
+                healthCheck(),
+
+            objectives:
+                Object.keys(
+                    STATE.objectives
+                ).length,
+
+            tasks:
+                Object.keys(
+                    STATE.tasks
+                ).length,
+
+            routes:
+                Object.keys(
+                    STATE.routes
+                ).length,
+
+            runningTasks:
+                Object.values(
+                    STATE.tasks
+                )
+                .filter(
+                    task =>
+                        task.status ===
+                        "RUNNING"
+                )
+                .length,
+
+            completedTasks:
+                Object.values(
+                    STATE.tasks
+                )
+                .filter(
+                    task =>
+                        task.status ===
+                        "COMPLETE"
+                )
+                .length,
+
+            failedTasks:
+                Object.values(
+                    STATE.tasks
+                )
+                .filter(
+                    task =>
+                        task.status ===
+                        "FAILED"
+                )
+                .length,
+
+            metrics:
+                clone(STATE.metrics)
+        };
+
+        emit(
+            "ORCHESTRATOR_AUDIT",
+            report
+        );
+
+        return report;
+    }
+
+    /* -------------------------------------------------------------
+       STATUS
+       ------------------------------------------------------------- */
+
+    function status() {
+
+        return {
+
+            protocol:
+                CONFIG.protocol,
+
+            version:
+                CONFIG.version,
+
+            name:
+                CONFIG.name,
+
+            booted:
+                STATE.booted,
+
+            running:
+                STATE.running,
+
+            paused:
+                STATE.paused,
+
+            cycle:
+                STATE.cycle,
+
+            lastCycle:
+                STATE.lastCycle,
+
+            health:
+                healthCheck(),
+
+            counts: {
+
+                objectives:
+                    Object.keys(
+                        STATE.objectives
+                    ).length,
+
+                tasks:
+                    Object.keys(
+                        STATE.tasks
+                    ).length,
+
+                routes:
+                    Object.keys(
+                        STATE.routes
+                    ).length,
+
+                executions:
+                    Object.keys(
+                        STATE.executions
+                    ).length,
+
+                workflows:
+                    Object.keys(
+                        STATE.workflows
+                    ).length
+            },
+
+            metrics:
+                clone(STATE.metrics),
+
+            modules: {
+
+                core:
+                    !!CORE,
+
+                memory:
+                    !!MEMORY,
+
+                workers:
+                    !!WORKERS,
+
+                evolution:
+                    !!EVOLUTION,
+
+                pathways:
+                    !!PATHWAYS,
+
+                watchdog:
+                    !!WATCHDOG,
+
+                knowledge:
+                    !!KNOWLEDGE,
+
+                build:
+                    !!BUILD
+            },
+
+            safety: {
+
+                productionAutoDeploy:
+                    CONFIG.productionAutoDeploy,
+
+                unrestrictedSelfRewrite:
+                    CONFIG.unrestrictedSelfRewrite,
+
+                protectedModules:
+                    clone(
+                        CONFIG.protectedModules
+                    )
+            }
+        };
+    }
+
+    /* -------------------------------------------------------------
+       EXPORT
+       ------------------------------------------------------------- */
+
+    function exportState() {
+
+        return {
+
+            protocol:
+                CONFIG.protocol,
+
+            version:
+                CONFIG.version,
+
+            exportedAt:
+                now(),
+
+            config:
+                clone(CONFIG),
+
+            state: {
+
+                booted:
+                    STATE.booted,
+
+                running:
+                    STATE.running,
+
+                paused:
+                    STATE.paused,
+
+                cycle:
+                    STATE.cycle,
+
+                lastCycle:
+                    STATE.lastCycle,
+
+                objectives:
+                    clone(
+                        STATE.objectives
+                    ),
+
+                tasks:
+                    clone(
+                        STATE.tasks
+                    ),
+
+                routes:
+                    clone(
+                        STATE.routes
+                    ),
+
+                executions:
+                    clone(
+                        STATE.executions
+                    ),
+
+                workflows:
+                    clone(
+                        STATE.workflows
+                    ),
+
+                metrics:
+                    clone(
+                        STATE.metrics
+                    )
+            }
+        };
+    }
+
+    /* -------------------------------------------------------------
+       PAUSE / RESUME
+       ------------------------------------------------------------- */
+
+    function pause() {
+
+        STATE.paused = true;
+
+        emit(
+            "ORCHESTRATOR_PAUSED",
+            {
+                timestamp:
+                    now()
+            }
+        );
+
+        return status();
+    }
+
+    function resume() {
+
+        STATE.paused = false;
+
+        emit(
+            "ORCHESTRATOR_RESUMED",
+            {
+                timestamp:
+                    now()
+            }
+        );
+
+        return status();
+    }
+
+    /* -------------------------------------------------------------
+       RESET
+       ------------------------------------------------------------- */
+
+    function reset(
+        preserveMemory
+    ) {
+
+        if (
+            STATE.timers.scheduler
+        ) {
+
+            clearInterval(
+                STATE.timers.scheduler
+            );
+
+            STATE.timers.scheduler =
+                null;
+        }
+
+        STATE.objectives = {};
+        STATE.tasks = {};
+        STATE.routes = {};
+        STATE.executions = {};
+        STATE.workflows = {};
+        STATE.events = [];
+        STATE.history = [];
+        STATE.incidents = [];
+        STATE.checkpoints = {};
+
+        STATE.cycle = 0;
+        STATE.lastCycle = null;
+
+        Object.keys(
+            STATE.metrics
+        ).forEach(
+            key =>
+                STATE.metrics[key] = 0
+        );
+
+        STATE.running = true;
+        STATE.paused = false;
+
+        if (!preserveMemory) {
+
+            rememberRecord(
+                "ORCHESTRATOR_RESET",
+                {
+                    timestamp:
+                        now()
+                }
+            );
+        }
+
+        emit(
+            "ORCHESTRATOR_RESET",
+            {
+                preserveMemory:
+                    !!preserveMemory
+            }
+        );
+
+        return status();
+    }
+
+    /* -------------------------------------------------------------
+       COMMAND INTERFACE
+       ------------------------------------------------------------- */
+
+    async function command(
+        type,
+        payload
+    ) {
+
+        const commandType =
+            String(type || "")
+                .toUpperCase();
+
+        switch (commandType) {
+
+            case "OBJECTIVE":
+
+                return createObjective(
+                    payload
+                );
+
+            case "TASK":
+
+                return createTask(
+                    payload
+                );
+
+            case "RUN":
+
+                return cycle();
+
+            case "PAUSE":
+
+                return pause();
+
+            case "RESUME":
+
+                return resume();
+
+            case "STATUS":
+
+                return status();
+
+            case "AUDIT":
+
+                return audit();
+
+            case "CHECKPOINT":
+
+                return createCheckpoint(
+                    payload &&
+                    payload.label
+                );
+
+            case "ROUTE":
+
+                return routeTask(
+                    payload &&
+                    payload.taskId
+                );
+
+            case "EXECUTE":
+
+                return executeTask(
+                    payload &&
+                    payload.taskId
+                );
+
+            case "WORKFLOW":
+
+                return defineWorkflow(
+                    payload &&
+                    payload.name,
+                    payload &&
+                    payload.steps
+                );
+
+            case "HANDOFF":
+
+                return createExternalAIHandoff(
+                    payload &&
+                    payload.taskId,
+                    payload &&
+                    payload.instructions
+                );
+
+            case "EXPORT":
+
+                return exportState();
+
+            case "RESET":
+
+                return reset(
+                    payload &&
+                    payload.preserveMemory
+                );
+
+            default:
+
+                return {
+                    ok: false,
+                    error:
+                        "UNKNOWN_COMMAND",
+                    command:
+                        commandType
+                };
+        }
+    }
+
+    /* -------------------------------------------------------------
+       EVENT LISTENERS
+       ------------------------------------------------------------- */
+
+    function attachEventListeners() {
+
+        if (
+            !CORE ||
+            typeof CORE.on !==
+            "function"
+        ) {
+            return;
+        }
+
+        const events = [
+
+            "WATCHDOG_INCIDENT",
+
+            "WATCHDOG_RECOVERY_REQUIRED",
+
+            "EVOLUTION_DECISION",
+
+            "EVOLUTION_PROPOSAL_CREATED",
+
+            "PATHWAY_ANALYSIS_COMPLETE",
+
+            "PATHWAY_BOTTLENECK",
+
+            "BUILD_VALIDATION_COMPLETE",
+
+            "BUILD_PROPOSAL_CREATED",
+
+            "MEMORY_WRITE",
+
+            "SYSTEM_ERROR"
+        ];
+
+        events.forEach(
+            eventName => {
+
+                try {
+
+                    CORE.on(
+                        eventName,
+                        payload => {
+
+                            emit(
+                                "ORCHESTRATOR_EVENT_CAPTURED",
+                                {
+                                    source:
+                                        eventName,
+                                    payload:
+                                        clone(
+                                            payload ||
+                                            {}
+                                        )
+                                }
+                            );
+
+                            /*
+                             * Events are converted into
+                             * controlled tasks rather than
+                             * immediately modifying production.
+                             */
+
+                            let category =
+                                "GENERAL";
+
+                            if (
+                                eventName
+                                    .indexOf(
+                                        "WATCHDOG"
+                                    ) === 0
+                            ) {
+                                category =
+                                    "RECOVERY";
+                            }
+
+                            if (
+                                eventName
+                                    .indexOf(
+                                        "EVOLUTION"
+                                    ) === 0
+                            ) {
+                                category =
+                                    "EVOLUTION";
+                            }
+
+                            if (
+                                eventName
+                                    .indexOf(
+                                        "PATHWAY"
+                                    ) === 0
+                            ) {
+                                category =
+                                    "PATHWAY";
+                            }
+
+                            if (
+                                eventName
+                                    .indexOf(
+                                        "BUILD"
+                                    ) === 0
+                            ) {
+                                category =
+                                    "BUILD";
+                            }
+
+                            createTask({
+                                title:
+                                    "Process event: " +
+                                    eventName,
+
+                                description:
+                                    "Controlled orchestration response to " +
+                                    eventName,
+
+                                category,
+
+                                priority:
+                                    eventName
+                                        .indexOf(
+                                            "INCIDENT"
+                                        ) >= 0
+                                        ? "HIGH"
+                                        : "NORMAL",
+
+                                confidence:
+                                    0.75,
+
+                                payload: {
+                                    event:
+                                        eventName,
+                                    data:
+                                        clone(
+                                            payload ||
+                                            {}
+                                        )
+                                }
+                            });
+                        }
+                    );
+
+                } catch (error) {}
+            }
+        );
+    }
+
+    /* -------------------------------------------------------------
+       WORKER REGISTRATION
+       ------------------------------------------------------------- */
+
+    function registerWorkers() {
+
+        if (
+            !WORKERS ||
+            typeof WORKERS.register !==
+            "function"
+        ) {
+            return;
+        }
+
+        const registrations = [
+
+            [
+                "ORCHESTRATOR_HEALTH",
+                async function () {
+                    return healthCheck();
+                },
+                {
+                    priority: 100
+                }
+            ],
+
+            [
+                "ORCHESTRATOR_PLANNER",
+                async function () {
+
+                    const pending =
+                        Object.values(
+                            STATE.objectives
+                        )
+                        .filter(
+                            objective =>
+                                objective.status ===
+                                "PENDING"
+                        );
+
+                    pending.forEach(
+                        objective =>
+                            decomposeObjective(
+                                objective.id
+                            )
+                    );
+
+                    return {
+                        planned:
+                            pending.length
+                    };
+                },
+                {
+                    priority: 90
+                }
+            ],
+
+            [
+                "ORCHESTRATOR_ROUTER",
+                async function () {
+
+                    let routed = 0;
+
+                    Object.values(
+                        STATE.tasks
+                    ).forEach(
+                        task => {
+
+                            if (
+                                !task.route &&
+                                (
+                                    task.status ===
+                                    "PENDING" ||
+                                    task.status ===
+                                    "READY"
+                                ) &&
+                                !dependencyBlocked(
+                                    task
+                                )
+                            ) {
+
+                                routeTask(
+                                    task.id
+                                );
+
+                                routed++;
+                            }
+                        }
+                    );
+
+                    return {
+                        routed
+                    };
+                },
+                {
+                    priority: 85
+                }
+            ],
+
+            [
+                "ORCHESTRATOR_DISPATCH",
+                async function () {
+
+                    const task =
+                        nextTask();
+
+                    if (!task) {
+
+                        return {
+                            status:
+                                "NO_TASK"
+                        };
+                    }
+
+                    return executeTask(
+                        task.id
+                    );
+                },
+                {
+                    priority: 80
+                }
+            ],
+
+            [
+                "ORCHESTRATOR_AUDITOR",
+                async function () {
+                    return audit();
+                },
+                {
+                    priority: 70
+                }
+            ],
+
+            [
+                "ORCHESTRATOR_STATUS",
+                async function () {
+                    return status();
+                },
+                {
+                    priority: 20
+                }
+            ]
+        ];
+
+        registrations.forEach(
+            registration => {
+
+                try {
+
+                    WORKERS.register(
+                        registration[0],
+                        registration[1],
+                        registration[2]
+                    );
+
+                } catch (error) {
+
+                    log(
+                        "Worker registration warning",
+                        {
+                            worker:
+                                registration[0],
+                            error:
+                                error.message
+                        }
+                    );
+                }
+            }
+        );
+    }
+
+    /* -------------------------------------------------------------
+       SCHEDULER
+       ------------------------------------------------------------- */
+
+    function startScheduler() {
+
+        if (
+            STATE.timers.scheduler
+        ) {
+            return;
+        }
+
+        STATE.timers.scheduler =
+            setInterval(
+                function () {
+
+                    cycle()
+                        .catch(
+                            error => {
+
+                                log(
+                                    "Cycle error",
+                                    error.message
+                                );
+
+                                emit(
+                                    "ORCHESTRATOR_CYCLE_ERROR",
+                                    {
+                                        error:
+                                            error.message
+                                    }
+                                );
+                            }
+                        );
+
+                },
+                CONFIG.schedulerInterval
+            );
+    }
+
+    /* -------------------------------------------------------------
+       BOOT
+       ------------------------------------------------------------- */
+
+    async function boot() {
+
+        if (STATE.booted) {
+            return status();
+        }
+
+        log(
+            "Booting Master Orchestrator..."
+        );
+
+        attachEventListeners();
+
+        registerWorkers();
+
+        STATE.booted = true;
+
+        STATE.running = true;
+
+        STATE.paused = false;
+
+        await rememberRecord(
+            "ORCHESTRATOR_BOOT",
+            {
+                protocol:
+                    CONFIG.protocol,
+                version:
+                    CONFIG.version,
+                timestamp:
+                    now()
+            }
+        );
+
+        startScheduler();
+
+        emit(
+            "ORCHESTRATOR_BOOT_COMPLETE",
+            status()
+        );
+
+        log(
+            "Master Orchestrator online."
+        );
+
+        return status();
+    }
+
+    /* -------------------------------------------------------------
+       PUBLIC API
+       ------------------------------------------------------------- */
+
+    const API = {
+
+        protocol:
+            CONFIG.protocol,
+
+        version:
+            CONFIG.version,
+
+        config:
+            clone(CONFIG),
+
+        boot,
+
+        status,
+
+        audit,
+
+        cycle,
+
+        reset,
+
+        pause,
+
+        resume,
+
+        command,
+
+        createObjective,
+
+        getObjective,
+
+        objectives,
+
+        createTask,
+
+        getTask,
+
+        tasks,
+
+        routeTask,
+
+        executeTask,
+
+        determineRoute,
+
+        healthCheck,
+
+        decomposeObjective,
+
+        defineWorkflow,
+
+        runWorkflow,
+
+        createExternalAIHandoff,
+
+        createCheckpoint,
+
+        export:
+            exportState
+    };
+
+    /* -------------------------------------------------------------
+       GLOBAL REGISTRATION
+       ------------------------------------------------------------- */
+
+    global.CHIROMBE_ORCHESTRATOR =
+        API;
+
+    global.CHIROMBE_ORCHESTRATION_ENGINE =
+        API;
+
+    /* -------------------------------------------------------------
+       BOOT
+       ------------------------------------------------------------- */
+
+    boot().catch(
+        error => {
+
+            console.error(
+                "[CHIROMBE ORCHESTRATOR] Boot failure:",
+                error
+            );
+        }
+    );
+
+})(typeof globalThis !== "undefined"
+    ? globalThis
+    : window);
