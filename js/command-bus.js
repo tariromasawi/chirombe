@@ -1,6 +1,6 @@
 (function(g){
   var cmds={};
-  function registerCommand(name,handler,meta){cmds[name]={handler:handler,meta:meta||{}};
+  function registerCommand(name,handler,meta){cmds[name]={handler:handler,meta:meta||{}};}
   function executeCommand(name,args){
     var t=Date.now(); var rec=cmds[name];
     if(!rec) return {ok:false,command:name,timestamp:new Date().toISOString(),duration:0,error:"unknown command",subsystem:"bus"};
