@@ -27,7 +27,7 @@
   load("./js/celestial-support.js");
   load("./js/celestial-autostart-on-index.js");
   function loadThen(src,next){var s=document.createElement("script");s.src=src;s.onload=next;s.onerror=next;document.head.appendChild(s);}
-  loadThen("./chirombe-audio-living-liturgy.js",function(){load("./js/chirombe-audio-install.js");});
+  loadThen("./chirombe-audio-living-liturgy.js",function(){loadThen("./js/chirombe-audio-install.js",function(){load("./js/chirombe-connect-and-play.js");});});
   function loadOrdered(list){
     var i=0;
     function next(){
@@ -42,7 +42,7 @@
   }
   loadOrdered(["./js/engine/policy.js","./js/engine/ledger.js","./js/engine/adapters.js","./js/engine/chirombe-engine.js","./js/engine/kernel-bridge.js","./js/engine/activation.js","./js/engine/recovery.js"]);
   function note(type,msg){var feed=document.getElementById("feed")||document.getElementById("log")||document.getElementById("liveFeed");if(!feed)return;var row=document.createElement("div");row.textContent=new Date().toLocaleTimeString()+"  "+type+"  "+msg;feed.prepend(row);}
-  window.Chirombe={log:note,version:"2.6.5"};
+  window.Chirombe={log:note,version:"2.6.6"};
   try { if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(function(){}); } catch (e) {}
   try {
     if ("serviceWorker" in navigator) {

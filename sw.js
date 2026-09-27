@@ -1,8 +1,8 @@
-const STATIC="CHIROMBE_STATIC_v10";
+const STATIC="CHIROMBE_STATIC_v11";
 const DATA="CHIROMBE_DATA_v3";
-const BUILD="audio-hw-path";
-const FRESH=["index.html","chirombe-audio-living-liturgy.js","js/chirombe-audio-install.js","js/cm90-tonal-continuous.js","js/soko-mukanya-matrix.js","js/resonance-engine.js","js/chirombe.js","sw.js"];
-const CORE=["./","./app.html","./engine.html","./inspect.html","./zcca.html","./chirombe-audio-living-liturgy.js","./js/chirombe-audio-install.js","./js/cm90-tonal-continuous.js","./js/boot.js","./js/command-bus.js","./js/zcca.js","./js/engine/policy.js","./js/engine/ledger.js","./js/engine/adapters.js","./js/engine/chirombe-engine.js","./js/engine/kernel-bridge.js","./js/engine/activation.js","./js/engine/recovery.js","./engine/chep-03-worker-swarm.js","./data/trusted-manifest.json","./css/zcca.css","./data/family.json","./data/version.json"];
+const BUILD="audio-live-connect";
+const FRESH=["index.html","chirombe-audio-living-liturgy.js","js/chirombe-audio-install.js","js/cm90-tonal-continuous.js","js/soko-mukanya-matrix.js","js/resonance-engine.js","js/chirombe.js","js/chirombe-connect-and-play.js","sw.js"];
+const CORE=["./","./app.html","./engine.html","./inspect.html","./zcca.html","./chirombe-audio-living-liturgy.js","./js/chirombe-audio-install.js","./js/chirombe-connect-and-play.js","./js/cm90-tonal-continuous.js","./js/boot.js","./js/command-bus.js","./js/zcca.js","./js/engine/policy.js","./js/engine/ledger.js","./js/engine/adapters.js","./js/engine/chirombe-engine.js","./js/engine/kernel-bridge.js","./js/engine/activation.js","./js/engine/recovery.js","./engine/chep-03-worker-swarm.js","./data/trusted-manifest.json","./css/zcca.css","./data/family.json","./data/version.json"];
 function freshRequest(url){
   try{const path=new URL(url).pathname;if(path.endsWith("/"))return true;return FRESH.some(function(name){return path.endsWith("/"+name)||path.endsWith(name);});}
   catch(e){return false;}
