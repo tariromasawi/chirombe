@@ -35,8 +35,6 @@
     blindDeployment: "BLOCKED"
   };
 
-  /* Names the order asked for, mapped to what the repository actually exposes.
-     global:null means MISSING_OPTIONAL_COMPONENT unless an alias is found later. */
   var CATALOGUE = [
     { id: "CHIROMBE_BUS", global: "ChirombeBus", file: "js/command-bus.js", optional: false, methods: ["registerCommand", "executeCommand", "listCommands"] },
     { id: "CHIROMBE_SYSTEM", global: "ChirombeSystem", file: "js/boot.js", optional: false, methods: [] },
@@ -54,7 +52,7 @@
     { id: "CHIROMBE_LITURGY", global: "CHIROMBE_LITURGY", file: "js/liturgy-matrix.js", optional: true, methods: [] },
     { id: "CHIROMBE_PIONEER", global: "CHIROMBE_PIONEER_BRAIN", file: "js/pioneer-brain.js", optional: true, methods: ["status", "discover", "cycle"] },
     { id: "CHIROMBE_LOGGER", global: "Chirombe", file: "js/chirombe.js", optional: true, methods: ["log"] },
-    { id: "CHIROMBE_WORKERS", global: null, file: "workers/", optional: true, methods: [], note: "No CHIROMBE_WORKERS global. Page workers are separate files." },
+    { id: "CHIROMBE_WORKERS", global: "CHIROMBE_WORKERS", file: "workers/", optional: true, methods: ["list"], note: "Spawned by connect-and-play." },
     { id: "CHIROMBE_EVOLUTION", global: null, file: null, optional: true, methods: ["observe", "propose", "sandbox", "score"], note: "MISSING_OPTIONAL_COMPONENT. ChirombeCore.evolve is a different live function and is not replaced." },
     { id: "CHIROMBE_PATHWAYS", global: null, file: null, optional: true, methods: [], note: "MISSING_OPTIONAL_COMPONENT" },
     { id: "CHIROMBE_KNOWLEDGE", global: null, file: null, optional: true, methods: [], note: "MISSING_OPTIONAL_COMPONENT. Engine keeps its own knowledge ledger." },
@@ -81,7 +79,6 @@
     "workers/watch-worker.js"
   ];
 
-  /* Snapshot of the preserved mega-file at audit time. Not loaded. Not rewritten. */
   var ARTIFACT = {
     path: "chirombe engine",
     bytes: 728908,
