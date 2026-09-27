@@ -1,9 +1,15 @@
 {
-  "generatedAt": "2026-09-22T16:30:00Z",
+  "generatedAt": "2026-09-27T19:40:00Z",
   "protocol": "CHIROMBE-2.0",
   "schemaVersion": 2,
-  "appVersion": "2.0.0",
-  "commit": "pending",
+  "appVersion": "2.1.0-hardware-path",
+  "commit": "audio-hw-path",
+  "build": "audio-hw-path",
+  "audioKernel": "1.0.0-part1",
+  "tonal": "5.0.0",
+  "performance": "7.0.0",
+  "safety": "8.0.1",
+  "evolution": "9.0.0",
   "status": "ok",
   "site": "https://tariromasawi.github.io/chirombe/"
 }

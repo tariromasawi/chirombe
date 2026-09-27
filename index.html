@@ -15674,68 +15674,29 @@ function defensiveMirror(input=null){
 async function enableAudio(){
 
  try{
-
-   if(!S.audioCtx){
-     const AC=window.AudioContext||window.webkitAudioContext;
-
-     if(!AC){
-       log("Web Audio unavailable — visual matrix continues","warn");
-       return;
-     }
-
-     S.audioCtx=new AC();
-     S.master=S.audioCtx.createGain();
-     S.master.gain.value=.018;
-     S.master.connect(S.audioCtx.destination);
+   const kernel = window.CHIROMBE_AUDIO;
+   if(!kernel || typeof kernel.runHardwareSelfTest !== "function"){
+     log("CHIROMBE audio kernel not ready — refusing a second AudioContext","warn");
+     return;
    }
-
-   await S.audioCtx.resume();
-
-   const frequencies=[174,196,220,247,261.63];
-
-   frequencies.forEach((freq,i)=>{
-
-     const osc=S.audioCtx.createOscillator();
-     const gain=S.audioCtx.createGain();
-
-     osc.frequency.value=freq;
-     osc.type="sine";
-
-     const now=S.audioCtx.currentTime;
-
-     gain.gain.setValueAtTime(0,now);
-     gain.gain.linearRampToValueAtTime(.08,now+.06);
-     gain.gain.exponentialRampToValueAtTime(.001,now+1.4);
-
-     osc.connect(gain);
-     gain.connect(S.master);
-
-     osc.start(now);
-     osc.stop(now+1.45);
-   });
-
-   S.audio=true;
-   $("cm90AudioState").textContent="ACTIVE";
-   $("cm90Audio").textContent="TONAL LAYER ACTIVE";
-
-   log("Tonal layer activated by user gesture","ok");
-
+   const report = await kernel.runHardwareSelfTest();
+   S.audio = !!(report && report.ok);
+   $("cm90AudioState").textContent = S.audio ? "ACTIVE" : "FAILED";
+   $("cm90Audio").textContent = S.audio ? "TONAL LAYER ACTIVE" : "ENABLE TONAL LAYER";
+   log(
+     S.audio
+       ? "Tonal layer routed through CHIROMBE_AUDIO"
+       : ("Audio path failed: " + ((report && report.errors) || []).join(",")),
+     S.audio ? "ok" : "warn"
+   );
  }catch(err){
-
-   log("Audio activation failed safely","warn");
-
+   log("Audio activation failed: " + (err && err.message || err),"warn");
  }
 }
 
 function disableAudio(){
-
- if(S.audioCtx){
-
-   try{
-     S.audioCtx.suspend();
-   }catch(e){}
- }
-
+ try{ if(window.CHIROMBE_TONAL && CHIROMBE_TONAL.stop) CHIROMBE_TONAL.stop(); }catch(e){}
+ try{ if(window.CHIROMBE_AUDIO_TONAL_ENGINE && CHIROMBE_AUDIO_TONAL_ENGINE.stopAll) CHIROMBE_AUDIO_TONAL_ENGINE.stopAll("CM90_OFF"); }catch(e){}
  S.audio=false;
  $("cm90AudioState").textContent="OFF";
  $("cm90Audio").textContent="ENABLE TONAL LAYER";
@@ -15864,7 +15825,7 @@ document.addEventListener("visibilitychange",()=>{
 
    S.paused=true;
 
-   if(S.audioCtx){
+   if(S.audioCtx && !(window.CHIROMBE_AUDIO && CHIROMBE_AUDIO.getAudioContext && CHIROMBE_AUDIO.getAudioContext()===S.audioCtx)){
      try{S.audioCtx.suspend();}catch(e){}
    }
 

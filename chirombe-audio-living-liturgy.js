@@ -29,6 +29,7 @@
 
   const VERSION = "1.0.0-part1";
   const BUILD = "CHIROMBE-AUDIO-LIVING-LITURGY";
+  const HARDWARE_BUILD = "audio-hw-path";
   const CREATED_AT = new Date().toISOString();
 
   /* ------------------------------------------------------------------------
@@ -52,6 +53,7 @@
 
   window.CHIROMBE_AUDIO = AUDIO;
   window.CHIROMBE_AUDIO_LIVING_LITURGY = AUDIO;
+  window.CHIROMBE_AUDIO_BUILD = HARDWARE_BUILD;
 
   /* ------------------------------------------------------------------------
      02. UNIQUE IDENTIFIERS
@@ -511,6 +513,12 @@
   let masterGain = null;
   let limiter = null;
   let analyser = null;
+  const routeProof = {
+    masterToLimiter: false,
+    limiterToAnalyser: false,
+    analyserToDestination: false,
+    toneToMaster: false
+  };
 
   const buses = {};
 
@@ -578,6 +586,11 @@
         .connect(analyser)
         .connect(audioContext.destination);
 
+      routeProof.masterToLimiter = true;
+      routeProof.limiterToAnalyser = true;
+      routeProof.analyserToDestination = true;
+      AUDIO.context = audioContext;
+
       createAudioBuses();
 
       state.audioContextState =
@@ -621,6 +634,9 @@
   AUDIO.getAudioContext = function () { return audioContext; };
   AUDIO.getAnalyser = function () { return analyser; };
   AUDIO.getBuses = function () { return buses; };
+  AUDIO.getMasterGainNode = function () { return masterGain; };
+  AUDIO.getLimiter = function () { return limiter; };
+  AUDIO.getRouteProof = function () { return Object.assign({}, routeProof); };
 
   /* ------------------------------------------------------------------------
      12. AUDIO BUS ARCHITECTURE
@@ -649,11 +665,12 @@
         audioContext.createGain();
 
       gain.gain.value =
-        name === "MASTER"
+        name === "MASTER" || name === "TONE"
           ? 1
           : 0.7;
 
       gain.connect(masterGain);
+      if (name === "TONE") routeProof.toneToMaster = true;
 
       buses[name] = {
         name,
@@ -680,6 +697,284 @@
 
   AUDIO.createAudioBuses = createAudioBuses;
 
+  function ensureKernelRoute() {
+    const context = audioContext || createAudioContext();
+    if (!context || !masterGain || !limiter || !analyser) return false;
+    try { masterGain.disconnect(); } catch (_) {}
+    try { limiter.disconnect(); } catch (_) {}
+    try { analyser.disconnect(); } catch (_) {}
+    masterGain.connect(limiter);
+    limiter.connect(analyser);
+    analyser.connect(context.destination);
+    routeProof.masterToLimiter = true;
+    routeProof.limiterToAnalyser = true;
+    routeProof.analyserToDestination = true;
+    if (!buses.TONE) createAudioBuses();
+    Object.keys(buses).forEach(function (name) {
+      const bus = buses[name];
+      if (!bus || !bus.gain) return;
+      try { bus.gain.disconnect(); } catch (_) {}
+      bus.gain.connect(masterGain);
+      if (name === "TONE") routeProof.toneToMaster = true;
+    });
+    AUDIO.context = context;
+    return routeProof.toneToMaster && routeProof.analyserToDestination;
+  }
+
+  AUDIO.ensureKernelRoute = ensureKernelRoute;
+
+  function primeFromGesture() {
+    const context = audioContext || createAudioContext();
+    if (!context) return Promise.reject(new Error("AUDIO_CONTEXT_UNAVAILABLE"));
+    if (context.state === "suspended") return context.resume();
+    return Promise.resolve(context.state);
+  }
+
+  AUDIO.primeFromGesture = primeFromGesture;
+
+  function inspectSignalPath() {
+    const tone = buses.TONE;
+    const safety = window.CHIROMBE_AUDIO_SAFETY_ENGINE;
+    const tonal = window.CHIROMBE_AUDIO_TONAL_ENGINE;
+    const perf = window.CHIROMBE_AUDIO_PERFORMANCE_ENGINE;
+    const evo = window.CHIROMBE_AUDIO_EVOLUTION;
+    let safetyState = "UNAVAILABLE";
+    let safeStopped = false;
+    let scheduled = 0;
+    try { safetyState = safety && safety.getStatus ? safety.getStatus().state : "UNAVAILABLE"; } catch (error) { safetyState = "ERROR:" + error.message; }
+    try { safeStopped = !!(tonal && tonal.getStatus && tonal.getStatus().safeStopped); } catch (_) {}
+    try { scheduled = tonal && tonal.getStatus ? (tonal.getStatus().scheduledEvents || 0) : 0; } catch (_) {}
+    return {
+      contextExists: !!audioContext,
+      contextState: audioContext ? audioContext.state : "UNAVAILABLE",
+      sampleRate: audioContext ? audioContext.sampleRate : null,
+      currentTime: audioContext ? audioContext.currentTime : null,
+      destinationExists: !!(audioContext && audioContext.destination),
+      destinationChannels: audioContext && audioContext.destination ? audioContext.destination.channelCount : 0,
+      masterGain: masterGain ? masterGain.gain.value : state.masterGain,
+      masterGainNodeExists: !!masterGain,
+      toneBusExists: !!(tone && tone.gain),
+      toneBusGain: tone && tone.gain ? tone.gain.gain.value : 0,
+      analyserExists: !!analyser,
+      compressorExists: !!limiter,
+      safetyState: safetyState,
+      lifecycle: state.lifecycle,
+      safeStopped: safeStopped,
+      activeSources: tone && tone.activeNodes ? tone.activeNodes.size : 0,
+      scheduledSources: scheduled,
+      kernelVersion: VERSION,
+      tonalVersion: tonal && tonal.VERSION ? tonal.VERSION : null,
+      performanceVersion: perf && perf.VERSION ? perf.VERSION : null,
+      evolutionVersion: evo && evo.VERSION ? evo.VERSION : null,
+      routing: Object.assign({}, routeProof),
+      build: HARDWARE_BUILD,
+      hardwareBuild: HARDWARE_BUILD
+    };
+  }
+
+  AUDIO.inspectSignalPath = inspectSignalPath;
+
+  function readAnalyserNow(node, sampleRate) {
+    if (!node) return { rms: 0, peak: 0, dominantFrequency: 0, bytePeak: 0 };
+    const freq = new Uint8Array(node.frequencyBinCount || 0);
+    const time = new Float32Array(node.fftSize || 0);
+    try { node.getByteFrequencyData(freq); } catch (_) {}
+    try { node.getFloatTimeDomainData(time); } catch (_) {}
+    let bytePeak = 0;
+    let dominantIndex = 0;
+    for (let i = 1; i < freq.length; i++) {
+      if (freq[i] > bytePeak) { bytePeak = freq[i]; dominantIndex = i; }
+    }
+    let squares = 0;
+    let peak = 0;
+    for (let j = 0; j < time.length; j++) {
+      const sample = time[j];
+      squares += sample * sample;
+      peak = Math.max(peak, Math.abs(sample));
+    }
+    let crossings = 0;
+    let firstCross = -1;
+    let lastCross = 0;
+    for (let k = 1; k < time.length; k++) {
+      if (time[k - 1] <= 0 && time[k] > 0) {
+        if (firstCross < 0) firstCross = k;
+        lastCross = k;
+        crossings += 1;
+      }
+    }
+    const fftFrequency = node.fftSize ? (sampleRate * dominantIndex / node.fftSize) : 0;
+    const zeroCross = crossings >= 4 && lastCross > firstCross
+      ? sampleRate * (crossings - 1) / (lastCross - firstCross)
+      : 0;
+    return {
+      rms: time.length ? Math.sqrt(squares / time.length) : 0,
+      peak: peak,
+      bytePeak: bytePeak / 255,
+      dominantFrequency: zeroCross || fftFrequency
+    };
+  }
+
+  function waitMs(ms) {
+    return new Promise(function (resolve) { setTimeout(resolve, ms); });
+  }
+
+  async function runHardwareSelfTest(options) {
+    const opts = options || {};
+    const errors = [];
+    const stages = ["TEST REQUESTED"];
+    const report = {
+      ok: false,
+      context: "UNAVAILABLE",
+      routing: Object.assign({}, routeProof),
+      master: 0,
+      analyser: false,
+      destination: false,
+      oscillator: false,
+      signalDetected: false,
+      rms: 0,
+      peak: 0,
+      dominantFrequency: 0,
+      before: null,
+      during: null,
+      after: null,
+      direct: null,
+      stages: stages,
+      errors: errors,
+      build: HARDWARE_BUILD
+    };
+    const context = audioContext || createAudioContext();
+    if (!context) {
+      errors.push("AUDIO_CONTEXT_UNAVAILABLE");
+      stages.push("AUDIO_CONTEXT_UNAVAILABLE");
+      return report;
+    }
+    try {
+      if (context.state === "suspended") await context.resume();
+    } catch (error) {
+      errors.push("RESUME_FAILED:" + (error && error.message || error));
+    }
+    report.context = context.state;
+    if (context.state !== "running") {
+      errors.push("AUDIO_CONTEXT_NOT_RUNNING");
+      stages.push("AUDIO_CONTEXT_NOT_RUNNING");
+      return report;
+    }
+    stages.push("CONTEXT RUNNING");
+    const routed = ensureKernelRoute();
+    if (!routed) errors.push("KERNEL_ROUTE_INCOMPLETE");
+    if (state.lifecycle === STATES.SAFE_STOP || !masterGain || masterGain.gain.value <= 0.001) {
+      AUDIO.recoverFromSafeStop("HARDWARE_TEST");
+    }
+    const ceiling = CONFIG.maximumMasterGain;
+    const restored = Math.min(ceiling, Math.max(CONFIG.defaultMasterGain, state.masterGain || 0));
+    setMasterGain(restored);
+    if (buses.TONE && buses.TONE.gain && buses.TONE.gain.gain.value <= 0.001) {
+      buses.TONE.gain.gain.setValueAtTime(1, context.currentTime);
+    }
+    report.master = masterGain ? masterGain.gain.value : 0;
+    report.analyser = !!analyser;
+    report.destination = !!context.destination;
+    report.routing = Object.assign({}, routeProof);
+    if (!(report.master > 0)) errors.push("MASTER_GAIN_ZERO");
+    report.before = readAnalyserNow(analyser, context.sampleRate);
+    const amplitude = Math.min(0.12, CONFIG.maximumToneGain || 0.12);
+    const osc = context.createOscillator();
+    const gain = context.createGain();
+    const toneInput = buses.TONE && buses.TONE.gain;
+    if (!toneInput) {
+      errors.push("TONE_BUS_MISSING");
+      stages.push("TONE_BUS_MISSING");
+      return report;
+    }
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(440, context.currentTime);
+    gain.gain.setValueAtTime(amplitude, context.currentTime);
+    osc.connect(gain);
+    gain.connect(toneInput);
+    if (buses.TONE.activeNodes) buses.TONE.activeNodes.add(osc);
+    report.oscillator = true;
+    stages.push("OSCILLATOR CREATED");
+    stages.push("SIGNAL ROUTED");
+    const started = context.currentTime;
+    osc.start(started);
+    await waitMs(180);
+    report.during = readAnalyserNow(analyser, context.sampleRate);
+    report.rms = report.during.rms;
+    report.peak = report.during.peak;
+    report.dominantFrequency = report.during.dominantFrequency;
+    report.signalDetected = report.during.rms >= 0.002 || report.during.peak >= 0.004;
+    await waitMs(560);
+    if (!report.signalDetected) {
+      const direct = await probeDirectDestination(context);
+      report.direct = direct;
+      if (direct.signalDetected && !report.signalDetected) {
+        errors.push("AUDIO BUS ROUTING FAILURE");
+        stages.push("AUDIO BUS ROUTING FAILURE");
+        ensureKernelRoute();
+        setMasterGain(restored);
+        await waitMs(120);
+        const retry = readAnalyserNow(analyser, context.sampleRate);
+        report.retry = retry;
+        if (retry.rms >= 0.002 || retry.peak >= 0.004) {
+          report.signalDetected = true;
+          report.rms = retry.rms;
+          report.peak = retry.peak;
+          report.dominantFrequency = retry.dominantFrequency;
+          report.during = retry;
+          errors.splice(errors.indexOf("AUDIO BUS ROUTING FAILURE"), 1);
+          stages.push("ROUTE REPAIRED");
+        }
+      } else if (!direct.signalDetected && !report.signalDetected) {
+        errors.push("NO_SIGNAL_AT_DESTINATION_OR_ANALYSER");
+      }
+    }
+    try { gain.gain.setValueAtTime(0, context.currentTime); } catch (_) {}
+    try { osc.stop(context.currentTime + 0.02); } catch (_) {}
+    await waitMs(220);
+    try { osc.disconnect(); } catch (_) {}
+    try { gain.disconnect(); } catch (_) {}
+    if (buses.TONE.activeNodes) buses.TONE.activeNodes.delete(osc);
+    report.after = readAnalyserNow(analyser, context.sampleRate);
+    report.routing = Object.assign({}, routeProof);
+    report.master = masterGain ? masterGain.gain.value : report.master;
+    if (!report.signalDetected) errors.push("ANALYSER_SILENT_WHILE_OSCILLATOR_RUNNING");
+    report.ok = report.signalDetected && context.state === "running" && report.master > 0 && errors.length === 0;
+    stages.push(report.ok ? "TEST COMPLETE" : "TEST FAILED");
+    internalLog(report.ok ? "INFO" : "ERROR", "HARDWARE_SELF_TEST", report);
+    return report;
+  }
+
+  async function probeDirectDestination(context) {
+    const probeAnalyser = context.createAnalyser();
+    probeAnalyser.fftSize = 2048;
+    const osc = context.createOscillator();
+    const gain = context.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(440, context.currentTime);
+    gain.gain.setValueAtTime(0.05, context.currentTime);
+    osc.connect(gain);
+    gain.connect(probeAnalyser);
+    probeAnalyser.connect(context.destination);
+    osc.start(context.currentTime);
+    await waitMs(140);
+    const reading = readAnalyserNow(probeAnalyser, context.sampleRate);
+    try { gain.gain.setValueAtTime(0, context.currentTime); } catch (_) {}
+    try { osc.stop(context.currentTime + 0.03); } catch (_) {}
+    await waitMs(40);
+    try { osc.disconnect(); } catch (_) {}
+    try { gain.disconnect(); } catch (_) {}
+    try { probeAnalyser.disconnect(); } catch (_) {}
+    return {
+      signalDetected: reading.rms >= 0.002 || reading.peak >= 0.004,
+      rms: reading.rms,
+      peak: reading.peak,
+      dominantFrequency: reading.dominantFrequency,
+      permanentBypass: false
+    };
+  }
+
+  AUDIO.runHardwareSelfTest = runHardwareSelfTest;
+
   /* ------------------------------------------------------------------------
      13. MASTER SAFETY GOVERNOR
      ------------------------------------------------------------------------ */
@@ -701,12 +996,10 @@
 
     state.masterGain = safeValue;
 
-    if (masterGain) {
-      masterGain.gain.setTargetAtTime(
-        safeValue,
-        audioContext.currentTime,
-        0.025
-      );
+    if (masterGain && audioContext) {
+      const at = audioContext.currentTime;
+      masterGain.gain.cancelScheduledValues(at);
+      masterGain.gain.setValueAtTime(safeValue, at);
     }
 
     emit("MASTER_GAIN_CHANGED", {
@@ -782,18 +1075,16 @@
     if (audioContext && masterGain) {
       try {
         masterGain.gain.cancelScheduledValues(audioContext.currentTime);
-        masterGain.gain.setTargetAtTime(
+        masterGain.gain.setValueAtTime(
           CONFIG.defaultMasterGain,
-          audioContext.currentTime,
-          0.05
+          audioContext.currentTime
         );
         Object.values(buses).forEach(function (bus) {
           if (!bus.gain) return;
           bus.gain.gain.cancelScheduledValues(audioContext.currentTime);
-          bus.gain.gain.setTargetAtTime(
-            bus.name === "MASTER" ? 1 : 0.7,
-            audioContext.currentTime,
-            0.05
+          bus.gain.gain.setValueAtTime(
+            bus.name === "MASTER" || bus.name === "TONE" ? 1 : 0.7,
+            audioContext.currentTime
           );
         });
       } catch (_) {}
@@ -1617,10 +1908,12 @@
   async function unlockAudio() {
 
     const context =
+      audioContext ||
       createAudioContext();
 
     if (!context) {
-      return false;
+      state.audioContextState = "UNAVAILABLE";
+      throw new Error("AUDIO_CONTEXT_UNAVAILABLE");
     }
 
     try {
@@ -1634,6 +1927,10 @@
 
       state.audioContextState =
         context.state;
+
+      if (context.state !== "running") {
+        throw new Error("AUDIO_CONTEXT_NOT_RUNNING");
+      }
 
       emit(
         "AUDIO_UNLOCKED",
@@ -1652,10 +1949,7 @@
         }
       );
 
-      return (
-        context.state ===
-        "running"
-      );
+      return true;
 
     } catch (error) {
 
@@ -1666,11 +1960,15 @@
         "AUDIO_UNLOCK_FAILED",
         {
           error:
-            String(error)
+            String(error && error.message || error)
         }
       );
 
-      return false;
+      if (error && (error.message === "AUDIO_CONTEXT_UNAVAILABLE" || error.message === "AUDIO_CONTEXT_NOT_RUNNING")) {
+        throw error;
+      }
+
+      throw new Error("AUDIO_CONTEXT_NOT_RUNNING");
     }
   }
 
@@ -12539,12 +12837,13 @@
 
     try {
 
-      state.context =
-        sharedContext ||
-        new AudioContextClass();
+      state.context = sharedContext;
 
-      state.usesKernelContext =
-        Boolean(sharedContext);
+      if (!state.context) {
+        throw new Error("AUDIO_CONTEXT_UNAVAILABLE");
+      }
+
+      state.usesKernelContext = true;
 
       const context =
         state.context;
@@ -12577,19 +12876,9 @@
         );
 
       /*
-       * Master routing:
-       *
-       * oscillator/source
-       *       ↓
-       * voice duck / gain
-       *       ↓
-       * master
-       *       ↓
-       * compressor
-       *       ↓
-       * analyser
-       *       ↓
-       * destination
+       * Audible route is the kernel chain only:
+       * oscillator → voice duck → TONE bus → kernel master → limiter → analyser → destination.
+       * This engine does not insert a second master in series.
        */
 
       state.master =
@@ -12640,48 +12929,40 @@
           CONFIG.smoothing;
       }
 
-      state.voiceDuck.connect(
-        state.master
-      );
-
-      state.master.connect(
-        state.compressor
-      );
-
       const toneBus =
         kernelAudio &&
-        kernelAudio.buses &&
-        kernelAudio.buses.TONE &&
-        kernelAudio.buses.TONE.gain;
+        typeof kernelAudio.ensureKernelRoute === "function"
+          ? (kernelAudio.ensureKernelRoute(), kernelAudio.getBuses && kernelAudio.getBuses().TONE && kernelAudio.getBuses().TONE.gain)
+          : (kernelAudio && kernelAudio.buses && kernelAudio.buses.TONE && kernelAudio.buses.TONE.gain);
 
       const sink =
         toneBus ||
-        context.destination;
+        (kernelAudio && typeof kernelAudio.getMasterGainNode === "function" && kernelAudio.getMasterGainNode()) ||
+        null;
 
-      if (
-        state.analyser
-      ) {
-
-        state.compressor.connect(
-          state.analyser
-        );
-
-        state.analyser.connect(
-          sink
-        );
-
-      } else {
-
-        state.compressor.connect(
-          sink
-        );
+      if (!sink) {
+        throw new Error("AUDIO BUS ROUTING FAILURE");
       }
+
+      state.voiceDuck.connect(sink);
+      state.usesKernelBus = sink === toneBus || !!(toneBus && sink === toneBus);
+      state.usesKernelContext = Boolean(sharedContext) && state.context === sharedContext && !!toneBus;
+
+      if (state.analyser) {
+        try { state.voiceDuck.connect(state.analyser); } catch (_) {}
+      }
+
+      try { state.master.connect(state.compressor); } catch (_) {}
 
       state.state =
         STATES.READY;
 
       state.initialised =
         true;
+
+      if (root.CHIROMBE_AUDIO_TONAL_ENGINE) {
+        root.CHIROMBE_AUDIO_TONAL_ENGINE.context = state.context;
+      }
 
       emit(
         "TONAL_ENGINE_READY",
@@ -12746,6 +13027,14 @@
       ) {
 
         await state.context.resume();
+      }
+
+      if (state.context.state !== "running") {
+        return {
+          ok: false,
+          error: "AUDIO_CONTEXT_NOT_RUNNING",
+          state: state.context.state
+        };
       }
 
       emit(
@@ -13399,11 +13688,11 @@
 
           attackMs:
             options.attackMs ||
-            1000,
+            Math.min(1000, Math.max(30, (options.durationMs || 12000) * 0.08)),
 
           releaseMs:
             options.releaseMs ||
-            1600,
+            Math.min(1600, Math.max(40, (options.durationMs || 12000) * 0.15)),
 
           pan:
             options.pan ||
@@ -18969,9 +19258,7 @@
       ) {
 
         TONAL.setVoiceDuck(
-          enabled
-            ? 0.20
-            : 1
+          !!enabled
         );
 
         return true;
@@ -21931,7 +22218,7 @@
           "function"
       ) {
         TONAL.setVoiceDuck(
-          enabled ? 0.20 : 1
+          !!enabled
         );
 
         return true;
@@ -24159,6 +24446,17 @@
 
   function getContext() {
 
+    const audio =
+      window.CHIROMBE_AUDIO;
+
+    if (
+      audio &&
+      typeof audio.getAudioContext === "function"
+    ) {
+      const shared = audio.getAudioContext();
+      if (shared) return shared;
+    }
+
     const tonal =
       window.CHIROMBE_AUDIO_TONAL_ENGINE;
 
@@ -24168,9 +24466,6 @@
     ) {
       return tonal.context;
     }
-
-    const audio =
-      window.CHIROMBE_AUDIO;
 
     if (
       audio &&

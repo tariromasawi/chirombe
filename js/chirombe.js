@@ -44,4 +44,16 @@
   function note(type,msg){var feed=document.getElementById("feed")||document.getElementById("log")||document.getElementById("liveFeed");if(!feed)return;var row=document.createElement("div");row.textContent=new Date().toLocaleTimeString()+"  "+type+"  "+msg;feed.prepend(row);}
   window.Chirombe={log:note,version:"2.6.5"};
   try { if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(function(){}); } catch (e) {}
+  try {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.addEventListener("message", function (event) {
+        var data = event.data || {};
+        if (data.type !== "CHIROMBE_SW_UPDATED") return;
+        if (data.build && data.build !== window.CHIROMBE_AUDIO_BUILD && !sessionStorage.getItem("chirombe-sw-" + data.build)) {
+          sessionStorage.setItem("chirombe-sw-" + data.build, "1");
+          location.reload();
+        }
+      });
+    }
+  } catch (e) {}
 })();

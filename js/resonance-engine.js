@@ -1,19 +1,22 @@
 (function(g){
-  var ctx=null, master=null, drone=null, armed=false;
-  function status(){return {audio:armed?"LIVE":"WAITING_FOR_ACTIVATION",policy:"user-gesture-required"}}
+  var armed=false;
+  function status(){return {audio:armed?"LIVE":"WAITING_FOR_ACTIVATION",policy:"kernel-context-only"}}
   function activate(){
     try{
-      ctx=new (g.AudioContext||g.webkitAudioContext)();
-      master=ctx.createGain(); master.gain.value=0.08; master.connect(ctx.destination);
-      drone=ctx.createOscillator(); drone.type="sine"; drone.frequency.value=136.1;
-      var g2=ctx.createGain(); g2.gain.value=0.2; drone.connect(g2); g2.connect(master); drone.start();
-      armed=true;
-      if(g.Chirombe&&Chirombe.log) Chirombe.log("AUDIO","resonance armed after gesture");
+      var kernel=g.CHIROMBE_AUDIO;
+      if(!kernel||typeof kernel.runHardwareSelfTest!=="function"){
+        armed=false;
+        return status();
+      }
+      kernel.runHardwareSelfTest().then(function(report){armed=!!(report&&report.ok);});
+      if(g.Chirombe&&Chirombe.log) Chirombe.log("AUDIO","resonance routed through CHIROMBE_AUDIO");
     }catch(e){armed=false}
     return status();
   }
   function measure(){
-    return {rms:armed?0.08:0, note:"Measured acoustic resonance only. Not a curse-removal frequency."};
+    var kernel=g.CHIROMBE_AUDIO;
+    var path=kernel&&kernel.inspectSignalPath?kernel.inspectSignalPath():null;
+    return {rms:path&&path.masterGain||0, note:"Kernel context only. No independent AudioContext."};
   }
   g.ChirombeResonance={activate:activate,status:status,measure:measure};
 })(typeof window!=="undefined"?window:globalThis);

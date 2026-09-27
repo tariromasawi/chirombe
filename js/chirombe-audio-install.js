@@ -3,8 +3,8 @@
   if (g.__CHIROMBE_AUDIO_INSTALL__) return;
   g.__CHIROMBE_AUDIO_INSTALL__ = true;
 
-  var VERSION = "2.0.0-command-centre";
-  var CACHE = "CHIROMBE_STATIC_v9";
+  var VERSION = "2.1.0-hardware-path";
+  var CACHE = "CHIROMBE_STATIC_v10";
   var MODES = ["GROUNDING", "REFLECTION", "PROTECTION", "GRATITUDE", "REMEMBRANCE", "UNITY", "COURAGE", "PEACE", "NIGHT_WATCH", "DAWN", "EVENING", "SILENT_WATCH", "RECOVERY", "ALERT", "CLOSING", "FAMILY_BLESSING"];
   var SILENT = { SILENT_WATCH: true };
   var PRESETS = [128, 174, 196, 220, 256, 432, 440, 528];
@@ -194,23 +194,61 @@
     } catch (e) {}
   }
 
+  function showPath(diagnostic, stage, extra) {
+    var box = $("#ca-path-json");
+    var stageNode = $("#ca-hw-stage");
+    if (stageNode) stageNode.textContent = stage || "IDLE";
+    var payload = { stage: stage || "IDLE", diagnostic: diagnostic || null, extra: extra || null };
+    if (box) box.textContent = JSON.stringify(payload, null, 2);
+    try { console.log("CHIROMBE_AUDIO_DIAGNOSTIC", payload); } catch (e) {}
+  }
+
+  function primeGesture() {
+    var A = audio();
+    try { if (g.CHIROMBE_AUDIO_SAFETY_ENGINE && g.CHIROMBE_AUDIO_SAFETY_ENGINE.registerUserGesture) g.CHIROMBE_AUDIO_SAFETY_ENGINE.registerUserGesture(); } catch (e) {}
+    if (!A || !A.primeFromGesture) return Promise.reject(new Error("AUDIO_CONTEXT_UNAVAILABLE"));
+    return Promise.resolve(A.primeFromGesture());
+  }
+
   async function activate() {
     var A = audio();
     if (!A) return { ok: false, reason: "KERNEL_UNAVAILABLE" };
     ui.recoveryAttempts += 1;
     if (ui.recoveryAttempts > 6) return { ok: false, reason: "RECOVERY_LIMIT" };
-    try { if (A.recoverFromSafeStop) A.recoverFromSafeStop("ACTIVATE"); } catch (e) {}
-    try { if (A.reset) A.reset(); } catch (e) {}
     var unlocked = false;
-    try { unlocked = await A.unlockAudio(); } catch (e) { unlocked = false; }
+    var unlockError = null;
+    try { unlocked = await A.unlockAudio(); } catch (e) { unlocked = false; unlockError = e; }
+    var ctx = null;
+    try { ctx = A.getAudioContext ? A.getAudioContext() : null; } catch (e) {}
+    if (!unlocked || !ctx || ctx.state !== "running") {
+      var failed = A.inspectSignalPath ? A.inspectSignalPath() : null;
+      var reason = (unlockError && unlockError.message) || "AUDIO_CONTEXT_NOT_RUNNING";
+      showPath(failed, reason);
+      pushFeed(reason);
+      render();
+      return { ok: false, unlocked: false, reason: reason, diagnostic: failed };
+    }
+    try { if (A.recoverFromSafeStop) A.recoverFromSafeStop("ACTIVATE"); } catch (e) {}
+    try { if (A.ensureKernelRoute) A.ensureKernelRoute(); } catch (e) {}
+    if (A.getMasterGainNode && A.getMasterGainNode() && A.getMasterGainNode().gain.value <= 0.001 && A.setMasterGain) {
+      try { A.setMasterGain(Math.min(ceiling(), 0.42)); } catch (e) {}
+    }
     var T = tonal();
     try { if (T && T.resume) await T.resume(); } catch (e) {}
     try { if (T && T.initialise) await T.initialise(); } catch (e) {}
     try { if (safety() && safety().arm) safety().arm(); } catch (e) {}
-    audit("AUDIO_ACTIVATED", { unlocked: !!unlocked, attempt: ui.recoveryAttempts });
+    var diagnostic = A.inspectSignalPath ? A.inspectSignalPath() : null;
+    if (diagnostic && !(diagnostic.masterGain > 0)) {
+      showPath(diagnostic, "MASTER_GAIN_ZERO");
+      pushFeed("MASTER_GAIN_ZERO");
+      render();
+      return { ok: false, reason: "MASTER_GAIN_ZERO", diagnostic: diagnostic };
+    }
+    audit("AUDIO_ACTIVATED", { unlocked: true, attempt: ui.recoveryAttempts, state: ctx.state });
     pushFeed("AUDIO_UNLOCKED");
+    showPath(diagnostic, "CONTEXT RUNNING");
     render();
-    return { ok: true, unlocked: !!unlocked };
+    return { ok: true, unlocked: true, diagnostic: diagnostic };
   }
 
   async function emergency(reason) {
@@ -261,19 +299,71 @@
   }
 
   async function testTone() {
-    await activate();
-    if (!tonal() || !tonal().playScene) return { ok: false, reason: "TONAL_UNAVAILABLE" };
-    var scene = sceneFor(ui.mode) || "PEACE";
-    var result = await tonal().playScene(scene, { durationMs: 900, amplitude: 0.05 });
-    pushFeed(result && result.ok ? "TONE_STARTED" : "TONE_REJECTED");
+    showPath(null, "TEST REQUESTED");
+    var A = audio();
+    if (!A || !A.runHardwareSelfTest) {
+      showPath(null, "HARDWARE_TEST_UNAVAILABLE");
+      return { ok: false, reason: "HARDWARE_TEST_UNAVAILABLE" };
+    }
+    var result = await A.runHardwareSelfTest();
+    var diagnostic = A.inspectSignalPath ? A.inspectSignalPath() : null;
+    var stage = (result && result.stages || []).join(" → ") || "TEST FAILED";
+    showPath(diagnostic, stage, result);
+    pushFeed(result && result.ok ? "TEST COMPLETE" : ((result && result.errors || []).join(",") || "TEST FAILED"));
     render();
+    publishSignal(result);
     return result;
   }
 
+  function publishSignal(result) {
+    var detected = $("#ca-signal-detected");
+    var barsNode = $("#ca-hw-level");
+    var note = $("#ca-signal-note");
+    var yes = !!(result && result.signalDetected);
+    if (detected) detected.textContent = yes ? "YES" : "NO";
+    var amount = result && typeof result.rms === "number" ? Math.min(1, result.rms * 8) : 0;
+    if (barsNode) barsNode.textContent = bars(amount);
+    if (note) {
+      if (!result) note.textContent = "";
+      else if (yes) note.textContent = "Analyser heard the tone. If the phone stays silent, the failure is downstream of the analyser (mute switch, media volume, or output device).";
+      else if ((result.errors || []).indexOf("AUDIO BUS ROUTING FAILURE") >= 0) note.textContent = "AUDIO BUS ROUTING FAILURE — oscillator energy did not reach the kernel analyser.";
+      else note.textContent = "No analyser energy while the oscillator was running. The signal is not reaching the analyser. " + ((result.errors || []).join(" | ") || "");
+    }
+  }
+
   async function testVoice() {
-    if (!perf() || !perf().speakText) return { ok: false, reason: "SPEECH_UNAVAILABLE" };
+    var A = audio();
+    try { await primeGesture(); } catch (e) {
+      showPath(A && A.inspectSignalPath ? A.inspectSignalPath() : null, e.message || "AUDIO_CONTEXT_UNAVAILABLE");
+      return { ok: false, reason: e.message || "AUDIO_CONTEXT_UNAVAILABLE", speech: false };
+    }
+    var ctx = A && A.getAudioContext ? A.getAudioContext() : null;
+    if (!ctx || ctx.state !== "running") {
+      showPath(A && A.inspectSignalPath ? A.inspectSignalPath() : null, "AUDIO_CONTEXT_NOT_RUNNING");
+      return { ok: false, reason: "AUDIO_CONTEXT_NOT_RUNNING", contextState: ctx && ctx.state, speech: false };
+    }
+    if (!perf() || !perf().speakText) return { ok: false, reason: "SPEECH_UNAVAILABLE", contextState: ctx.state };
+    var voices = [];
+    try { voices = perf().refreshVoices ? perf().refreshVoices() : []; } catch (e) { voices = []; }
+    var selected = null;
+    try { selected = perf().getStatus ? perf().getStatus().voice : null; } catch (e) {}
     var result = await perf().speakText("CHIROMBE audio system ready.", { rate: 0.92 });
-    pushFeed("VOICE_STARTED");
+    var speaking = false;
+    try { speaking = !!(g.speechSynthesis && g.speechSynthesis.speaking); } catch (e) {}
+    result = result || {};
+    result.contextState = ctx.state;
+    result.selectedVoice = selected || (voices[0] && voices[0].name) || "UNAVAILABLE";
+    result.availableVoices = (voices || []).map(function (voice) { return (voice.name || "voice") + (voice.lang ? " · " + voice.lang : ""); });
+    result.speechSynthesisSpeaking = speaking || !!result.ok;
+    result.webAudioState = ctx.state;
+    if (result.ok && ctx.state === "running") {
+      result.output = "SPEECH_SYNTHESIS";
+      result.note = "Speech synthesis uses the browser voice output, separate from the Web Audio oscillator bus. If this reports speaking and the phone is silent, that is a speech-output failure, not a Web Audio routing failure.";
+    }
+    text("#ca-voice-list", result.availableVoices.length ? result.availableVoices.join("\n") : "NO SPEECH VOICES ON THIS DEVICE");
+    text("#ca-voice-selected", result.selectedVoice || "UNAVAILABLE");
+    showPath(A.inspectSignalPath ? A.inspectSignalPath() : null, result.ok ? "SPEECH REQUESTED" : (result.reason || "SPEECH_FAILED"), result);
+    pushFeed(result.ok ? "VOICE_STARTED" : "VOICE_FAILED");
     render();
     return result;
   }
@@ -507,6 +597,7 @@
     for (var i = 0; i < buttons.length; i++) buttons[i].classList.toggle("is-on", buttons[i].getAttribute("data-mode") === ui.mode);
     renderBuses();
     var reading = measure();
+    paintHardware(reading);
     if (reading) {
       text("#ca-level", bars(reading.level));
       text("#ca-peak", bars(reading.peak));
@@ -536,8 +627,42 @@
       text("#ca-peak", bars(reading.peak));
       text("#ca-rms", bars(Math.min(1, reading.rms * 4)));
       text("#ca-dominant", Math.round(reading.dominant) + " Hz");
+      paintHardware(reading);
     }
     ui.raf = g.requestAnimationFrame(loop);
+  }
+
+  function paintHardware(reading) {
+    var A = audio();
+    var path = null;
+    try { path = A && A.inspectSignalPath ? A.inspectSignalPath() : null; } catch (e) { path = null; }
+    var banner = $("#ca-safe-banner");
+    if (banner) banner.hidden = !(path && (path.lifecycle === "SAFE_STOP" || path.safeStopped));
+    text("#ca-hw-ctx", path && path.contextState ? String(path.contextState).toUpperCase() : "UNAVAILABLE");
+    text("#ca-hw-rate", path && path.sampleRate ? Math.round(path.sampleRate) + " Hz" : "UNAVAILABLE");
+    text("#ca-hw-master", path && typeof path.masterGain === "number" ? path.masterGain.toFixed(2) : "UNAVAILABLE");
+    text("#ca-hw-tone", path && path.toneBusExists ? ("CONNECTED " + Number(path.toneBusGain).toFixed(2)) : "NOT CONNECTED");
+    text("#ca-hw-master-node", path && path.masterGainNodeExists && path.routing && path.routing.masterToLimiter ? "CONNECTED" : "NOT CONNECTED");
+    text("#ca-hw-analyser", path && path.analyserExists ? "ACTIVE" : "MISSING");
+    text("#ca-hw-destination", path && path.destinationExists && path.routing && path.routing.analyserToDestination ? "ACTIVE" : "MISSING");
+    text("#ca-hw-sources", path ? String(path.activeSources) : "0");
+    text("#ca-hw-mic", path ? "OFF" : "OFF");
+    var mic = "OFF";
+    try { mic = env() && env().getStatus && env().getStatus().microphone && env().getStatus().microphone.active ? "ACTIVE" : "OFF"; } catch (e) {}
+    text("#ca-hw-mic", mic);
+    text("#ca-hw-safety", path && path.lifecycle === "SAFE_STOP" ? "SAFE STOP" : (path && path.safetyState ? path.safetyState : "ARMED"));
+    text("#ca-build-kernel", path && path.kernelVersion ? path.kernelVersion : "UNAVAILABLE");
+    text("#ca-build-tonal", path && path.tonalVersion ? path.tonalVersion : "UNAVAILABLE");
+    text("#ca-build-perf", path && path.performanceVersion ? path.performanceVersion : "UNAVAILABLE");
+    text("#ca-build-safety", (safety() && safety().VERSION) || (path && path.safetyState) || "UNAVAILABLE");
+    text("#ca-build-evo", path && path.evolutionVersion ? path.evolutionVersion : "UNAVAILABLE");
+    text("#ca-build-id", g.CHIROMBE_AUDIO_BUILD || "audio-hw-path");
+    text("#ca-commit", "audio-hw-path");
+    if (reading) {
+      text("#ca-hw-level", bars(Math.min(1, reading.rms * 8)));
+      var detected = reading.rms >= 0.002 || reading.peak >= 0.01;
+      text("#ca-signal-detected", detected ? "YES" : "NO");
+    }
   }
 
   function loadVoices() {
@@ -599,17 +724,23 @@
     if (mode) { setMode(mode); return; }
     if (hz) { classifyInput(Number(hz)); return; }
     if (button.getAttribute("data-feedback")) { feedback(button.getAttribute("data-feedback"), button.getAttribute("data-value")); return; }
-    if (action === "activate") activate();
-    else if (action === "start" || action === "quick") startLiturgy();
-    else if (action === "pause") control("pauseLivingLiturgy");
+    if (action === "activate" || action === "start" || action === "quick" || action === "tone" || action === "hardware" || action === "routing" || action === "voice" || action === "demo") {
+      var primed = primeGesture();
+      var run = action === "activate" ? activate : (action === "tone" || action === "hardware" || action === "routing") ? testTone : action === "voice" ? testVoice : action === "demo" ? demo : startLiturgy;
+      Promise.resolve(primed).then(function () { return run(); }).catch(function (err) {
+        showPath(audio() && audio().inspectSignalPath ? audio().inspectSignalPath() : null, (err && err.message) || "AUDIO_CONTEXT_NOT_RUNNING");
+        pushFeed((err && err.message) || "AUDIO_FAILED");
+        render();
+      });
+      return;
+    }
+    if (action === "pause") control("pauseLivingLiturgy");
     else if (action === "resume") control("resumeLivingLiturgy");
     else if (action === "stop") control("stopLivingLiturgy");
     else if (action === "next") control("nextLivingStage");
     else if (action === "repeat") control("repeatLivingStage");
     else if (action === "emergency") emergency("UI_EMERGENCY");
-    else if (action === "tone") testTone();
-    else if (action === "voice") testVoice();
-    else if (action === "speak") speakSelected();
+    else if (action === "speak") { primeGesture(); speakSelected(); }
     else if (action === "voice-pause") { try { if (perf() && perf().pause) perf().pause(); } catch (e) {} }
     else if (action === "voice-resume") { try { if (perf() && perf().resume) perf().resume(); } catch (e) {} }
     else if (action === "voice-cancel") { try { if (perf() && perf().stop) perf().stop(); } catch (e) {} }
@@ -620,7 +751,7 @@
       return new Promise(function (resolve) { setTimeout(resolve, 700); }).then(disableMic);
     });
     else if (action === "hz") { var field = $("#ca-hz"); classifyInput(field ? Number(field.value) : NaN); }
-    else if (action === "scene") testTone();
+    else if (action === "scene") { primeGesture(); testTone(); }
     else if (action === "drone") {
       activate().then(function () {
         if (tonal() && tonal().playDrone) return tonal().playDrone({ frequencyHz: ui.hz || 174, durationMs: 8000, amplitude: 0.04 });
@@ -683,7 +814,9 @@
       '#chirombe-audio-centre .ca-stat{background:#080d15;border:1px solid #1c2a3a;border-radius:10px;padding:8px}' +
       '#chirombe-audio-centre .ca-stat b{display:block;color:#4de7ff}' +
       '#chirombe-audio-centre .ca-strip{position:sticky;top:0;z-index:50;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:10px;background:#080d15ee}' +
-      '#chirombe-audio-centre .ca-stop{grid-column:1/-1;background:#3a1218;border-color:#ff5577;font-weight:800}' +
+      '#chirombe-audio-centre .ca-hw{margin:10px;border:1px solid #4de7ff;background:#071018;padding:10px;font-family:ui-monospace,monospace;white-space:pre-wrap}' +
+      '#chirombe-audio-centre .ca-hw button{min-width:44%}' +
+      '#chirombe-audio-centre .ca-banner{margin:8px 10px;padding:10px;background:#3a1218;color:#ffd0d8;font-weight:800}' +
       '#chirombe-audio-centre .ca-card{padding:12px;border-top:1px solid #1c2a3a}' +
       '#chirombe-audio-centre .ca-modes{display:flex;flex-wrap:wrap;gap:6px}' +
       '#chirombe-audio-centre canvas{width:100%;height:96px;display:block;background:#070b12;border-radius:8px}' +
@@ -695,6 +828,35 @@
       '</style>' +
       '<header class="ca-head"><p class="ca-k">LIVING LITURGY / VOICE / TONAL</p><h2 id="ca-title">CHIROMBE AUDIO COMMAND CENTRE</h2>' +
       '<button type="button" data-action="focus">OPEN COMMAND CENTRE</button> <button type="button" data-action="unfocus">RETURN TO CHIROMBE</button></header>' +
+      '<div id="ca-safe-banner" class="ca-banner" hidden>SAFE STOP ACTIVE — TAP ACTIVATE TO RECOVER</div>' +
+      '<section class="ca-hw" id="ca-hw-panel" aria-label="CHIROMBE audio hardware status">' +
+      '╔══════════════════════════════════╗\n' +
+      '║ CHIROMBE AUDIO HARDWARE STATUS   ║\n' +
+      '╠══════════════════════════════════╣\n' +
+      '║ AudioContext       <b id="ca-hw-ctx">UNAVAILABLE</b>\n' +
+      '║ Sample Rate        <b id="ca-hw-rate">UNAVAILABLE</b>\n' +
+      '║ Master Gain        <b id="ca-hw-master">UNAVAILABLE</b>\n' +
+      '║ TONE Bus           <b id="ca-hw-tone">UNAVAILABLE</b>\n' +
+      '║ Master             <b id="ca-hw-master-node">UNAVAILABLE</b>\n' +
+      '║ Analyser           <b id="ca-hw-analyser">UNAVAILABLE</b>\n' +
+      '║ Destination        <b id="ca-hw-destination">UNAVAILABLE</b>\n' +
+      '║ Active Sources     <b id="ca-hw-sources">0</b>\n' +
+      '║ Microphone         <b id="ca-hw-mic">OFF</b>\n' +
+      '║ Safety             <b id="ca-hw-safety">UNAVAILABLE</b>\n' +
+      '╠══════════════════════════════════╣\n' +
+      '║ SIGNAL LEVEL <b id="ca-hw-level">░░░░░░░░░░</b>\n' +
+      '║ SIGNAL DETECTED: <b id="ca-signal-detected">NO</b>\n' +
+      '║ STAGE <b id="ca-hw-stage">IDLE</b>\n' +
+      '╠══════════════════════════════════╣\n' +
+      '║ <button type="button" data-action="tone">TEST TONE</button> <button type="button" data-action="voice">TEST VOICE</button>\n' +
+      '║ <button type="button" data-action="routing">TEST ROUTING</button> <button type="button" data-action="emergency">EMERGENCY</button>\n' +
+      '╚══════════════════════════════════╝\n' +
+      '<div id="ca-signal-note"></div>' +
+      '<div class="ca-k">BUILD <span id="ca-build-id">audio-hw-path</span> · COMMIT <span id="ca-commit">audio-hw-path</span></div>' +
+      '<div>KERNEL <span id="ca-build-kernel">UNAVAILABLE</span> · TONAL <span id="ca-build-tonal">UNAVAILABLE</span> · PERFORMANCE <span id="ca-build-perf">UNAVAILABLE</span></div>' +
+      '<div>SAFETY <span id="ca-build-safety">UNAVAILABLE</span> · EVOLUTION <span id="ca-build-evo">UNAVAILABLE</span> · CACHE <span id="ca-build-cache">CHIROMBE_STATIC_v10</span></div>' +
+      '<div class="ca-k">SELECTED VOICE <span id="ca-voice-selected">UNAVAILABLE</span></div><pre id="ca-voice-list">VOICES NOT QUERIED</pre>' +
+      '<pre id="ca-path-json">NO DIAGNOSTIC YET</pre></section>' +
       '<div class="ca-stats">' +
       '<div class="ca-stat"><span class="ca-k">KERNEL</span><b id="ca-kernel">STANDBY</b></div>' +
       '<div class="ca-stat"><span class="ca-k">AUDIO CONTEXT</span><b id="ca-ctx">UNAVAILABLE</b></div>' +
