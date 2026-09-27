@@ -11609,3 +11609,3907 @@
   initialise();
 
 })();
+/* ================================================================
+   CHIROMBE AUDIO LIVING LITURGY
+   PART 5 — TONAL / FREQUENCY / DRONE / HARMONIC ENGINE
+   ================================================================
+
+   PURPOSE
+   -------
+   Creates the actual computational sound layer beneath the
+   CHIROMBE Living Liturgy system.
+
+   CAPABILITIES
+   ------------
+   • Oscillator synthesis
+   • Harmonic stacks
+   • Drone generation
+   • Frequency scenes
+   • Slow frequency sweeps
+   • Amplitude modulation
+   • Rhythmic pulses
+   • Audible frequency validation
+   • Nyquist protection
+   • Master gain control
+   • Envelope control
+   • Voice ducking
+   • Spectral analysis
+   • Tone fingerprints
+   • Scene transitions
+   • Tone scheduling
+   • Audio-resource cleanup
+   • Safe stop
+   • Hardware capability reporting
+   • Frequency research metadata
+
+   IMPORTANT
+   ---------
+   "Frequency" here means an audio signal unless explicitly marked
+   otherwise.
+
+   A normal phone speaker/headphone system cannot output arbitrary
+   MHz/RF signals. Frequencies beyond the supported audio range are
+   therefore represented as research/target metadata rather than
+   falsely claimed to be physically emitted.
+
+   This engine does not claim that a particular frequency scientifically
+   repels supernatural entities or guarantees spiritual protection.
+
+   It provides a controllable sound environment for devotional,
+   reflective, symbolic and technical purposes.
+
+   ================================================================ */
+
+(() => {
+  "use strict";
+
+  const root = window;
+
+  const CHIROMBE =
+    root.CHIROMBE ||
+    (root.CHIROMBE = {});
+
+  const AUDIO =
+    root.CHIROMBE_AUDIO ||
+    (CHIROMBE.AudioLivingLiturgy =
+      CHIROMBE.AudioLivingLiturgy || {});
+
+  const BLOODLINE =
+    root.CHIROMBE_AUDIO_BLOODLINE_ORCHESTRATOR ||
+    CHIROMBE.AudioBloodlineOrchestrator ||
+    {};
+
+  const MODULE_ID =
+    "CHIROMBE_AUDIO_TONAL_ENGINE";
+
+  const VERSION =
+    "5.0.0";
+
+  /* ================================================================
+     1. STATES
+     ================================================================ */
+
+  const STATES = Object.freeze({
+
+    DORMANT:
+      "DORMANT",
+
+    READY:
+      "READY",
+
+    INITIALISING:
+      "INITIALISING",
+
+    PLAYING:
+      "PLAYING",
+
+    TRANSITIONING:
+      "TRANSITIONING",
+
+    ANALYSING:
+      "ANALYSING",
+
+    PAUSED:
+      "PAUSED",
+
+    SAFE_STOP:
+      "SAFE_STOP",
+
+    UNSUPPORTED:
+      "UNSUPPORTED",
+
+    ERROR:
+      "ERROR"
+
+  });
+
+  const FREQUENCY_CLASSES =
+    Object.freeze({
+
+      SUB_AUDIO:
+        "SUB_AUDIO",
+
+      AUDIBLE:
+        "AUDIBLE",
+
+      ULTRASONIC:
+        "ULTRASONIC",
+
+      RF_METADATA:
+        "RF_METADATA",
+
+      INVALID:
+        "INVALID"
+
+    });
+
+  const WAVEFORMS =
+    Object.freeze({
+
+      SINE:
+        "sine",
+
+      TRIANGLE:
+        "triangle",
+
+      SQUARE:
+        "square",
+
+      SAWTOOTH:
+        "sawtooth",
+
+      CUSTOM:
+        "custom"
+
+    });
+
+  const SCENES =
+    Object.freeze({
+
+      GROUNDING:
+        "GROUNDING",
+
+      REFLECTION:
+        "REFLECTION",
+
+      PROTECTION:
+        "PROTECTION",
+
+      GRATITUDE:
+        "GRATITUDE",
+
+      REMEMBRANCE:
+        "REMEMBRANCE",
+
+      UNITY:
+        "UNITY",
+
+      COURAGE:
+        "COURAGE",
+
+      PEACE:
+        "PEACE",
+
+      NIGHT_WATCH:
+        "NIGHT_WATCH",
+
+      DAWN:
+        "DAWN",
+
+      EVENING:
+        "EVENING",
+
+      SILENT_WATCH:
+        "SILENT_WATCH",
+
+      RECOVERY:
+        "RECOVERY",
+
+      ALERT:
+        "ALERT",
+
+      CLOSING:
+        "CLOSING"
+
+    });
+
+  /* ================================================================
+     2. DEFAULT CONFIGURATION
+     ================================================================ */
+
+  const CONFIG = {
+
+    masterGain:
+      0.22,
+
+    maximumMasterGain:
+      0.50,
+
+    oscillatorGain:
+      0.075,
+
+    maximumOscillatorGain:
+      0.16,
+
+    defaultAttackMs:
+      900,
+
+    defaultReleaseMs:
+      1400,
+
+    maximumOscillators:
+      16,
+
+    maximumHarmonics:
+      8,
+
+    maximumDurationMs:
+      60 * 60 * 1000,
+
+    maximumSweepRate:
+      20,
+
+    defaultWaveform:
+      WAVEFORMS.SINE,
+
+    analysisFftSize:
+      2048,
+
+    smoothing:
+      0.82,
+
+    duckGain:
+      0.20,
+
+    safetyHeadroom:
+      0.80,
+
+    allowUltrasonicGeneration:
+      false,
+
+    allowExperimentalModulation:
+      true,
+
+    enableAnalysis:
+      true,
+
+    autoCleanup:
+      true
+
+  };
+
+  /* ================================================================
+     3. INTERNAL STATE
+     ================================================================ */
+
+  const state = {
+
+    state:
+      STATES.DORMANT,
+
+    context:
+      null,
+
+    master:
+      null,
+
+    analyser:
+      null,
+
+    compressor:
+      null,
+
+    voiceDuck:
+      null,
+
+    activeNodes:
+      new Map(),
+
+    activeScenes:
+      new Map(),
+
+    scheduled:
+      new Map(),
+
+    toneHistory:
+      [],
+
+    sceneHistory:
+      [],
+
+    frequencyHistory:
+      [],
+
+    analysis:
+      {
+
+        rms:
+          0,
+
+        peak:
+          0,
+
+        spectralCentroid:
+          0,
+
+        dominantFrequency:
+          0,
+
+        timestamp:
+          null
+
+      },
+
+    capabilities:
+      {
+
+        webAudio:
+          false,
+
+        oscillator:
+          false,
+
+        analyser:
+          false,
+
+        speechSynthesis:
+          "speechSynthesis" in root,
+
+        audioWorklet:
+          false,
+
+        sampleRate:
+          null,
+
+        channelCount:
+          null,
+
+        maxAudibleFrequency:
+          null
+
+      },
+
+    currentScene:
+      null,
+
+    currentFundamental:
+      null,
+
+    safeStopped:
+      false,
+
+    initialised:
+      false
+
+  };
+
+  /* ================================================================
+     4. UTILITIES
+     ================================================================ */
+
+  function now() {
+    return new Date().toISOString();
+  }
+
+  function uid(prefix = "TON") {
+
+    return (
+      prefix +
+      "_" +
+      Date.now().toString(36) +
+      "_" +
+      Math.random()
+        .toString(36)
+        .slice(2, 9)
+    );
+  }
+
+  function number(
+    value,
+    fallback = 0
+  ) {
+
+    const n =
+      Number(value);
+
+    return Number.isFinite(n)
+      ? n
+      : fallback;
+  }
+
+  function clamp(
+    value,
+    min,
+    max
+  ) {
+
+    return Math.min(
+      max,
+      Math.max(
+        min,
+        number(value, min)
+      )
+    );
+  }
+
+  function safe(value) {
+
+    if (
+      value === null ||
+      value === undefined
+    ) {
+      return "";
+    }
+
+    return String(value).trim();
+  }
+
+  function hash(text) {
+
+    const input =
+      safe(text);
+
+    let h =
+      2166136261;
+
+    for (
+      let i = 0;
+      i < input.length;
+      i++
+    ) {
+
+      h ^=
+        input.charCodeAt(i);
+
+      h +=
+        (h << 1) +
+        (h << 4) +
+        (h << 7) +
+        (h << 8) +
+        (h << 24);
+
+      h >>>=
+        0;
+    }
+
+    return h
+      .toString(16)
+      .padStart(8, "0");
+  }
+
+  function emit(
+    type,
+    detail = {}
+  ) {
+
+    const payload = {
+
+      type,
+
+      timestamp:
+        now(),
+
+      module:
+        MODULE_ID,
+
+      version:
+        VERSION,
+
+      detail
+
+    };
+
+    try {
+
+      if (
+        AUDIO &&
+        typeof AUDIO.emit ===
+        "function"
+      ) {
+
+        AUDIO.emit(
+          "TONAL_ENGINE_EVENT",
+          payload
+        );
+      }
+
+    } catch (_) {}
+
+    try {
+
+      root.dispatchEvent(
+        new CustomEvent(
+          "CHIROMBE_AUDIO_TONAL_EVENT",
+          {
+            detail:
+              payload
+          }
+        )
+      );
+
+    } catch (_) {}
+
+    return payload;
+  }
+
+  /* ================================================================
+     5. FREQUENCY CLASSIFICATION
+     ================================================================ */
+
+  function classifyFrequency(
+    frequency,
+    context = state.context
+  ) {
+
+    const hz =
+      number(
+        frequency,
+        NaN
+      );
+
+    if (
+      !Number.isFinite(hz) ||
+      hz <= 0
+    ) {
+
+      return {
+        class:
+          FREQUENCY_CLASSES.INVALID,
+
+        supported:
+          false,
+
+        frequencyHz:
+          hz,
+
+        reason:
+          "Frequency must be greater than zero."
+      };
+    }
+
+    const sampleRate =
+      number(
+        context?.sampleRate,
+        44100
+      );
+
+    const nyquist =
+      sampleRate / 2;
+
+    if (
+      hz < 20
+    ) {
+
+      return {
+
+        class:
+          FREQUENCY_CLASSES.SUB_AUDIO,
+
+        supported:
+          false,
+
+        frequencyHz:
+          hz,
+
+        nyquist,
+
+        reason:
+          "Below conventional human-audible range."
+      };
+    }
+
+    if (
+      hz <=
+      Math.min(
+        20000,
+        nyquist * 0.95
+      )
+    ) {
+
+      return {
+
+        class:
+          FREQUENCY_CLASSES.AUDIBLE,
+
+        supported:
+          true,
+
+        frequencyHz:
+          hz,
+
+        nyquist,
+
+        reason:
+          "Within normal audio generation range."
+      };
+    }
+
+    if (
+      hz <=
+      nyquist
+    ) {
+
+      return {
+
+        class:
+          FREQUENCY_CLASSES.ULTRASONIC,
+
+        supported:
+          CONFIG.allowUltrasonicGeneration,
+
+        frequencyHz:
+          hz,
+
+        nyquist,
+
+        reason:
+          "Above conventional audible range."
+      };
+    }
+
+    /*
+     * Frequencies beyond Nyquist cannot be represented directly by
+     * the current digital audio context.
+     */
+
+    if (
+      hz >=
+      20000
+    ) {
+
+      return {
+
+        class:
+          FREQUENCY_CLASSES.RF_METADATA,
+
+        supported:
+          false,
+
+        frequencyHz:
+          hz,
+
+        nyquist,
+
+        reason:
+          "Not directly representable as ordinary digital audio."
+      };
+    }
+
+    return {
+
+      class:
+        FREQUENCY_CLASSES.INVALID,
+
+      supported:
+        false,
+
+      frequencyHz:
+        hz,
+
+      nyquist
+    };
+  }
+
+  /* ================================================================
+     6. FREQUENCY SPECIFICATION
+     ================================================================ */
+
+  function createToneSpec(
+    options = {}
+  ) {
+
+    const frequencyHz =
+      number(
+        options.frequencyHz ||
+        options.frequency ||
+        432
+      );
+
+    const classification =
+      classifyFrequency(
+        frequencyHz
+      );
+
+    const spec = {
+
+      toneId:
+        uid("TONE"),
+
+      frequencyHz,
+
+      classification:
+        classification.class,
+
+      supported:
+        classification.supported,
+
+      waveform:
+        options.waveform ||
+        CONFIG.defaultWaveform,
+
+      amplitude:
+        clamp(
+          options.amplitude ??
+          CONFIG.oscillatorGain,
+          0,
+          CONFIG.maximumOscillatorGain
+        ),
+
+      phase:
+        number(
+          options.phase,
+          0
+        ),
+
+      attackMs:
+        clamp(
+          options.attackMs ??
+          CONFIG.defaultAttackMs,
+          1,
+          30000
+        ),
+
+      releaseMs:
+        clamp(
+          options.releaseMs ??
+          CONFIG.defaultReleaseMs,
+          1,
+          30000
+        ),
+
+      durationMs:
+        clamp(
+          options.durationMs ??
+          10000,
+          10,
+          CONFIG.maximumDurationMs
+        ),
+
+      pan:
+        clamp(
+          options.pan ??
+          0,
+          -1,
+          1
+        ),
+
+      modulationDepth:
+        clamp(
+          options.modulationDepth ??
+          0,
+          0,
+          1
+        ),
+
+      modulationRateHz:
+        clamp(
+          options.modulationRateHz ??
+          0,
+          0,
+          CONFIG.maximumSweepRate
+        ),
+
+      detuneCents:
+        clamp(
+          options.detuneCents ??
+          0,
+          -1200,
+          1200
+        ),
+
+      purpose:
+        safe(
+          options.purpose
+        ) ||
+        "REFLECTION",
+
+      provenance:
+        safe(
+          options.provenance
+        ) ||
+        "CHIROMBE_GENERATED",
+
+      safetyLimit:
+        clamp(
+          options.safetyLimit ??
+          CONFIG.maximumOscillatorGain,
+          0,
+          CONFIG.maximumOscillatorGain
+        ),
+
+      metadata:
+        options.metadata || {}
+
+    };
+
+    spec.fingerprint =
+      hash(
+        JSON.stringify({
+          frequencyHz:
+            spec.frequencyHz,
+
+          waveform:
+            spec.waveform,
+
+          amplitude:
+            spec.amplitude,
+
+          detuneCents:
+            spec.detuneCents,
+
+          modulationDepth:
+            spec.modulationDepth,
+
+          modulationRateHz:
+            spec.modulationRateHz
+        })
+      );
+
+    return spec;
+  }
+
+  /* ================================================================
+     7. AUDIO CONTEXT INITIALISATION
+     ================================================================ */
+
+  async function initialiseAudio() {
+
+    if (
+      state.initialised &&
+      state.context
+    ) {
+
+      return {
+        ok: true,
+        context:
+          state.context
+      };
+    }
+
+    state.state =
+      STATES.INITIALISING;
+
+    const AudioContextClass =
+      root.AudioContext ||
+      root.webkitAudioContext;
+
+    if (
+      !AudioContextClass
+    ) {
+
+      state.state =
+        STATES.UNSUPPORTED;
+
+      state.capabilities.webAudio =
+        false;
+
+      emit(
+        "TONAL_ENGINE_UNSUPPORTED",
+        {
+          reason:
+            "Web Audio API unavailable."
+        }
+      );
+
+      return {
+        ok: false,
+        error:
+          "Web Audio API is unavailable."
+      };
+    }
+
+    try {
+
+      state.context =
+        new AudioContextClass();
+
+      const context =
+        state.context;
+
+      state.capabilities.webAudio =
+        true;
+
+      state.capabilities.oscillator =
+        typeof context
+          .createOscillator ===
+        "function";
+
+      state.capabilities.analyser =
+        typeof context
+          .createAnalyser ===
+        "function";
+
+      state.capabilities.audioWorklet =
+        Boolean(
+          context.audioWorklet
+        );
+
+      state.capabilities.sampleRate =
+        context.sampleRate;
+
+      state.capabilities.maxAudibleFrequency =
+        Math.min(
+          20000,
+          context.sampleRate / 2
+        );
+
+      /*
+       * Master routing:
+       *
+       * oscillator/source
+       *       ↓
+       * voice duck / gain
+       *       ↓
+       * master
+       *       ↓
+       * compressor
+       *       ↓
+       * analyser
+       *       ↓
+       * destination
+       */
+
+      state.master =
+        context.createGain();
+
+      state.master.gain.value =
+        clamp(
+          CONFIG.masterGain,
+          0,
+          CONFIG.maximumMasterGain
+        );
+
+      state.compressor =
+        context.createDynamicsCompressor();
+
+      state.compressor.threshold.value =
+        -18;
+
+      state.compressor.knee.value =
+        20;
+
+      state.compressor.ratio.value =
+        4;
+
+      state.compressor.attack.value =
+        0.01;
+
+      state.compressor.release.value =
+        0.25;
+
+      state.voiceDuck =
+        context.createGain();
+
+      state.voiceDuck.gain.value =
+        1;
+
+      if (
+        state.capabilities.analyser
+      ) {
+
+        state.analyser =
+          context.createAnalyser();
+
+        state.analyser.fftSize =
+          CONFIG.analysisFftSize;
+
+        state.analyser.smoothingTimeConstant =
+          CONFIG.smoothing;
+      }
+
+      state.voiceDuck.connect(
+        state.master
+      );
+
+      state.master.connect(
+        state.compressor
+      );
+
+      if (
+        state.analyser
+      ) {
+
+        state.compressor.connect(
+          state.analyser
+        );
+
+        state.analyser.connect(
+          context.destination
+        );
+
+      } else {
+
+        state.compressor.connect(
+          context.destination
+        );
+      }
+
+      state.state =
+        STATES.READY;
+
+      state.initialised =
+        true;
+
+      emit(
+        "TONAL_ENGINE_READY",
+        {
+          sampleRate:
+            context.sampleRate,
+
+          maxAudibleFrequency:
+            state.capabilities
+              .maxAudibleFrequency
+        }
+      );
+
+      return {
+        ok: true,
+        context
+      };
+
+    } catch (error) {
+
+      state.state =
+        STATES.ERROR;
+
+      emit(
+        "TONAL_ENGINE_INIT_ERROR",
+        {
+          error:
+            error?.message ||
+            String(error)
+        }
+      );
+
+      return {
+        ok: false,
+        error:
+          error?.message ||
+          String(error)
+      };
+    }
+  }
+
+  /* ================================================================
+     8. AUDIO CONTEXT UNLOCK
+     ================================================================ */
+
+  async function unlock() {
+
+    const result =
+      await initialiseAudio();
+
+    if (
+      !result.ok
+    ) {
+      return result;
+    }
+
+    try {
+
+      if (
+        state.context.state ===
+        "suspended"
+      ) {
+
+        await state.context.resume();
+      }
+
+      emit(
+        "TONAL_AUDIO_UNLOCKED",
+        {
+          contextState:
+            state.context.state
+        }
+      );
+
+      return {
+        ok: true,
+
+        state:
+          state.context.state
+      };
+
+    } catch (error) {
+
+      return {
+        ok: false,
+        error:
+          error?.message ||
+          String(error)
+      };
+    }
+  }
+
+  /* ================================================================
+     9. SAFE AMPLITUDE
+     ================================================================ */
+
+  function safeAmplitude(
+    amplitude
+  ) {
+
+    return clamp(
+      amplitude,
+      0,
+      CONFIG.maximumOscillatorGain
+    );
+  }
+
+  /* ================================================================
+     10. CREATE OSCILLATOR
+     ================================================================ */
+
+  async function createOscillator(
+    input = {}
+  ) {
+
+    const unlocked =
+      await unlock();
+
+    if (
+      !unlocked.ok
+    ) {
+      return unlocked;
+    }
+
+    if (
+      state.safeStopped
+    ) {
+
+      return {
+        ok: false,
+        error:
+          "Tonal engine is in SAFE_STOP."
+      };
+    }
+
+    const spec =
+      createToneSpec(
+        input
+      );
+
+    const classification =
+      classifyFrequency(
+        spec.frequencyHz
+      );
+
+    if (
+      !classification.supported
+    ) {
+
+      emit(
+        "TONAL_FREQUENCY_REJECTED",
+        {
+          frequencyHz:
+            spec.frequencyHz,
+
+          classification
+        }
+      );
+
+      return {
+        ok: false,
+
+        error:
+          classification.reason,
+
+        classification,
+
+        spec
+      };
+    }
+
+    if (
+      state.activeNodes.size >=
+      CONFIG.maximumOscillators
+    ) {
+
+      return {
+        ok: false,
+
+        error:
+          "Maximum simultaneous oscillators reached."
+      };
+    }
+
+    const context =
+      state.context;
+
+    const oscillator =
+      context.createOscillator();
+
+    const gain =
+      context.createGain();
+
+    oscillator.type =
+      spec.waveform;
+
+    oscillator.frequency.setValueAtTime(
+      spec.frequencyHz,
+      context.currentTime
+    );
+
+    oscillator.detune.setValueAtTime(
+      spec.detuneCents,
+      context.currentTime
+    );
+
+    /*
+     * Optional stereo panning.
+     */
+
+    let output =
+      gain;
+
+    let panner =
+      null;
+
+    if (
+      typeof context.createStereoPanner ===
+      "function"
+    ) {
+
+      panner =
+        context.createStereoPanner();
+
+      panner.pan.value =
+        spec.pan;
+
+      gain.connect(
+        panner
+      );
+
+      output =
+        panner;
+    }
+
+    output.connect(
+      state.voiceDuck
+    );
+
+    /*
+     * Start safely at zero gain and ramp up.
+     */
+
+    const startTime =
+      context.currentTime;
+
+    const attackSeconds =
+      spec.attackMs / 1000;
+
+    const releaseSeconds =
+      spec.releaseMs / 1000;
+
+    const amplitude =
+      safeAmplitude(
+        spec.amplitude
+      );
+
+    gain.gain.cancelScheduledValues(
+      startTime
+    );
+
+    gain.gain.setValueAtTime(
+      0,
+      startTime
+    );
+
+    gain.gain.linearRampToValueAtTime(
+      amplitude,
+      startTime +
+      attackSeconds
+    );
+
+    /*
+     * Optional amplitude modulation.
+     */
+
+    let modulation =
+      null;
+
+    if (
+      CONFIG.allowExperimentalModulation &&
+      spec.modulationDepth > 0 &&
+      spec.modulationRateHz > 0
+    ) {
+
+      modulation =
+        context.createOscillator();
+
+      const modulationGain =
+        context.createGain();
+
+      modulation.type =
+        "sine";
+
+      modulation.frequency.value =
+        spec.modulationRateHz;
+
+      modulationGain.gain.value =
+        amplitude *
+        spec.modulationDepth;
+
+      modulation.connect(
+        modulationGain
+      );
+
+      modulationGain.connect(
+        gain.gain
+      );
+
+      modulation.start(
+        startTime
+      );
+    }
+
+    oscillator.start(
+      startTime
+    );
+
+    const durationSeconds =
+      spec.durationMs / 1000;
+
+    const stopTime =
+      startTime +
+      durationSeconds;
+
+    const record = {
+
+      id:
+        spec.toneId,
+
+      spec,
+
+      oscillator,
+
+      gain,
+
+      panner,
+
+      modulation,
+
+      startedAt:
+        now(),
+
+      startTime,
+
+      stopTime,
+
+      status:
+        "PLAYING"
+
+    };
+
+    state.activeNodes.set(
+      spec.toneId,
+      record
+    );
+
+    state.toneHistory.unshift({
+
+      toneId:
+        spec.toneId,
+
+      frequencyHz:
+        spec.frequencyHz,
+
+      waveform:
+        spec.waveform,
+
+      amplitude:
+        spec.amplitude,
+
+      purpose:
+        spec.purpose,
+
+      timestamp:
+        now(),
+
+      fingerprint:
+        spec.fingerprint
+
+    });
+
+    state.toneHistory =
+      state.toneHistory.slice(
+        0,
+        500
+      );
+
+    if (
+      CONFIG.autoCleanup
+    ) {
+
+      window.setTimeout(
+        () => {
+
+          releaseOscillator(
+            spec.toneId
+          );
+
+        },
+        spec.durationMs
+      );
+    }
+
+    emit(
+      "TONAL_OSCILLATOR_STARTED",
+      {
+        toneId:
+          spec.toneId,
+
+        frequencyHz:
+          spec.frequencyHz,
+
+        purpose:
+          spec.purpose
+      }
+    );
+
+    return {
+
+      ok: true,
+
+      toneId:
+        spec.toneId,
+
+      spec,
+
+      classification
+
+    };
+  }
+
+  /* ================================================================
+     11. RELEASE OSCILLATOR
+     ================================================================ */
+
+  function releaseOscillator(
+    toneId
+  ) {
+
+    const record =
+      state.activeNodes.get(
+        toneId
+      );
+
+    if (
+      !record
+    ) {
+      return false;
+    }
+
+    try {
+
+      const context =
+        state.context;
+
+      const current =
+        context.currentTime;
+
+      const releaseSeconds =
+        record.spec.releaseMs /
+        1000;
+
+      record.gain.gain.cancelScheduledValues(
+        current
+      );
+
+      record.gain.gain.setValueAtTime(
+        record.gain.gain.value,
+        current
+      );
+
+      record.gain.gain.linearRampToValueAtTime(
+        0,
+        current +
+        releaseSeconds
+      );
+
+      record.oscillator.stop(
+        current +
+        releaseSeconds +
+        0.05
+      );
+
+      if (
+        record.modulation
+      ) {
+
+        try {
+
+          record.modulation.stop(
+            current +
+            releaseSeconds +
+            0.05
+          );
+
+        } catch (_) {}
+      }
+
+      record.status =
+        "RELEASING";
+
+      window.setTimeout(
+        () => {
+
+          try {
+
+            record.oscillator.disconnect();
+
+          } catch (_) {}
+
+          try {
+
+            record.gain.disconnect();
+
+          } catch (_) {}
+
+          try {
+
+            record.panner?.disconnect();
+
+          } catch (_) {}
+
+          try {
+
+            record.modulation?.disconnect();
+
+          } catch (_) {}
+
+          state.activeNodes.delete(
+            toneId
+          );
+
+          emit(
+            "TONAL_OSCILLATOR_RELEASED",
+            {
+              toneId
+            }
+          );
+
+        },
+        record.spec.releaseMs + 100
+      );
+
+      return true;
+
+    } catch (error) {
+
+      state.activeNodes.delete(
+        toneId
+      );
+
+      emit(
+        "TONAL_RELEASE_ERROR",
+        {
+          toneId,
+
+          error:
+            error?.message ||
+            String(error)
+        }
+      );
+
+      return false;
+    }
+  }
+
+  /* ================================================================
+     12. STOP ALL OSCILLATORS
+     ================================================================ */
+
+  function stopAll(
+    reason =
+      "Manual tonal stop"
+  ) {
+
+    [
+      ...state.activeNodes.keys()
+    ].forEach(
+      toneId =>
+        releaseOscillator(
+          toneId
+        )
+    );
+
+    emit(
+      "TONAL_ALL_STOPPED",
+      {
+        reason
+      }
+    );
+
+    return {
+      ok: true
+    };
+  }
+
+  /* ================================================================
+     13. HARMONIC GENERATOR
+     ================================================================ */
+
+  function harmonicFrequencies(
+    fundamental,
+    options = {}
+  ) {
+
+    const base =
+      number(
+        fundamental,
+        432
+      );
+
+    const ratios =
+      Array.isArray(
+        options.ratios
+      )
+        ? options.ratios
+        : [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8
+          ];
+
+    return ratios
+      .slice(
+        0,
+        CONFIG.maximumHarmonics
+      )
+      .map(
+        ratio =>
+          ({
+            ratio:
+              number(ratio, 1),
+
+            frequencyHz:
+              base *
+              number(
+                ratio,
+                1
+              )
+          })
+      )
+      .filter(
+        item =>
+          item.frequencyHz > 0
+      );
+  }
+
+  /* ================================================================
+     14. HARMONIC STACK
+     ================================================================ */
+
+  async function playHarmonicStack(
+    options = {}
+  ) {
+
+    const fundamental =
+      number(
+        options.frequencyHz ||
+        options.fundamental ||
+        432
+      );
+
+    const harmonics =
+      harmonicFrequencies(
+        fundamental,
+        options
+      );
+
+    const results =
+      [];
+
+    for (
+      let i = 0;
+      i < harmonics.length;
+      i++
+    ) {
+
+      const harmonic =
+        harmonics[i];
+
+      const amplitude =
+        safeAmplitude(
+          (
+            number(
+              options.amplitude,
+              CONFIG.oscillatorGain
+            ) /
+            Math.sqrt(
+              i + 1
+            )
+          )
+        );
+
+      const result =
+        await createOscillator({
+
+          frequencyHz:
+            harmonic.frequencyHz,
+
+          amplitude,
+
+          waveform:
+            options.waveform ||
+            WAVEFORMS.SINE,
+
+          durationMs:
+            options.durationMs ||
+            12000,
+
+          attackMs:
+            options.attackMs ||
+            1000,
+
+          releaseMs:
+            options.releaseMs ||
+            1600,
+
+          pan:
+            options.pan ||
+            0,
+
+          purpose:
+            options.purpose ||
+            "HARMONIC_REFLECTION",
+
+          provenance:
+            "CHIROMBE_HARMONIC_ENGINE",
+
+          metadata: {
+
+            fundamental,
+
+            ratio:
+              harmonic.ratio,
+
+            harmonicIndex:
+              i
+
+          }
+
+        });
+
+      results.push(
+        result
+      );
+    }
+
+    emit(
+      "TONAL_HARMONIC_STACK_STARTED",
+      {
+        fundamental,
+
+        harmonics:
+          harmonics.length
+      }
+    );
+
+    return {
+      ok:
+        results.some(
+          result =>
+            result.ok
+        ),
+
+      fundamental,
+
+      results
+    };
+  }
+
+  /* ================================================================
+     15. DRONE
+     ================================================================ */
+
+  async function playDrone(
+    options = {}
+  ) {
+
+    const fundamental =
+      number(
+        options.frequencyHz ||
+        options.fundamental ||
+        128
+      );
+
+    const ratios =
+      options.ratios ||
+      [
+        1,
+        1.5,
+        2
+      ];
+
+    const amplitudes =
+      options.amplitudes ||
+      [
+        0.07,
+        0.045,
+        0.025
+      ];
+
+    const results =
+      [];
+
+    for (
+      let i = 0;
+      i < ratios.length;
+      i++
+    ) {
+
+      results.push(
+        await createOscillator({
+
+          frequencyHz:
+            fundamental *
+            number(
+              ratios[i],
+              1
+            ),
+
+          amplitude:
+            amplitudes[i] ||
+            0.03,
+
+          waveform:
+            options.waveform ||
+            WAVEFORMS.SINE,
+
+          durationMs:
+            options.durationMs ||
+            30000,
+
+          attackMs:
+            options.attackMs ||
+            2500,
+
+          releaseMs:
+            options.releaseMs ||
+            3000,
+
+          detuneCents:
+            i === 0
+              ? 0
+              : (
+                  i % 2 === 0
+                    ? 3
+                    : -3
+                ),
+
+          purpose:
+            options.purpose ||
+            "GROUNDING_DRONE",
+
+          provenance:
+            "CHIROMBE_DRONE_ENGINE"
+
+        })
+      );
+    }
+
+    state.currentFundamental =
+      fundamental;
+
+    emit(
+      "TONAL_DRONE_STARTED",
+      {
+        fundamental,
+
+        components:
+          ratios.length
+      }
+    );
+
+    return {
+      ok:
+        results.some(
+          result =>
+            result.ok
+        ),
+
+      fundamental,
+
+      results
+    };
+  }
+
+  /* ================================================================
+     16. FREQUENCY SWEEP
+     ================================================================ */
+
+  async function playSweep(
+    options = {}
+  ) {
+
+    const unlocked =
+      await unlock();
+
+    if (
+      !unlocked.ok
+    ) {
+      return unlocked;
+    }
+
+    const startFrequency =
+      number(
+        options.startFrequency ||
+        options.from ||
+        220
+      );
+
+    const endFrequency =
+      number(
+        options.endFrequency ||
+        options.to ||
+        440
+      );
+
+    const durationMs =
+      clamp(
+        options.durationMs ||
+        10000,
+        100,
+        CONFIG.maximumDurationMs
+      );
+
+    const startClass =
+      classifyFrequency(
+        startFrequency
+      );
+
+    const endClass =
+      classifyFrequency(
+        endFrequency
+      );
+
+    if (
+      !startClass.supported ||
+      !endClass.supported
+    ) {
+
+      return {
+
+        ok: false,
+
+        error:
+          "Sweep endpoints are outside the supported audio range.",
+
+        startClass,
+
+        endClass
+
+      };
+    }
+
+    const context =
+      state.context;
+
+    const oscillator =
+      context.createOscillator();
+
+    const gain =
+      context.createGain();
+
+    oscillator.type =
+      options.waveform ||
+      WAVEFORMS.SINE;
+
+    const startTime =
+      context.currentTime;
+
+    const endTime =
+      startTime +
+      durationMs / 1000;
+
+    oscillator.frequency.setValueAtTime(
+      startFrequency,
+      startTime
+    );
+
+    oscillator.frequency.exponentialRampToValueAtTime(
+      Math.max(
+        20,
+        endFrequency
+      ),
+      endTime
+    );
+
+    gain.gain.setValueAtTime(
+      0,
+      startTime
+    );
+
+    gain.gain.linearRampToValueAtTime(
+      safeAmplitude(
+        options.amplitude ??
+        CONFIG.oscillatorGain
+      ),
+      startTime +
+      0.8
+    );
+
+    gain.gain.linearRampToValueAtTime(
+      0,
+      endTime
+    );
+
+    oscillator.connect(
+      gain
+    );
+
+    gain.connect(
+      state.voiceDuck
+    );
+
+    oscillator.start(
+      startTime
+    );
+
+    oscillator.stop(
+      endTime +
+      0.05
+    );
+
+    const sweepId =
+      uid("SWEEP");
+
+    state.activeNodes.set(
+      sweepId,
+      {
+        id:
+          sweepId,
+
+        oscillator,
+
+        gain,
+
+        startedAt:
+          now(),
+
+        status:
+          "PLAYING",
+
+        spec: {
+
+          startFrequency,
+
+          endFrequency,
+
+          durationMs
+
+        }
+
+      }
+    );
+
+    window.setTimeout(
+      () => {
+
+        try {
+
+          oscillator.disconnect();
+
+        } catch (_) {}
+
+        try {
+
+          gain.disconnect();
+
+        } catch (_) {}
+
+        state.activeNodes.delete(
+          sweepId
+        );
+
+      },
+      durationMs + 200
+    );
+
+    emit(
+      "TONAL_SWEEP_STARTED",
+      {
+        sweepId,
+
+        startFrequency,
+
+        endFrequency,
+
+        durationMs
+      }
+    );
+
+    return {
+
+      ok: true,
+
+      sweepId,
+
+      startFrequency,
+
+      endFrequency,
+
+      durationMs
+
+    };
+  }
+
+  /* ================================================================
+     17. RHYTHMIC PULSE
+     ================================================================ */
+
+  async function playPulse(
+    options = {}
+  ) {
+
+    const frequency =
+      number(
+        options.frequencyHz ||
+        options.frequency ||
+        220
+      );
+
+    const pulseRate =
+      clamp(
+        options.pulseRateHz ||
+        options.rate ||
+        2,
+        0.1,
+        20
+      );
+
+    const durationMs =
+      clamp(
+        options.durationMs ||
+        10000,
+        100,
+        CONFIG.maximumDurationMs
+      );
+
+    const pulseDuration =
+      1 /
+      pulseRate;
+
+    const pulseCount =
+      Math.ceil(
+        durationMs /
+        1000 *
+        pulseRate
+      );
+
+    const results =
+      [];
+
+    for (
+      let i = 0;
+      i < pulseCount;
+      i++
+    ) {
+
+      const delay =
+        i *
+        pulseDuration *
+        1000;
+
+      const id =
+        window.setTimeout(
+          () => {
+
+            createOscillator({
+
+              frequencyHz:
+                frequency,
+
+              amplitude:
+                options.amplitude ||
+                0.05,
+
+              attackMs:
+                Math.min(
+                  80,
+                  pulseDuration *
+                  250
+                ),
+
+              releaseMs:
+                Math.min(
+                  150,
+                  pulseDuration *
+                  350
+                ),
+
+              durationMs:
+                Math.max(
+                  80,
+                  pulseDuration *
+                  700
+                ),
+
+              purpose:
+                options.purpose ||
+                "RHYTHMIC_PULSE",
+
+              provenance:
+                "CHIROMBE_RHYTHM_ENGINE"
+
+            });
+
+          },
+          delay
+        );
+
+      state.scheduled.set(
+        String(id),
+        {
+          timeout:
+            id,
+
+          createdAt:
+            now()
+        }
+      );
+    }
+
+    emit(
+      "TONAL_PULSE_PATTERN_STARTED",
+      {
+        frequency,
+
+        pulseRate,
+
+        durationMs,
+
+        pulseCount
+      }
+    );
+
+    return {
+
+      ok: true,
+
+      frequency,
+
+      pulseRate,
+
+      durationMs,
+
+      pulseCount
+
+    };
+  }
+
+  /* ================================================================
+     18. SCENE DEFINITIONS
+     ================================================================ */
+
+  const SCENE_DEFINITIONS = {
+
+    [SCENES.GROUNDING]: {
+
+      fundamental:
+        128,
+
+      harmonics:
+        [1, 1.5, 2],
+
+      durationMs:
+        30000,
+
+      purpose:
+        "GROUNDING",
+
+      amplitude:
+        0.055
+
+    },
+
+    [SCENES.REFLECTION]: {
+
+      fundamental:
+        220,
+
+      harmonics:
+        [1, 1.5, 2],
+
+      durationMs:
+        30000,
+
+      purpose:
+        "REFLECTION",
+
+      amplitude:
+        0.045
+
+    },
+
+    [SCENES.PROTECTION]: {
+
+      fundamental:
+        256,
+
+      harmonics:
+        [1, 2, 3, 4],
+
+      durationMs:
+        25000,
+
+      purpose:
+        "PROTECTION",
+
+      amplitude:
+        0.045
+
+    },
+
+    [SCENES.GRATITUDE]: {
+
+      fundamental:
+        261.63,
+
+      harmonics:
+        [1, 1.25, 1.5, 2],
+
+      durationMs:
+        25000,
+
+      purpose:
+        "GRATITUDE",
+
+      amplitude:
+        0.04
+
+    },
+
+    [SCENES.REMEMBRANCE]: {
+
+      fundamental:
+        196,
+
+      harmonics:
+        [1, 1.5, 2],
+
+      durationMs:
+        35000,
+
+      purpose:
+        "REMEMBRANCE",
+
+      amplitude:
+        0.04
+
+    },
+
+    [SCENES.UNITY]: {
+
+      fundamental:
+        192,
+
+      harmonics:
+        [1, 1.25, 1.5, 2],
+
+      durationMs:
+        30000,
+
+      purpose:
+        "UNITY",
+
+      amplitude:
+        0.04
+
+    },
+
+    [SCENES.COURAGE]: {
+
+      fundamental:
+        220,
+
+      harmonics:
+        [1, 1.5, 2, 3],
+
+      durationMs:
+        22000,
+
+      purpose:
+        "COURAGE",
+
+      amplitude:
+        0.045
+
+    },
+
+    [SCENES.PEACE]: {
+
+      fundamental:
+        174,
+
+      harmonics:
+        [1, 1.5, 2],
+
+      durationMs:
+        35000,
+
+      purpose:
+        "PEACE",
+
+      amplitude:
+        0.035
+
+    },
+
+    [SCENES.NIGHT_WATCH]: {
+
+      fundamental:
+        110,
+
+      harmonics:
+        [1, 1.5, 2],
+
+      durationMs:
+        45000,
+
+      purpose:
+        "NIGHT_WATCH",
+
+      amplitude:
+        0.028
+
+    },
+
+    [SCENES.DAWN]: {
+
+      fundamental:
+        196,
+
+      harmonics:
+        [1, 1.25, 1.5, 2],
+
+      durationMs:
+        30000,
+
+      purpose:
+        "DAWN",
+
+      amplitude:
+        0.04
+
+    },
+
+    [SCENES.EVENING]: {
+
+      fundamental:
+        164.81,
+
+      harmonics:
+        [1, 1.5, 2],
+
+      durationMs:
+        35000,
+
+      purpose:
+        "EVENING",
+
+      amplitude:
+        0.032
+
+    },
+
+    [SCENES.SILENT_WATCH]: {
+
+      fundamental:
+        64,
+
+      harmonics:
+        [1],
+
+      durationMs:
+        45000,
+
+      purpose:
+        "SILENT_WATCH",
+
+      amplitude:
+        0.018
+
+    },
+
+    [SCENES.RECOVERY]: {
+
+      fundamental:
+        196,
+
+      harmonics:
+        [1, 1.5, 2],
+
+      durationMs:
+        20000,
+
+      purpose:
+        "RECOVERY",
+
+      amplitude:
+        0.035
+
+    },
+
+    [SCENES.ALERT]: {
+
+      fundamental:
+        440,
+
+      harmonics:
+        [1, 2],
+
+      durationMs:
+        4000,
+
+      purpose:
+        "ALERT",
+
+      amplitude:
+        0.035
+
+    },
+
+    [SCENES.CLOSING]: {
+
+      fundamental:
+        261.63,
+
+      harmonics:
+        [1, 1.5, 2],
+
+      durationMs:
+        22000,
+
+      purpose:
+        "CLOSING",
+
+      amplitude:
+        0.03
+
+    }
+
+  };
+
+  /* ================================================================
+     19. PLAY SCENE
+     ================================================================ */
+
+  async function playScene(
+    sceneName,
+    options = {}
+  ) {
+
+    const scene =
+      SCENE_DEFINITIONS[
+        sceneName
+      ];
+
+    if (
+      !scene
+    ) {
+
+      return {
+        ok: false,
+
+        error:
+          "Unknown tonal scene.",
+
+        available:
+          Object.keys(
+            SCENE_DEFINITIONS
+          )
+      };
+    }
+
+    await stopScene(
+      state.currentScene
+    );
+
+    state.state =
+      STATES.TRANSITIONING;
+
+    const durationMs =
+      clamp(
+        options.durationMs ||
+        scene.durationMs,
+        100,
+        CONFIG.maximumDurationMs
+      );
+
+    const fundamental =
+      number(
+        options.frequencyHz ||
+        scene.fundamental
+      );
+
+    const ratios =
+      options.harmonics ||
+      scene.harmonics;
+
+    const result =
+      await playHarmonicStack({
+
+        frequencyHz:
+          fundamental,
+
+        ratios,
+
+        durationMs,
+
+        amplitude:
+          options.amplitude ||
+          scene.amplitude,
+
+        purpose:
+          options.purpose ||
+          scene.purpose,
+
+        waveform:
+          options.waveform ||
+          WAVEFORMS.SINE
+
+      });
+
+    state.currentScene =
+      sceneName;
+
+    state.currentFundamental =
+      fundamental;
+
+    state.sceneHistory.unshift({
+
+      scene:
+        sceneName,
+
+      fundamental,
+
+      durationMs,
+
+      timestamp:
+        now(),
+
+      result:
+        result.ok
+
+    });
+
+    state.sceneHistory =
+      state.sceneHistory.slice(
+        0,
+        250
+      );
+
+    state.state =
+      STATES.PLAYING;
+
+    emit(
+      "TONAL_SCENE_STARTED",
+      {
+        scene:
+          sceneName,
+
+        fundamental,
+
+        durationMs,
+
+        purpose:
+          scene.purpose
+      }
+    );
+
+    return {
+
+      ok:
+        result.ok,
+
+      scene:
+        sceneName,
+
+      fundamental,
+
+      durationMs,
+
+      result
+
+    };
+  }
+
+  /* ================================================================
+     20. STOP SCENE
+     ================================================================ */
+
+  async function stopScene(
+    sceneName
+  ) {
+
+    if (
+      !sceneName
+    ) {
+      return {
+        ok: true
+      };
+    }
+
+    stopAll(
+      "Scene transition"
+    );
+
+    state.activeScenes.delete(
+      sceneName
+    );
+
+    emit(
+      "TONAL_SCENE_STOPPED",
+      {
+        scene:
+          sceneName
+      }
+    );
+
+    return {
+      ok: true
+    };
+  }
+
+  /* ================================================================
+     21. VOICE DUCKING
+     ================================================================ */
+
+  function setVoiceDuck(
+    speaking
+  ) {
+
+    if (
+      !state.voiceDuck ||
+      !state.context
+    ) {
+
+      return {
+        ok: false,
+        error:
+          "Tonal engine not initialised."
+      };
+    }
+
+    const target =
+      speaking
+        ? CONFIG.duckGain
+        : 1;
+
+    const current =
+      state.context.currentTime;
+
+    state.voiceDuck.gain.cancelScheduledValues(
+      current
+    );
+
+    state.voiceDuck.gain.setValueAtTime(
+      state.voiceDuck.gain.value,
+      current
+    );
+
+    state.voiceDuck.gain.linearRampToValueAtTime(
+      target,
+      current +
+      0.25
+    );
+
+    emit(
+      "TONAL_VOICE_DUCK_CHANGED",
+      {
+        speaking,
+        target
+      }
+    );
+
+    return {
+      ok: true,
+      speaking,
+      target
+    };
+  }
+
+  /* ================================================================
+     22. MASTER GAIN
+     ================================================================ */
+
+  function setMasterGain(
+    value
+  ) {
+
+    if (
+      !state.master
+    ) {
+
+      return {
+        ok: false,
+        error:
+          "Tonal engine not initialised."
+      };
+    }
+
+    const gain =
+      clamp(
+        value,
+        0,
+        CONFIG.maximumMasterGain
+      );
+
+    state.master.gain.value =
+      gain;
+
+    emit(
+      "TONAL_MASTER_GAIN_CHANGED",
+      {
+        gain
+      }
+    );
+
+    return {
+      ok: true,
+      gain
+    };
+  }
+
+  /* ================================================================
+     23. SPECTRAL ANALYSIS
+     ================================================================ */
+
+  function analyse() {
+
+    if (
+      !state.analyser
+    ) {
+
+      return {
+        ok: false,
+        error:
+          "Analyser unavailable."
+      };
+    }
+
+    const analyser =
+      state.analyser;
+
+    const size =
+      analyser.fftSize;
+
+    const timeData =
+      new Float32Array(
+        size
+      );
+
+    const frequencyData =
+      new Uint8Array(
+        analyser.frequencyBinCount
+      );
+
+    analyser.getFloatTimeDomainData(
+      timeData
+    );
+
+    analyser.getByteFrequencyData(
+      frequencyData
+    );
+
+    let sumSquares =
+      0;
+
+    let peak =
+      0;
+
+    for (
+      let i = 0;
+      i < timeData.length;
+      i++
+    ) {
+
+      const sample =
+        timeData[i];
+
+      sumSquares +=
+        sample *
+        sample;
+
+      peak =
+        Math.max(
+          peak,
+          Math.abs(sample)
+        );
+    }
+
+    const rms =
+      Math.sqrt(
+        sumSquares /
+        timeData.length
+      );
+
+    const sampleRate =
+      state.context.sampleRate;
+
+    let weighted =
+      0;
+
+    let magnitude =
+      0;
+
+    let dominantIndex =
+      0;
+
+    let dominantValue =
+      -1;
+
+    for (
+      let i = 0;
+      i < frequencyData.length;
+      i++
+    ) {
+
+      const value =
+        frequencyData[i];
+
+      weighted +=
+        i *
+        value;
+
+      magnitude +=
+        value;
+
+      if (
+        value >
+        dominantValue
+      ) {
+
+        dominantValue =
+          value;
+
+        dominantIndex =
+          i;
+      }
+    }
+
+    const binWidth =
+      sampleRate /
+      size;
+
+    const spectralCentroid =
+      magnitude
+        ? (
+            weighted /
+            magnitude
+          ) *
+          binWidth
+        : 0;
+
+    const dominantFrequency =
+      dominantIndex *
+      binWidth;
+
+    state.analysis = {
+
+      rms,
+
+      peak,
+
+      spectralCentroid,
+
+      dominantFrequency,
+
+      timestamp:
+        now()
+
+    };
+
+    state.state =
+      STATES.ANALYSING;
+
+    emit(
+      "TONAL_ANALYSIS_UPDATED",
+      state.analysis
+    );
+
+    return {
+      ok: true,
+      ...state.analysis
+    };
+  }
+
+  /* ================================================================
+     24. FREQUENCY METADATA
+     ================================================================ */
+
+  function registerResearchFrequency(
+    frequency,
+    metadata = {}
+  ) {
+
+    const hz =
+      number(
+        frequency,
+        NaN
+      );
+
+    const classification =
+      classifyFrequency(
+        hz
+      );
+
+    const record = {
+
+      frequencyHz:
+        hz,
+
+      classification:
+        classification.class,
+
+      physicallyGeneratedByThisEngine:
+        classification.supported,
+
+      purpose:
+        safe(
+          metadata.purpose
+        ) ||
+        "RESEARCH_METADATA",
+
+      source:
+        safe(
+          metadata.source
+        ) ||
+        "USER_DEFINED",
+
+      note:
+        safe(
+          metadata.note
+        ) ||
+        classification.reason,
+
+      registeredAt:
+        now()
+
+    };
+
+    state.frequencyHistory.unshift(
+      record
+    );
+
+    state.frequencyHistory =
+      state.frequencyHistory.slice(
+        0,
+        1000
+      );
+
+    emit(
+      "TONAL_FREQUENCY_REGISTERED",
+      record
+    );
+
+    return record;
+  }
+
+  /* ================================================================
+     25. COMMON FREQUENCY SETS
+     ================================================================ */
+
+  const FREQUENCY_PRESETS = {
+
+    AUDIBLE_LOW:
+      64,
+
+    GROUNDING:
+      128,
+
+    REFLECTION:
+      174,
+
+    PEACE:
+      192,
+
+    COURAGE:
+      220,
+
+    UNITY:
+      256,
+
+    GRATITUDE:
+      261.63,
+
+    CLOSING:
+      392,
+
+    REFERENCE_A:
+      440,
+
+    RESEARCH_432:
+      432,
+
+    RESEARCH_528:
+      528,
+
+    RESEARCH_639:
+      639,
+
+    RESEARCH_741:
+      741,
+
+    RESEARCH_852:
+      852,
+
+    RESEARCH_963:
+      963
+
+  };
+
+  /*
+   * The preset names above are descriptors only. They do not imply
+   * scientifically established supernatural or healing properties.
+   */
+
+  function getPreset(
+    name
+  ) {
+
+    const key =
+      safe(
+        name
+      ).toUpperCase();
+
+    const frequency =
+      FREQUENCY_PRESETS[
+        key
+      ];
+
+    if (
+      frequency ===
+      undefined
+    ) {
+
+      return null;
+    }
+
+    return {
+
+      name:
+        key,
+
+      frequencyHz:
+        frequency,
+
+      classification:
+        classifyFrequency(
+          frequency
+        ),
+
+      note:
+        key.startsWith(
+          "RESEARCH_"
+        )
+          ? "Research/reference frequency; no guaranteed physiological or spiritual effect is implied."
+          : "CHIROMBE audio-scene reference."
+
+    };
+  }
+
+  /* ================================================================
+     26. ADAPTIVE SCENE SELECTION
+     ================================================================ */
+
+  function selectScene(
+    context = {}
+  ) {
+
+    const mode =
+      safe(
+        context.mode
+      ).toUpperCase();
+
+    const time =
+      safe(
+        context.timeOfDay
+      ).toLowerCase();
+
+    if (
+      mode ===
+      "NIGHT_WATCH"
+    ) {
+
+      return SCENES.NIGHT_WATCH;
+    }
+
+    if (
+      mode ===
+      "RECOVERY"
+    ) {
+
+      return SCENES.RECOVERY;
+    }
+
+    if (
+      mode ===
+      "ALERT"
+    ) {
+
+      return SCENES.ALERT;
+    }
+
+    if (
+      mode ===
+      "PROTECTION"
+    ) {
+
+      return SCENES.PROTECTION;
+    }
+
+    if (
+      mode ===
+      "FAMILY"
+    ) {
+
+      return SCENES.UNITY;
+    }
+
+    if (
+      time ===
+      "morning" ||
+      time ===
+      "dawn"
+    ) {
+
+      return SCENES.DAWN;
+    }
+
+    if (
+      time ===
+      "evening"
+    ) {
+
+      return SCENES.EVENING;
+    }
+
+    return SCENES.REFLECTION;
+  }
+
+  /* ================================================================
+     27. ADAPTIVE SOUND RESPONSE
+     ================================================================ */
+
+  async function adaptiveResponse(
+    context = {}
+  ) {
+
+    const scene =
+      context.scene ||
+      selectScene(
+        context
+      );
+
+    const result =
+      await playScene(
+        scene,
+        context
+      );
+
+    emit(
+      "TONAL_ADAPTIVE_RESPONSE",
+      {
+        scene,
+
+        reason:
+          context.reason ||
+          "Adaptive selection",
+
+        result:
+          result.ok
+      }
+    );
+
+    return result;
+  }
+
+  /* ================================================================
+     28. SYSTEM EVENT INTEGRATION
+     ================================================================ */
+
+  function systemEvent(
+    event
+  ) {
+
+    const detail =
+      event?.detail ||
+      event ||
+      {};
+
+    const type =
+      safe(
+        detail.type ||
+        detail.event ||
+        detail.name
+      ).toUpperCase();
+
+    if (
+      !type
+    ) {
+      return;
+    }
+
+    const mappings = {
+
+      "SECURITY_ALERT":
+        SCENES.ALERT,
+
+      "WATCHDOG_ALERT":
+        SCENES.ALERT,
+
+      "RECOVERY_STARTED":
+        SCENES.RECOVERY,
+
+      "RECOVERY_COMPLETED":
+        SCENES.RECOVERY,
+
+      "LIVING_WATCH_STARTED":
+        SCENES.NIGHT_WATCH,
+
+      "FAMILY_UNITY":
+        SCENES.UNITY,
+
+      "BLOODLINE_LITURGY_READY":
+        SCENES.PROTECTION,
+
+      "RITUAL_SESSION_CREATED":
+        SCENES.REFLECTION,
+
+      "EVOLUTION_PROPOSAL_CREATED":
+        SCENES.REFLECTION,
+
+      "AUDIO_SAFE_STOP":
+        null,
+
+      "ENGINE_INTEGRITY_FAILURE":
+        SCENES.ALERT
+
+    };
+
+    if (
+      !(type in mappings)
+    ) {
+      return;
+    }
+
+    const scene =
+      mappings[type];
+
+    if (
+      !scene
+    ) {
+      return;
+    }
+
+    adaptiveResponse({
+
+      scene,
+
+      reason:
+        type,
+
+      mode:
+        type
+
+    }).catch(
+      error =>
+        emit(
+          "TONAL_SYSTEM_EVENT_ERROR",
+          {
+            event:
+              type,
+
+            error:
+              error?.message ||
+              String(error)
+          }
+        )
+    );
+  }
+
+  try {
+
+    root.addEventListener(
+      "CHIROMBE_AUDIO_EVENT",
+      systemEvent
+    );
+
+    root.addEventListener(
+      "CHIROMBE_LIVING_WATCH_EVENT",
+      systemEvent
+    );
+
+    root.addEventListener(
+      "CHIROMBE_ENGINE_EVENT",
+      systemEvent
+    );
+
+  } catch (_) {}
+
+  if (
+    AUDIO &&
+    typeof AUDIO.on ===
+    "function"
+  ) {
+
+    try {
+
+      AUDIO.on(
+        "SYSTEM_EVENT_OBSERVED",
+        systemEvent
+      );
+
+    } catch (_) {}
+  }
+
+  /* ================================================================
+     29. SCHEDULED TONE MANAGEMENT
+     ================================================================ */
+
+  function cancelScheduled() {
+
+    state.scheduled.forEach(
+      record => {
+
+        try {
+
+          clearTimeout(
+            record.timeout
+          );
+
+        } catch (_) {}
+
+      }
+    );
+
+    state.scheduled.clear();
+
+    emit(
+      "TONAL_SCHEDULE_CLEARED",
+      {}
+    );
+
+    return {
+      ok: true
+    };
+  }
+
+  /* ================================================================
+     30. SAFE STOP
+     ================================================================ */
+
+  function safeStop(
+    reason =
+      "Manual safe stop"
+  ) {
+
+    state.safeStopped =
+      true;
+
+    state.state =
+      STATES.SAFE_STOP;
+
+    cancelScheduled();
+
+    stopAll(
+      reason
+    );
+
+    if (
+      state.master &&
+      state.context
+    ) {
+
+      try {
+
+        state.master.gain.setValueAtTime(
+          0,
+          state.context.currentTime
+        );
+
+      } catch (_) {}
+    }
+
+    emit(
+      "TONAL_ENGINE_SAFE_STOP",
+      {
+        reason
+      }
+    );
+
+    return {
+      ok: true,
+      state:
+        state.state
+    };
+  }
+
+  /* ================================================================
+     31. RESUME
+     ================================================================ */
+
+  async function resume() {
+
+    state.safeStopped =
+      false;
+
+    const result =
+      await unlock();
+
+    if (
+      result.ok
+    ) {
+
+      if (
+        state.master
+      ) {
+
+        state.master.gain.value =
+          CONFIG.masterGain;
+      }
+
+      state.state =
+        STATES.READY;
+
+      emit(
+        "TONAL_ENGINE_RESUMED",
+        {}
+      );
+    }
+
+    return result;
+  }
+
+  /* ================================================================
+     32. HARDWARE CAPABILITY REPORT
+     ================================================================ */
+
+  function getCapabilities() {
+
+    return {
+
+      ...state.capabilities,
+
+      contextState:
+        state.context?.state ||
+        "NOT_INITIALISED",
+
+      activeOscillators:
+        state.activeNodes.size,
+
+      maximumOscillators:
+        CONFIG.maximumOscillators,
+
+      configuredMasterGain:
+        state.master?.gain?.value ??
+        CONFIG.masterGain,
+
+      frequencyPolicy: {
+
+        audible:
+          "GENERATE_WHEN_SUPPORTED",
+
+        ultrasonic:
+          CONFIG.allowUltrasonicGeneration
+            ? "EXPERIMENTAL"
+            : "METADATA_ONLY",
+
+        rfMHz:
+          "METADATA_ONLY_UNLESS_EXTERNAL_HARDWARE_EXISTS"
+
+      }
+
+    };
+  }
+
+  /* ================================================================
+     33. STATUS
+     ================================================================ */
+
+  function getStatus() {
+
+    return {
+
+      module:
+        MODULE_ID,
+
+      version:
+        VERSION,
+
+      state:
+        state.state,
+
+      initialised:
+        state.initialised,
+
+      safeStopped:
+        state.safeStopped,
+
+      currentScene:
+        state.currentScene,
+
+      currentFundamental:
+        state.currentFundamental,
+
+      activeOscillators:
+        state.activeNodes.size,
+
+      scheduledEvents:
+        state.scheduled.size,
+
+      capabilities:
+        getCapabilities(),
+
+      analysis:
+        {
+          ...state.analysis
+        },
+
+      history: {
+
+        tones:
+          state.toneHistory.length,
+
+        scenes:
+          state.sceneHistory.length,
+
+        frequencies:
+          state.frequencyHistory.length
+
+      },
+
+      timestamp:
+        now()
+
+    };
+  }
+
+  /* ================================================================
+     34. PUBLIC API
+     ================================================================ */
+
+  const TONAL = {
+
+    MODULE_ID,
+
+    VERSION,
+
+    STATES,
+
+    FREQUENCY_CLASSES,
+
+    WAVEFORMS,
+
+    SCENES,
+
+    FREQUENCY_PRESETS,
+
+    initialise:
+      initialiseAudio,
+
+    unlock,
+
+    classifyFrequency,
+
+    createToneSpec,
+
+    createOscillator,
+
+    releaseOscillator,
+
+    stopAll,
+
+    playHarmonicStack,
+
+    harmonicFrequencies,
+
+    playDrone,
+
+    playSweep,
+
+    playPulse,
+
+    playScene,
+
+    stopScene,
+
+    adaptiveResponse,
+
+    selectScene,
+
+    analyse,
+
+    setVoiceDuck,
+
+    setMasterGain,
+
+    registerResearchFrequency,
+
+    getPreset,
+
+    getCapabilities,
+
+    safeStop,
+
+    resume,
+
+    cancelScheduled,
+
+    getStatus
+
+  };
+
+  /* ================================================================
+     35. NAMESPACE REGISTRATION
+     ================================================================ */
+
+  root.CHIROMBE_AUDIO_TONAL_ENGINE =
+    TONAL;
+
+  CHIROMBE.AudioTonalEngine =
+    TONAL;
+
+  if (
+    !CHIROMBE.AudioLivingLiturgy
+  ) {
+
+    CHIROMBE.AudioLivingLiturgy =
+      {};
+  }
+
+  CHIROMBE.AudioLivingLiturgy.Tonal =
+    TONAL;
+
+  /* ================================================================
+     36. LITURGY COMMAND BUS INTEGRATION
+     ================================================================ */
+
+  const LITURGY =
+    root.CHIROMBE_AUDIO_LITURGY_ENGINE ||
+    {};
+
+  if (
+    LITURGY &&
+    typeof LITURGY === "object"
+  ) {
+
+    LITURGY.commands =
+      LITURGY.commands || {};
+
+    LITURGY.commands[
+      "audio.tonal.initialise"
+    ] =
+      initialiseAudio;
+
+    LITURGY.commands[
+      "audio.tonal.unlock"
+    ] =
+      unlock;
+
+    LITURGY.commands[
+      "audio.tonal.tone"
+    ] =
+      args =>
+        createOscillator(
+          args || {}
+        );
+
+    LITURGY.commands[
+      "audio.tonal.harmonics"
+    ] =
+      args =>
+        playHarmonicStack(
+          args || {}
+        );
+
+    LITURGY.commands[
+      "audio.tonal.drone"
+    ] =
+      args =>
+        playDrone(
+          args || {}
+        );
+
+    LITURGY.commands[
+      "audio.tonal.sweep"
+    ] =
+      args =>
+        playSweep(
+          args || {}
+        );
+
+    LITURGY.commands[
+      "audio.tonal.pulse"
+    ] =
+      args =>
+        playPulse(
+          args || {}
+        );
+
+    LITURGY.commands[
+      "audio.tonal.scene"
+    ] =
+      args =>
+        playScene(
+          args?.scene ||
+          SCENES.REFLECTION,
+          args || {}
+        );
+
+    LITURGY.commands[
+      "audio.tonal.stop"
+    ] =
+      args =>
+        stopAll(
+          args?.reason ||
+          "Commanded tonal stop"
+        );
+
+    LITURGY.commands[
+      "audio.tonal.safeStop"
+    ] =
+      args =>
+        safeStop(
+          args?.reason ||
+          "Commanded tonal safe stop"
+        );
+
+    LITURGY.commands[
+      "audio.tonal.resume"
+    ] =
+      resume;
+
+    LITURGY.commands[
+      "audio.tonal.analyse"
+    ] =
+      analyse;
+
+    LITURGY.commands[
+      "audio.tonal.status"
+    ] =
+      getStatus;
+
+  }
+
+  /* ================================================================
+     37. AUTOMATIC INITIALISATION
+     ================================================================ */
+
+  /*
+   * Do NOT automatically start sound on page load.
+   *
+   * Browsers normally require a user gesture before audio can begin.
+   * The engine therefore prepares itself but waits for explicit
+   * activation/unlock.
+   */
+
+  emit(
+    "TONAL_ENGINE_REGISTERED",
+    {
+      version:
+        VERSION,
+
+      policy:
+        "USER_GESTURE_AUDIO_ACTIVATION",
+
+      capability:
+        getCapabilities()
+    }
+  );
+
+  console.info(
+    "[CHIROMBE AUDIO] Part 5 — Tonal/Frequency Engine registered.",
+    getStatus()
+  );
+
+})();
