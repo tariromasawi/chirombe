@@ -23953,3 +23953,1206 @@
   );
 
 })();
+/* ============================================================
+   CHIROMBE AUDIO SAFETY CORE
+   PART 8A
+   VERSION 8.0.1
+   ============================================================ */
+
+(() => {
+  "use strict";
+
+  const VERSION = "8.0.1";
+
+  const STATES = Object.freeze({
+    OFFLINE: "OFFLINE",
+    READY: "READY",
+    ARMED: "ARMED",
+    MONITORING: "MONITORING",
+    SAFE_STOP: "SAFE_STOP",
+    LOCKED: "LOCKED",
+    ERROR: "ERROR"
+  });
+
+  const LIMITS = Object.freeze({
+    MASTER_GAIN: 0.50,
+    HARD_GAIN: 0.65,
+
+    MAX_OSCILLATORS: 24,
+    MAX_ACTIVE_SOURCES: 24,
+    MAX_SCHEDULED_SOURCES: 64,
+
+    MAX_TONE_MS: 3600000,
+    MAX_SESSION_MS: 3600000,
+
+    AUDIBLE_MIN_HZ: 20,
+    AUDIBLE_MAX_HZ: 20000,
+
+    ULTRASONIC_MAX_HZ: 96000,
+
+    RF_METADATA_MIN_HZ: 100000,
+
+    CLIP_THRESHOLD: 0.985,
+    DC_THRESHOLD: 0.10
+  });
+
+  const STATE = {
+    state: STATES.OFFLINE,
+
+    armed: false,
+    userGesture: false,
+
+    masterGain: 0.22,
+
+    activeSources: 0,
+    scheduledSources: 0,
+
+    clipping: false,
+    dcOffset: false,
+
+    lastFrequency: null,
+    lastFrequencyClass: null,
+
+    resourcePressure: 0,
+
+    monitorTimer: null,
+
+    metrics: {
+      checks: 0,
+      limits: 0,
+      rejectedFrequencies: 0,
+      clippingEvents: 0,
+      safeStops: 0,
+      invalidRequests: 0
+    }
+  };
+
+  /* ==========================================================
+     UTILITIES
+     ========================================================== */
+
+  function now() {
+    return Date.now();
+  }
+
+  function clamp(value, min, max) {
+    return Math.min(
+      max,
+      Math.max(
+        min,
+        Number(value)
+      )
+    );
+  }
+
+  function emit(type, detail = {}) {
+
+    const payload = {
+      type,
+      timestamp: now(),
+      version: VERSION,
+      detail
+    };
+
+    try {
+      window.dispatchEvent(
+        new CustomEvent(
+          "CHIROMBE_AUDIO_SAFETY_EVENT",
+          { detail: payload }
+        )
+      );
+    } catch (_) {}
+
+    try {
+
+      if (
+        window.ChirombeBus &&
+        typeof window.ChirombeBus.emit === "function"
+      ) {
+
+        window.ChirombeBus.emit(
+          type,
+          detail
+        );
+      }
+
+    } catch (_) {}
+
+    return payload;
+  }
+
+  /* ==========================================================
+     AUDIO CONTEXT
+     ========================================================== */
+
+  function getContext() {
+
+    const tonal =
+      window.CHIROMBE_AUDIO_TONAL_ENGINE;
+
+    if (
+      tonal &&
+      tonal.context
+    ) {
+      return tonal.context;
+    }
+
+    const audio =
+      window.CHIROMBE_AUDIO;
+
+    if (
+      audio &&
+      audio.context
+    ) {
+      return audio.context;
+    }
+
+    return null;
+  }
+
+  function capabilities() {
+
+    const context =
+      getContext();
+
+    if (!context) {
+
+      return {
+        audioContext: false,
+        sampleRate: null,
+        nyquist: null,
+        state: "UNAVAILABLE",
+        speech:
+          "speechSynthesis" in window,
+        microphone:
+          !!(
+            navigator.mediaDevices &&
+            navigator.mediaDevices.getUserMedia
+          )
+      };
+    }
+
+    return {
+
+      audioContext: true,
+
+      sampleRate:
+        context.sampleRate,
+
+      nyquist:
+        context.sampleRate / 2,
+
+      state:
+        context.state,
+
+      speech:
+        "speechSynthesis" in window,
+
+      microphone:
+        !!(
+          navigator.mediaDevices &&
+          navigator.mediaDevices.getUserMedia
+        )
+    };
+  }
+
+  /* ==========================================================
+     USER GESTURE
+     ========================================================== */
+
+  function registerUserGesture() {
+
+    STATE.userGesture = true;
+
+    emit(
+      "AUDIO_USER_GESTURE_REGISTERED"
+    );
+
+    return true;
+  }
+
+  /* ==========================================================
+     FREQUENCY SAFETY
+     ========================================================== */
+
+  function classifyFrequency(hz) {
+
+    const frequency =
+      Number(hz);
+
+    if (
+      !Number.isFinite(frequency) ||
+      frequency <= 0
+    ) {
+
+      return {
+        permitted: false,
+        class: "INVALID",
+        frequencyHz: frequency,
+        reason: "Invalid frequency."
+      };
+    }
+
+    const context =
+      getContext();
+
+    const nyquist =
+      context
+        ? context.sampleRate / 2
+        : 22050;
+
+    if (
+      frequency >=
+      LIMITS.RF_METADATA_MIN_HZ
+    ) {
+
+      return {
+        permitted: false,
+        class: "RF_METADATA",
+        frequencyHz: frequency,
+        reason:
+          "RF/MHz is metadata only. Ordinary browser audio is not an RF transmitter."
+      };
+    }
+
+    if (
+      frequency > nyquist
+    ) {
+
+      STATE.metrics
+        .rejectedFrequencies++;
+
+      return {
+        permitted: false,
+        class: "NYQUIST",
+        frequencyHz: frequency,
+        reason:
+          "Frequency exceeds the current AudioContext Nyquist limit."
+      };
+    }
+
+    if (
+      frequency < LIMITS.AUDIBLE_MIN_HZ
+    ) {
+
+      return {
+        permitted: false,
+        class: "SUB_AUDIO",
+        frequencyHz: frequency,
+        reason:
+          "Sub-audio output is disabled by default."
+      };
+    }
+
+    if (
+      frequency > LIMITS.AUDIBLE_MAX_HZ
+    ) {
+
+      return {
+        permitted: false,
+        class: "ULTRASONIC",
+        frequencyHz: frequency,
+        reason:
+          "Ultrasonic output is disabled by default."
+      };
+    }
+
+    return {
+      permitted: true,
+      class: "AUDIBLE",
+      frequencyHz: frequency,
+      reason: "Audible frequency permitted."
+    };
+  }
+
+  function validateFrequency(hz) {
+
+    const result =
+      classifyFrequency(hz);
+
+    STATE.lastFrequency =
+      result.frequencyHz;
+
+    STATE.lastFrequencyClass =
+      result.class;
+
+    if (!result.permitted) {
+
+      emit(
+        "AUDIO_FREQUENCY_REJECTED",
+        result
+      );
+    }
+
+    return result;
+  }
+
+  /* ==========================================================
+     GAIN GOVERNOR
+     ========================================================== */
+
+  function validateGain(
+    gain
+  ) {
+
+    const requested =
+      Number(gain);
+
+    const safe =
+      clamp(
+        Number.isFinite(requested)
+          ? requested
+          : STATE.masterGain,
+        0,
+        LIMITS.HARD_GAIN
+      );
+
+    const limited =
+      safe !== requested;
+
+    if (limited) {
+
+      STATE.metrics.limits++;
+    }
+
+    return {
+      requested,
+      applied: safe,
+      limited,
+      permitted: true
+    };
+  }
+
+  function setMasterGain(
+    gain
+  ) {
+
+    const result =
+      validateGain(gain);
+
+    STATE.masterGain =
+      result.applied;
+
+    try {
+
+      const tonal =
+        window.CHIROMBE_AUDIO_TONAL_ENGINE;
+
+      if (
+        tonal &&
+        typeof tonal.setMasterGain === "function"
+      ) {
+
+        tonal.setMasterGain(
+          result.applied
+        );
+      }
+
+    } catch (error) {
+
+      emit(
+        "AUDIO_SAFETY_ERROR",
+        {
+          message:
+            error.message
+        }
+      );
+    }
+
+    emit(
+      "AUDIO_MASTER_GAIN_CHANGED",
+      {
+        gain:
+          result.applied
+      }
+    );
+
+    return result;
+  }
+
+  /* ==========================================================
+     DURATION
+     ========================================================== */
+
+  function validateDuration(
+    durationMs
+  ) {
+
+    const requested =
+      Math.max(
+        0,
+        Number(durationMs) || 0
+      );
+
+    const applied =
+      Math.min(
+        requested,
+        LIMITS.MAX_TONE_MS
+      );
+
+    return {
+      requested,
+      applied,
+      limited:
+        requested !== applied
+    };
+  }
+
+  /* ==========================================================
+     RESOURCE GOVERNOR
+     ========================================================== */
+
+  function resourceCheck() {
+
+    const sourceRatio =
+      STATE.activeSources /
+      LIMITS.MAX_ACTIVE_SOURCES;
+
+    const scheduleRatio =
+      STATE.scheduledSources /
+      LIMITS.MAX_SCHEDULED_SOURCES;
+
+    STATE.resourcePressure =
+      clamp(
+        Math.max(
+          sourceRatio,
+          scheduleRatio
+        ),
+        0,
+        1
+      );
+
+    return {
+
+      pressure:
+        STATE.resourcePressure,
+
+      level:
+        STATE.resourcePressure >= 0.90
+          ? "CRITICAL"
+          : STATE.resourcePressure >= 0.70
+            ? "WARNING"
+            : "NORMAL",
+
+      permitted:
+        STATE.resourcePressure < 0.90
+    };
+  }
+
+  function sourceStarted() {
+
+    STATE.activeSources++;
+
+    return resourceCheck();
+  }
+
+  function sourceStopped() {
+
+    STATE.activeSources =
+      Math.max(
+        0,
+        STATE.activeSources - 1
+      );
+
+    return resourceCheck();
+  }
+
+  /* ==========================================================
+     REQUEST VALIDATION
+     ========================================================== */
+
+  function validateRequest(
+    request = {}
+  ) {
+
+    const frequency =
+      request.frequencyHz !== undefined
+        ? validateFrequency(
+            request.frequencyHz
+          )
+        : {
+            permitted: true
+          };
+
+    const gain =
+      validateGain(
+        request.gain ??
+        STATE.masterGain
+      );
+
+    const duration =
+      validateDuration(
+        request.durationMs ??
+        1000
+      );
+
+    const resources =
+      resourceCheck();
+
+    const oscillators =
+      Math.min(
+        Math.max(
+          1,
+          Number(
+            request.oscillators || 1
+          )
+        ),
+        LIMITS.MAX_OSCILLATORS
+      );
+
+    const permitted =
+      frequency.permitted &&
+      resources.permitted &&
+      gain.applied <=
+        LIMITS.HARD_GAIN &&
+      oscillators <=
+        LIMITS.MAX_OSCILLATORS;
+
+    if (!permitted) {
+
+      STATE.metrics
+        .invalidRequests++;
+
+      emit(
+        "AUDIO_REQUEST_BLOCKED",
+        {
+          frequency,
+          gain,
+          duration,
+          oscillators,
+          resources
+        }
+      );
+    }
+
+    return {
+      permitted,
+      frequency,
+      gain,
+      duration,
+      oscillators,
+      resources
+    };
+  }
+
+  /* ==========================================================
+     SIGNAL ANALYSIS
+     ========================================================== */
+
+  function analyseSignal() {
+
+    const tonal =
+      window.CHIROMBE_AUDIO_TONAL_ENGINE;
+
+    const analyser =
+      tonal?.analyser ||
+      window.CHIROMBE_AUDIO?.analyser;
+
+    if (!analyser) {
+
+      return {
+        available: false,
+        clipping: false,
+        dcOffset: false
+      };
+    }
+
+    try {
+
+      const data =
+        new Float32Array(
+          analyser.fftSize
+        );
+
+      analyser.getFloatTimeDomainData(
+        data
+      );
+
+      let peak = 0;
+      let sum = 0;
+
+      for (
+        let i = 0;
+        i < data.length;
+        i++
+      ) {
+
+        const value =
+          data[i];
+
+        peak =
+          Math.max(
+            peak,
+            Math.abs(value)
+          );
+
+        sum +=
+          value * value;
+      }
+
+      const rms =
+        Math.sqrt(
+          sum /
+          Math.max(
+            1,
+            data.length
+          )
+        );
+
+      let dc = 0;
+
+      for (
+        let i = 0;
+        i < data.length;
+        i++
+      ) {
+        dc += data[i];
+      }
+
+      dc =
+        Math.abs(
+          dc /
+          Math.max(
+            1,
+            data.length
+          )
+        );
+
+      const clipping =
+        peak >=
+        LIMITS.CLIP_THRESHOLD;
+
+      const dcOffset =
+        dc >=
+        LIMITS.DC_THRESHOLD;
+
+      STATE.clipping =
+        clipping;
+
+      STATE.dcOffset =
+        dcOffset;
+
+      if (clipping) {
+
+        STATE.metrics
+          .clippingEvents++;
+
+        emit(
+          "AUDIO_CLIPPING_DETECTED",
+          {
+            peak,
+            rms
+          }
+        );
+      }
+
+      return {
+        available: true,
+        peak,
+        rms,
+        dcOffset: dc,
+        clipping,
+        dcWarning: dcOffset,
+        healthy:
+          !clipping &&
+          !dcOffset
+      };
+
+    } catch (error) {
+
+      emit(
+        "AUDIO_SAFETY_ERROR",
+        {
+          message:
+            error.message
+        }
+      );
+
+      return {
+        available: false,
+        clipping: false,
+        dcOffset: false
+      };
+    }
+  }
+
+  /* ==========================================================
+     SAFETY CHECK
+     ========================================================== */
+
+  function safetyCheck() {
+
+    STATE.metrics.checks++;
+
+    const resources =
+      resourceCheck();
+
+    const signal =
+      analyseSignal();
+
+    if (
+      signal.clipping ||
+      signal.dcWarning
+    ) {
+
+      const reduced =
+        STATE.masterGain *
+        0.70;
+
+      setMasterGain(
+        Math.min(
+          reduced,
+          LIMITS.MASTER_GAIN
+        )
+      );
+    }
+
+    if (
+      !resources.permitted
+    ) {
+
+      safeStop(
+        "RESOURCE_LIMIT"
+      );
+    }
+
+    return {
+
+      healthy:
+        resources.permitted &&
+        !signal.clipping &&
+        !signal.dcWarning,
+
+      resources,
+      signal,
+
+      masterGain:
+        STATE.masterGain
+    };
+  }
+
+  /* ==========================================================
+     SAFE STOP
+     ========================================================== */
+
+  function safeStop(
+    reason = "USER_STOP"
+  ) {
+
+    try {
+
+      const tonal =
+        window.CHIROMBE_AUDIO_TONAL_ENGINE;
+
+      if (
+        tonal &&
+        typeof tonal.stopAll === "function"
+      ) {
+
+        tonal.stopAll();
+      }
+
+    } catch (_) {}
+
+    try {
+
+      if (
+        window.speechSynthesis
+      ) {
+
+        speechSynthesis.cancel();
+      }
+
+    } catch (_) {}
+
+    STATE.activeSources = 0;
+    STATE.scheduledSources = 0;
+
+    STATE.armed = false;
+
+    STATE.state =
+      STATES.SAFE_STOP;
+
+    STATE.metrics.safeStops++;
+
+    emit(
+      "AUDIO_SAFE_STOP",
+      {
+        reason
+      }
+    );
+
+    return {
+      stopped: true,
+      reason
+    };
+  }
+
+  /* ==========================================================
+     EMERGENCY STOP
+     ========================================================== */
+
+  function emergencyStop() {
+
+    return safeStop(
+      "EMERGENCY_STOP"
+    );
+  }
+
+  /* ==========================================================
+     ARM
+     ========================================================== */
+
+  function arm() {
+
+    if (
+      !STATE.userGesture
+    ) {
+
+      return {
+        armed: false,
+        reason:
+          "USER_GESTURE_REQUIRED"
+      };
+    }
+
+    if (
+      !getContext()
+    ) {
+
+      return {
+        armed: false,
+        reason:
+          "AUDIO_CONTEXT_UNAVAILABLE"
+      };
+    }
+
+    STATE.armed = true;
+    STATE.state =
+      STATES.ARMED;
+
+    emit(
+      "AUDIO_SAFETY_ARMED"
+    );
+
+    return {
+      armed: true
+    };
+  }
+
+  function disarm() {
+
+    STATE.armed = false;
+
+    STATE.state =
+      STATES.READY;
+
+    return true;
+  }
+
+  /* ==========================================================
+     MONITOR
+     ========================================================== */
+
+  function startMonitoring() {
+
+    if (
+      STATE.monitorTimer
+    ) {
+      return true;
+    }
+
+    STATE.state =
+      STATES.MONITORING;
+
+    STATE.monitorTimer =
+      setInterval(
+        safetyCheck,
+        1000
+      );
+
+    emit(
+      "AUDIO_SAFETY_MONITOR_STARTED"
+    );
+
+    return true;
+  }
+
+  function stopMonitoring() {
+
+    if (
+      STATE.monitorTimer
+    ) {
+
+      clearInterval(
+        STATE.monitorTimer
+      );
+
+      STATE.monitorTimer =
+        null;
+    }
+
+    STATE.state =
+      STATES.READY;
+
+    return true;
+  }
+
+  /* ==========================================================
+     STATUS
+     ========================================================== */
+
+  function getStatus() {
+
+    return {
+
+      version:
+        VERSION,
+
+      state:
+        STATE.state,
+
+      armed:
+        STATE.armed,
+
+      userGesture:
+        STATE.userGesture,
+
+      masterGain:
+        STATE.masterGain,
+
+      activeSources:
+        STATE.activeSources,
+
+      scheduledSources:
+        STATE.scheduledSources,
+
+      resourcePressure:
+        STATE.resourcePressure,
+
+      clipping:
+        STATE.clipping,
+
+      dcOffset:
+        STATE.dcOffset,
+
+      lastFrequency:
+        STATE.lastFrequency,
+
+      lastFrequencyClass:
+        STATE.lastFrequencyClass,
+
+      capabilities:
+        capabilities(),
+
+      metrics:
+        {
+          ...STATE.metrics
+        },
+
+      limits:
+        {
+          ...LIMITS
+        }
+    };
+  }
+
+  /* ==========================================================
+     COMMAND BUS
+     ========================================================== */
+
+  function registerCommands() {
+
+    const commands = {
+
+      "audio.safety.status":
+        getStatus,
+
+      "audio.safety.gesture":
+        registerUserGesture,
+
+      "audio.safety.arm":
+        arm,
+
+      "audio.safety.disarm":
+        disarm,
+
+      "audio.safety.check":
+        safetyCheck,
+
+      "audio.safety.frequency":
+        args =>
+          validateFrequency(
+            args?.frequencyHz
+          ),
+
+      "audio.safety.gain":
+        args =>
+          validateGain(
+            args?.gain
+          ),
+
+      "audio.safety.request":
+        args =>
+          validateRequest(
+            args || {}
+          ),
+
+      "audio.safety.monitor.start":
+        startMonitoring,
+
+      "audio.safety.monitor.stop":
+        stopMonitoring,
+
+      "audio.safety.safeStop":
+        args =>
+          safeStop(
+            args?.reason ||
+            "USER_STOP"
+          ),
+
+      "audio.safety.emergencyStop":
+        emergencyStop
+    };
+
+    try {
+
+      if (
+        window.ChirombeBus &&
+        typeof
+          window.ChirombeBus.registerCommand ===
+          "function"
+      ) {
+
+        Object.entries(
+          commands
+        ).forEach(
+          ([name, handler]) => {
+
+            try {
+
+              window.ChirombeBus
+                .registerCommand(
+                  name,
+                  handler
+                );
+
+            } catch (_) {}
+
+          }
+        );
+      }
+
+    } catch (_) {}
+
+    return commands;
+  }
+
+  /* ==========================================================
+     LIFECYCLE
+     ========================================================== */
+
+  function initialise() {
+
+    STATE.state =
+      STATES.READY;
+
+    registerCommands();
+
+    window.addEventListener(
+      "pagehide",
+      () => {
+
+        safeStop(
+          "PAGE_HIDE"
+        );
+
+      }
+    );
+
+    emit(
+      "AUDIO_SAFETY_ENGINE_READY",
+      {
+        version:
+          VERSION
+      }
+    );
+
+    return getStatus();
+  }
+
+  /* ==========================================================
+     PUBLIC API
+     ========================================================== */
+
+  const API = {
+
+    VERSION,
+
+    STATES,
+
+    LIMITS,
+
+    STATE,
+
+    initialise,
+
+    capabilities,
+
+    getContext,
+
+    registerUserGesture,
+
+    classifyFrequency,
+
+    validateFrequency,
+
+    validateGain,
+
+    setMasterGain,
+
+    validateDuration,
+
+    resourceCheck,
+
+    sourceStarted,
+
+    sourceStopped,
+
+    validateRequest,
+
+    analyseSignal,
+
+    safetyCheck,
+
+    safeStop,
+
+    emergencyStop,
+
+    arm,
+
+    disarm,
+
+    startMonitoring,
+
+    stopMonitoring,
+
+    getStatus
+  };
+
+  window.CHIROMBE_AUDIO_SAFETY_ENGINE =
+    API;
+
+  window.CHIROMBE_AUDIO_SAFETY =
+    API;
+
+  window.CHIROMBE_AUDIO =
+    window.CHIROMBE_AUDIO ||
+    {};
+
+  window.CHIROMBE_AUDIO.Safety =
+    API;
+
+  initialise();
+
+})();
