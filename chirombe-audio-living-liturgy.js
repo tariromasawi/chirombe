@@ -7868,3 +7868,3744 @@
   initialise();
 
 })();
+(() => {
+  "use strict";
+
+  /* ================================================================
+     CHIROMBE AUDIO LIVING LITURGY
+     PART 4 — BLOODLINE PRAYER ORCHESTRATOR
+     ================================================================
+     
+     PURPOSE
+     -------
+     Transform approved CHIROMBE family/bloodline records into
+     structured, person-aware devotional sessions.
+
+     DESIGN
+     ------
+     BLOODLINE DATA
+          ↓
+     VALIDATION
+          ↓
+     PERSON PROFILE
+          ↓
+     LANGUAGE / PRIVACY / THEME RESOLUTION
+          ↓
+     NOVELTY ENGINE
+          ↓
+     PERSON PRAYER
+          ↓
+     COVERAGE TRACKING
+          ↓
+     FAMILY SESSION
+          ↓
+     LIVING WATCH / AUDIO BROADCAST
+
+     IMPORTANT
+     ---------
+     This module does not diagnose, label or infer that any person is
+     cursed, possessed, spiritually attacked, dangerous or doomed.
+
+     It treats "protection" as a devotional intention and the
+     computational protection layer as system integrity, privacy,
+     resilience, continuity, monitoring and recovery.
+
+     The family dataset is READ-ONLY from this module.
+     ================================================================ */
+
+  const root = window;
+
+  const CHIROMBE =
+    root.CHIROMBE ||
+    (root.CHIROMBE = {});
+
+  const AUDIO =
+    root.CHIROMBE_AUDIO ||
+    (CHIROMBE.AudioLivingLiturgy =
+      CHIROMBE.AudioLivingLiturgy || {});
+
+  const LITURGY =
+    root.CHIROMBE_AUDIO_LITURGY_ENGINE ||
+    {};
+
+  const LIBRARY =
+    root.CHIROMBE_AUDIO_TRADITION_LIBRARY ||
+    CHIROMBE.AudioTraditionLibrary ||
+    LITURGY.Sources ||
+    {};
+
+  const MODULE_ID =
+    "CHIROMBE_AUDIO_BLOODLINE_ORCHESTRATOR";
+
+  const VERSION =
+    "4.0.0";
+
+  const STORAGE_KEY =
+    "CHIROMBE_AUDIO_BLOODLINE_ORCHESTRATOR_V4";
+
+  const MEMORY_NAMESPACE =
+    "AUDIO_BLOODLINE_ORCHESTRATOR";
+
+  /* ================================================================
+     1. STATES
+     ================================================================ */
+
+  const STATES = Object.freeze({
+    DORMANT: "DORMANT",
+    READY: "READY",
+    VALIDATING: "VALIDATING",
+    PLANNING: "PLANNING",
+    PRAYING: "PRAYING",
+    PAUSED: "PAUSED",
+    COMPLETED: "COMPLETED",
+    RECOVERING: "RECOVERING",
+    SAFE_STOP: "SAFE_STOP"
+  });
+
+  const SESSION_MODES = Object.freeze({
+    PERSON: "PERSON",
+    FAMILY: "FAMILY",
+    BLOODLINE: "BLOODLINE",
+    DAILY: "DAILY",
+    NIGHT_WATCH: "NIGHT_WATCH",
+    REMEMBRANCE: "REMEMBRANCE",
+    FAMILY_UNITY: "FAMILY_UNITY",
+    CUSTOM: "CUSTOM"
+  });
+
+  const PRIVACY_MODES = Object.freeze({
+    FULL_NAME: "FULL_NAME",
+    FIRST_NAME: "FIRST_NAME",
+    INITIALS: "INITIALS",
+    PRIVATE_REFERENCE: "PRIVATE_REFERENCE",
+    NO_NAME: "NO_NAME"
+  });
+
+  const THEMES = [
+    "PROTECTION",
+    "PEACE",
+    "COURAGE",
+    "WISDOM",
+    "TRUTH",
+    "UNITY",
+    "FAMILY",
+    "GRATITUDE",
+    "HOPE",
+    "HEALING",
+    "REMEMBRANCE",
+    "STEWARDSHIP",
+    "JUSTICE",
+    "HUMILITY",
+    "FORGIVENESS",
+    "FAITH",
+    "LOVE",
+    "COMMUNITY",
+    "SERVICE",
+    "DISCERNMENT",
+    "RESILIENCE",
+    "CONTINUITY",
+    "LEGACY",
+    "REFLECTION",
+    "REST",
+    "BLESSING",
+    "FAMILY_UNITY",
+    "NIGHT",
+    "MORNING"
+  ];
+
+  /* ================================================================
+     2. INTERNAL STATE
+     ================================================================ */
+
+  const state = {
+
+    state:
+      STATES.DORMANT,
+
+    initialized:
+      false,
+
+    sourceRevision:
+      0,
+
+    people:
+      new Map(),
+
+    approvedPeople:
+      new Set(),
+
+    sessions:
+      new Map(),
+
+    coverage:
+      new Map(),
+
+    recentPrayerHashes:
+      [],
+
+    recentThemes:
+      [],
+
+    recentPersons:
+      [],
+
+    statistics: {
+
+      peopleDiscovered:
+        0,
+
+      peopleApproved:
+        0,
+
+      sessionsCreated:
+        0,
+
+      sessionsCompleted:
+        0,
+
+      personPrayers:
+        0,
+
+      familySessions:
+        0,
+
+      skippedPeople:
+        0,
+
+      privacyFiltered:
+        0,
+
+      noveltyRegenerations:
+        0,
+
+      errors:
+        0
+    },
+
+    settings: {
+
+      maxRecentHashes:
+        500,
+
+      maxRecentThemes:
+        100,
+
+      maxRecentPersons:
+        100,
+
+      defaultPrivacy:
+        PRIVACY_MODES.FIRST_NAME,
+
+      defaultLanguage:
+        "en",
+
+      defaultDuration:
+        20,
+
+      minimumNovelty:
+        0.42,
+
+      requireApprovedPerson:
+        false,
+
+      readOnlyFamilySource:
+        true,
+
+      preserveSacredAnchors:
+        true,
+
+      rotateThemes:
+        true,
+
+      rotateOpenings:
+        true,
+
+      rotateClosings:
+        true
+    },
+
+    activeSession:
+      null
+  };
+
+  /* ================================================================
+     3. UTILITIES
+     ================================================================ */
+
+  function now() {
+    return new Date().toISOString();
+  }
+
+  function uid(prefix = "BL") {
+
+    return (
+      prefix +
+      "_" +
+      Date.now().toString(36) +
+      "_" +
+      Math.random()
+        .toString(36)
+        .slice(2, 9)
+        .toUpperCase()
+    );
+  }
+
+  function safe(value, fallback = "") {
+
+    if (
+      value === null ||
+      value === undefined
+    ) {
+      return fallback;
+    }
+
+    return String(value).trim();
+  }
+
+  function arr(value) {
+
+    if (Array.isArray(value)) {
+      return value.slice();
+    }
+
+    if (
+      value === null ||
+      value === undefined ||
+      value === ""
+    ) {
+      return [];
+    }
+
+    return [value];
+  }
+
+  function unique(values) {
+
+    return [
+      ...new Set(
+        values
+          .map(v => safe(v))
+          .filter(Boolean)
+      )
+    ];
+  }
+
+  function clamp(value, min, max) {
+
+    const number =
+      Number(value);
+
+    if (
+      !Number.isFinite(number)
+    ) {
+      return min;
+    }
+
+    return Math.min(
+      max,
+      Math.max(
+        min,
+        number
+      )
+    );
+  }
+
+  function hash(text) {
+
+    const value =
+      safe(text);
+
+    let h =
+      2166136261;
+
+    for (
+      let i = 0;
+      i < value.length;
+      i++
+    ) {
+
+      h ^=
+        value.charCodeAt(i);
+
+      h +=
+        (h << 1) +
+        (h << 4) +
+        (h << 7) +
+        (h << 8) +
+        (h << 24);
+
+      h >>>=
+        0;
+    }
+
+    return h
+      .toString(16)
+      .padStart(8, "0");
+  }
+
+  function choose(list, seed = 0) {
+
+    if (
+      !Array.isArray(list) ||
+      !list.length
+    ) {
+      return "";
+    }
+
+    const index =
+      Math.abs(
+        Number(seed) || 0
+      ) % list.length;
+
+    return list[index];
+  }
+
+  function clone(value) {
+
+    try {
+
+      return JSON.parse(
+        JSON.stringify(value)
+      );
+
+    } catch (_) {
+
+      return value;
+    }
+  }
+
+  /* ================================================================
+     4. FAMILY SOURCE DISCOVERY
+     ================================================================ */
+
+  function discoverSource() {
+
+    const candidates = [
+
+      root.CHIROMBE_BLOODLINE,
+
+      root.BLOODLINE,
+
+      root.ChirombeBloodline,
+
+      root.CHIROMBE_FAMILY,
+
+      CHIROMBE.BLOODLINE,
+
+      CHIROMBE.FAMILY,
+
+      root.CHIROMBE_STATE?.bloodline,
+
+      root.CHIROMBE_STATE?.family,
+
+      root.ChirombeState?.bloodline,
+
+      root.ChirombeState?.family
+
+    ];
+
+    for (
+      const candidate of candidates
+    ) {
+
+      if (
+        Array.isArray(candidate) &&
+        candidate.length
+      ) {
+        return {
+          source:
+            candidate,
+          sourceType:
+            "ARRAY"
+        };
+      }
+
+      if (
+        candidate &&
+        Array.isArray(
+          candidate.people
+        )
+      ) {
+        return {
+          source:
+            candidate.people,
+          sourceType:
+            "PEOPLE"
+        };
+      }
+
+      if (
+        candidate &&
+        Array.isArray(
+          candidate.members
+        )
+      ) {
+        return {
+          source:
+            candidate.members,
+          sourceType:
+            "MEMBERS"
+        };
+      }
+
+      if (
+        candidate &&
+        Array.isArray(
+          candidate.family
+        )
+      ) {
+        return {
+          source:
+            candidate.family,
+          sourceType:
+            "FAMILY"
+        };
+      }
+    }
+
+    return {
+      source: [],
+      sourceType:
+        "NONE"
+    };
+  }
+
+  /* ================================================================
+     5. PERSON NORMALISATION
+     ================================================================ */
+
+  function normalisePerson(
+    raw,
+    index = 0
+  ) {
+
+    if (
+      !raw ||
+      typeof raw !== "object"
+    ) {
+      return null;
+    }
+
+    const displayName =
+      safe(
+        raw.displayName ||
+        raw.name ||
+        raw.fullName ||
+        raw.personName ||
+        raw.label
+      );
+
+    if (!displayName) {
+      return null;
+    }
+
+    const personKey =
+      safe(
+        raw.personKey ||
+        raw.id ||
+        raw.key ||
+        raw.uid
+      ) ||
+      hash(
+        displayName +
+        ":" +
+        index
+      );
+
+    const approved =
+      raw.approved !== false &&
+      raw.enabled !== false &&
+      raw.audioApproved !== false;
+
+    const preferredLanguage =
+      safe(
+        raw.preferredLanguage ||
+        raw.language
+      ) ||
+      state.settings.defaultLanguage;
+
+    const privacy =
+      safe(
+        raw.privacyMode ||
+        raw.audioPrivacy
+      ).toUpperCase() ||
+      state.settings.defaultPrivacy;
+
+    const themes =
+      unique(
+        arr(
+          raw.approvedThemes ||
+          raw.themes ||
+          raw.prayerThemes
+        )
+      )
+      .map(theme =>
+        theme
+          .toUpperCase()
+          .replace(/\s+/g, "_")
+      )
+      .filter(
+        theme =>
+          THEMES.includes(theme)
+      );
+
+    return {
+
+      personKey,
+
+      displayName,
+
+      firstName:
+        safe(
+          raw.firstName ||
+          displayName.split(/\s+/)[0]
+        ),
+
+      preferredLanguage,
+
+      traditionMode:
+        safe(
+          raw.traditionMode ||
+          raw.tradition ||
+          "ORIGINAL"
+        ),
+
+      privacyMode:
+        Object.values(
+          PRIVACY_MODES
+        ).includes(privacy)
+          ? privacy
+          : state.settings.defaultPrivacy,
+
+      approved,
+
+      approvedThemes:
+        themes,
+
+      preferredDuration:
+        clamp(
+          raw.preferredDuration ||
+          state.settings.defaultDuration,
+          1,
+          180
+        ),
+
+      sessionFrequency:
+        safe(
+          raw.sessionFrequency
+        ) ||
+        "ADAPTIVE",
+
+      pronunciation:
+        safe(
+          raw.pronunciation
+        ),
+
+      pronunciationGuide:
+        safe(
+          raw.pronunciationGuide
+        ),
+
+      preferredVoice:
+        safe(
+          raw.preferredVoice
+        ),
+
+      notes:
+        safe(
+          raw.audioNotes
+        ),
+
+      consent:
+        raw.audioConsent !== false,
+
+      remembrance:
+        Boolean(
+          raw.remembrance ||
+          raw.isAncestor ||
+          raw.historical
+        ),
+
+      generation:
+        safe(
+          raw.generation
+        ),
+
+      relationship:
+        safe(
+          raw.relationship ||
+          raw.relation
+        ),
+
+      metadata:
+        {
+          sourceIndex:
+            index,
+
+          sourceRevision:
+            state.sourceRevision
+        }
+    };
+  }
+
+  /* ================================================================
+     6. READ-ONLY BLOODLINE REFRESH
+     ================================================================ */
+
+  function refreshBloodline() {
+
+    state.state =
+      STATES.VALIDATING;
+
+    const discovered =
+      discoverSource();
+
+    const incoming =
+      discovered.source;
+
+    const next =
+      new Map();
+
+    incoming.forEach(
+      (raw, index) => {
+
+        const person =
+          normalisePerson(
+            raw,
+            index
+          );
+
+        if (!person) {
+          return;
+        }
+
+        next.set(
+          person.personKey,
+          person
+        );
+      }
+    );
+
+    state.people =
+      next;
+
+    state.approvedPeople =
+      new Set(
+        [...next.values()]
+          .filter(
+            person =>
+              person.approved &&
+              person.consent
+          )
+          .map(
+            person =>
+              person.personKey
+          )
+      );
+
+    state.statistics.peopleDiscovered =
+      next.size;
+
+    state.statistics.peopleApproved =
+      state.approvedPeople.size;
+
+    state.sourceRevision++;
+
+    state.state =
+      STATES.READY;
+
+    emit(
+      "BLOODLINE_REFRESHED",
+      {
+        sourceType:
+          discovered.sourceType,
+
+        discovered:
+          next.size,
+
+        approved:
+          state.approvedPeople.size,
+
+        revision:
+          state.sourceRevision
+      }
+    );
+
+    persist();
+
+    return {
+      ok: true,
+
+      sourceType:
+        discovered.sourceType,
+
+      people:
+        next.size,
+
+      approved:
+        state.approvedPeople.size,
+
+      revision:
+        state.sourceRevision
+    };
+  }
+
+  /* ================================================================
+     7. PRIVACY REFERENCE
+     ================================================================ */
+
+  function referenceFor(
+    person,
+    override
+  ) {
+
+    const mode =
+      override ||
+      person.privacyMode ||
+      state.settings.defaultPrivacy;
+
+    switch (mode) {
+
+      case PRIVACY_MODES.FULL_NAME:
+        return person.displayName;
+
+      case PRIVACY_MODES.FIRST_NAME:
+        return person.firstName;
+
+      case PRIVACY_MODES.INITIALS:
+
+        return person.displayName
+          .split(/\s+/)
+          .filter(Boolean)
+          .map(
+            word =>
+              word.charAt(0)
+                .toUpperCase()
+          )
+          .join(".") + ".";
+
+      case PRIVACY_MODES.PRIVATE_REFERENCE:
+        return "this family member";
+
+      case PRIVACY_MODES.NO_NAME:
+        return "this beloved person";
+
+      default:
+        return person.firstName;
+    }
+  }
+
+  /* ================================================================
+     8. THEME ROTATION
+     ================================================================ */
+
+  const THEME_GROUPS = {
+
+    protection: [
+      "PROTECTION",
+      "TRUTH",
+      "RESILIENCE",
+      "DISCERNMENT"
+    ],
+
+    family: [
+      "FAMILY",
+      "UNITY",
+      "FAMILY_UNITY",
+      "LOVE"
+    ],
+
+    peace: [
+      "PEACE",
+      "REST",
+      "HOPE",
+      "REFLECTION"
+    ],
+
+    growth: [
+      "WISDOM",
+      "COURAGE",
+      "SERVICE",
+      "STEWARDSHIP"
+    ],
+
+    remembrance: [
+      "REMEMBRANCE",
+      "LEGACY",
+      "CONTINUITY",
+      "GRATITUDE"
+    ]
+
+  };
+
+  function resolveThemes(
+    person,
+    options = {}
+  ) {
+
+    let themes =
+      unique(
+        arr(
+          options.themes ||
+          person.approvedThemes
+        )
+      )
+      .map(
+        theme =>
+          theme
+            .toUpperCase()
+            .replace(/\s+/g, "_")
+      )
+      .filter(
+        theme =>
+          THEMES.includes(theme)
+      );
+
+    if (
+      !themes.length
+    ) {
+
+      const groups =
+        Object.keys(
+          THEME_GROUPS
+        );
+
+      const group =
+        choose(
+          groups,
+          state.recentThemes.length
+        );
+
+      themes =
+        THEME_GROUPS[group]
+          .slice();
+    }
+
+    if (
+      state.settings.rotateThemes &&
+      state.recentThemes.length
+    ) {
+
+      const previous =
+        new Set(
+          state.recentThemes
+        );
+
+      const alternatives =
+        themes.filter(
+          theme =>
+            !previous.has(theme)
+        );
+
+      if (
+        alternatives.length
+      ) {
+        themes =
+          alternatives;
+      }
+    }
+
+    return themes.slice(0, 5);
+  }
+
+  /* ================================================================
+     9. LANGUAGE RESOLUTION
+     ================================================================ */
+
+  function resolveLanguage(
+    person,
+    options = {}
+  ) {
+
+    return safe(
+      options.language ||
+      person.preferredLanguage ||
+      state.settings.defaultLanguage
+    );
+  }
+
+  /* ================================================================
+     10. PERSON PRAYER COMPONENTS
+     ================================================================ */
+
+  const OPENINGS = {
+
+    en: [
+      "Let us enter this moment with gratitude, truth and peace.",
+      "May this moment be set apart for reflection, wisdom and love.",
+      "We begin in stillness, remembering the dignity of every life.",
+      "Let this prayer become a quiet expression of care and hope.",
+      "We gather our thoughts with gratitude and peaceful intention."
+    ],
+
+    sn: [
+      "Ngatipinde panguva ino nekutenda, chokwadi nerugare.",
+      "Ngaiyi ive nguva yekufungisisa, njere nerudo.",
+      "Tinotanga takanyarara, tichiyeuka kukosha kwehupenyu hwese.",
+      "Munamato uyu ngauve kuratidza rudo netariro.",
+      "Tinounganidza pfungwa dzedu nekutenda nerunyararo."
+    ]
+
+  };
+
+  const PERSON_LINES = {
+
+    en: [
+      "May {person} be surrounded by wisdom, peace and courage.",
+      "May {person} walk with clarity, dignity and strength.",
+      "May {person} find wise people, truthful words and peaceful paths.",
+      "May {person} have courage for difficult moments and gratitude for good ones.",
+      "May {person} be guided toward choices that preserve dignity, safety and love.",
+      "May {person} be strengthened by family unity and truthful understanding.",
+      "May {person} have space to rest, reflect and begin again.",
+      "May {person} carry hope into every place they enter."
+    ],
+
+    sn: [
+      "{person} ngaawane nenjere, rugare uye ushingi.",
+      "{person} ngaafambe nechokwadi, rukudzo nesimba.",
+      "{person} ngaawane vanhu vakachenjera, mashoko echokwadi nenzira dzerugare.",
+      "{person} ngaave nesimba panguva dzakaoma uye nekutenda panguva dzakanaka.",
+      "{person} ngaatungamirirwe pasarudzo dzinochengetedza rukudzo, kuchengeteka nerudo.",
+      "{person} ngaasimbiswe nekubatana kwemhuri uye nekunzwisisa kwechokwadi.",
+      "{person} ngaawane nguva yekuzorora, kufungisisa uye kutanga patsva.",
+      "{person} ngaatakure tariro munzvimbo dzose dzaanofamba."
+    ]
+
+  };
+
+  const THEME_LINES = {
+
+    en: {
+
+      PROTECTION:
+        "May protection be understood through wise action, secure boundaries, careful decisions and peaceful strength.",
+
+      PEACE:
+        "May peace settle the heart and make room for clear thought.",
+
+      COURAGE:
+        "May courage arise without hatred, and strength without cruelty.",
+
+      WISDOM:
+        "May wisdom guide every decision and every relationship.",
+
+      TRUTH:
+        "May truth remain stronger than confusion and honesty guide every conversation.",
+
+      UNITY:
+        "May the family remain connected through respect, patience and love.",
+
+      FAMILY:
+        "May family bonds be strengthened by compassion and mutual care.",
+
+      GRATITUDE:
+        "May gratitude keep good memories alive and deepen appreciation for life.",
+
+      HOPE:
+        "May hope remain present even when circumstances are difficult.",
+
+      HEALING:
+        "May there be space for restoration, rest, compassion and renewed strength.",
+
+      REMEMBRANCE:
+        "May those remembered be honoured with dignity and their positive legacy carried forward.",
+
+      CONTINUITY:
+        "May what is good be preserved and wisely passed to future generations.",
+
+      LEGACY:
+        "May every worthy lesson become part of a constructive legacy.",
+
+      REFLECTION:
+        "May reflection reveal what deserves attention and what can be released peacefully.",
+
+      REST:
+        "May the body, mind and household find peaceful rest.",
+
+      BLESSING:
+        "May this moment be filled with gratitude, peace and a sincere intention for good.",
+
+      FAMILY_UNITY:
+        "May family unity be strengthened through truth, patience, forgiveness and love.",
+
+      RESILIENCE:
+        "May resilience grow through wisdom, preparation, community and hope.",
+
+      DISCERNMENT:
+        "May discernment distinguish evidence from uncertainty and wisdom from fear."
+
+    },
+
+    sn: {
+
+      PROTECTION:
+        "Kuchengetedzwa ngakunzwisiswe kuburikidza nenjere, miganhu yakachengeteka, sarudzo dzakangwara nesimba rerugare.",
+
+      PEACE:
+        "Rugare ngaruzadze mwoyo uye rwugadzirire nzvimbo yekufunga zvakajeka.",
+
+      COURAGE:
+        "Ushingi ngauuye pasina ruvengo, uye simba risina hutsinye.",
+
+      WISDOM:
+        "Njere ngadzitungamirire sarudzo dzese nehukama hwese.",
+
+      TRUTH:
+        "Chokwadi ngachikunde kuvhiringidzika uye kutendeseka kutungamirire hurukuro dzedu.",
+
+      UNITY:
+        "Mhuri ngaigare yakabatana neruremekedzo, moyo murefu nerudo.",
+
+      FAMILY:
+        "Ukama hwemhuri ngahusimbiswe netsitsi nekubatsirana.",
+
+      GRATITUDE:
+        "Kutenda ngakuchengetedze ndangariro dzakanaka uye kuwedzere kukoshesa hupenyu.",
+
+      HOPE:
+        "Tariro ngaigare iripo kunyange nguva dzakaoma.",
+
+      HEALING:
+        "Ngakuve nenzvimbo yekuzorora, kuvandudzwa, tsitsi nesimba idzva.",
+
+      REMEMBRANCE:
+        "Vatinorangarira ngavaremekedzwe uye nhaka yavo yakanaka ienderere mberi.",
+
+      CONTINUITY:
+        "Zvakanaka ngazvichengetedzwe uye zvipfuudzwe nekuchenjera kune vanotevera.",
+
+      LEGACY:
+        "Chidzidzo chose chakanaka ngachive chikamu chenhaka inovaka.",
+
+      REFLECTION:
+        "Kufungisisa ngakuratidze zvinoda kutariswa nezvinogona kusiiwa murugare.",
+
+      REST:
+        "Muviri, mwoyo nemhuri ngazviwane kuzorora murugare.",
+
+      BLESSING:
+        "Nguva ino ngaizadzwe nekutenda, rugare uye chinangwa chakanaka.",
+
+      FAMILY_UNITY:
+        "Kubatana kwemhuri ngakusimbiswe nechokwadi, moyo murefu, kuregererana nerudo.",
+
+      RESILIENCE:
+        "Kusimba ngakukure kuburikidza nenjere, kugadzirira, kubatsirana netariro.",
+
+      DISCERNMENT:
+        "Kunzwisisa kwakadzama ngakusiyanise humbowo nekusaziva uye njere nekutya."
+
+    }
+
+  };
+
+  const CLOSINGS = {
+
+    en: [
+      "May peace remain with this family as the moment closes.",
+      "Let gratitude remain, let wisdom continue, and let peace guide the next step.",
+      "We close with truth, unity, courage and hope.",
+      "May the good intention of this moment continue through wise action.",
+      "The prayer closes, but care, remembrance and peaceful action continue."
+    ],
+
+    sn: [
+      "Rugare ngarurambe ruri nemhuri iyi sezvo nguva ino ichivharwa.",
+      "Kutenda ngakurambe kuripo, njere ngadzienderere mberi, uye rugare rutungamirire danho rinotevera.",
+      "Tinopedzisa nechokwadi, kubatana, ushingi netariro.",
+      "Chinangwa chakanaka chenguva ino ngachienderere mberi kuburikidza nezviito zvine njere.",
+      "Munamato wapera, asi rudo, kurangarira nezviito zverugare zvinoenderera mberi."
+    ]
+
+  };
+
+  /* ================================================================
+     11. SACRED ANCHORS
+     ================================================================ */
+
+  function sacredAnchor(
+    language
+  ) {
+
+    if (
+      !state.settings.preserveSacredAnchors
+    ) {
+      return "";
+    }
+
+    if (
+      language === "sn"
+    ) {
+
+      return (
+        "Mwari ndiMwari. " +
+        "Mudzimu Unoyera. "
+      );
+    }
+
+    return (
+      "Mwari ndiMwari. " +
+      "Mudzimu Unoyera. "
+    );
+  }
+
+  /* ================================================================
+     12. TEMPLATE FILLING
+     ================================================================ */
+
+  function fill(
+    template,
+    person
+  ) {
+
+    return template
+      .replace(
+        /\{person\}/g,
+        referenceFor(person)
+      );
+  }
+
+  /* ================================================================
+     13. NOVELTY ENGINE
+     ================================================================ */
+
+  function noveltyScore(
+    text
+  ) {
+
+    const current =
+      new Set(
+        safe(text)
+          .toLowerCase()
+          .split(/\W+/)
+          .filter(
+            word =>
+              word.length > 2
+          )
+      );
+
+    if (
+      !current.size
+    ) {
+      return 1;
+    }
+
+    let highest =
+      0;
+
+    state.recentPrayerHashes
+      .forEach(record => {
+
+        if (
+          !record.text
+        ) {
+          return;
+        }
+
+        const previous =
+          new Set(
+            record.text
+              .toLowerCase()
+              .split(/\W+/)
+              .filter(
+                word =>
+                  word.length > 2
+              )
+          );
+
+        if (
+          !previous.size
+        ) {
+          return;
+        }
+
+        let hits = 0;
+
+        current.forEach(word => {
+
+          if (
+            previous.has(word)
+          ) {
+            hits++;
+          }
+
+        });
+
+        const similarity =
+          hits /
+          Math.max(
+            1,
+            Math.min(
+              current.size,
+              previous.size
+            )
+          );
+
+        highest =
+          Math.max(
+            highest,
+            similarity
+          );
+      });
+
+    return (
+      1 - highest
+    );
+  }
+
+  function rememberPrayer(
+    person,
+    text,
+    themes
+  ) {
+
+    state.recentPrayerHashes
+      .unshift({
+        hash:
+          hash(text),
+
+        text,
+
+        personKey:
+          person.personKey,
+
+        timestamp:
+          now(),
+
+        themes:
+          themes.slice()
+      });
+
+    state.recentPrayerHashes =
+      state.recentPrayerHashes
+        .slice(
+          0,
+          state.settings.maxRecentHashes
+        );
+
+    themes.forEach(
+      theme =>
+        state.recentThemes.unshift(theme)
+    );
+
+    state.recentThemes =
+      state.recentThemes
+        .slice(
+          0,
+          state.settings.maxRecentThemes
+        );
+
+    state.recentPersons.unshift(
+      person.personKey
+    );
+
+    state.recentPersons =
+      state.recentPersons
+        .slice(
+          0,
+          state.settings.maxRecentPersons
+        );
+  }
+
+  /* ================================================================
+     14. PERSON PRAYER GENERATOR
+     ================================================================ */
+
+  function generatePersonPrayer(
+    person,
+    options = {}
+  ) {
+
+    if (
+      !person
+    ) {
+      return {
+        ok: false,
+        error:
+          "No person supplied."
+      };
+    }
+
+    if (
+      state.settings.requireApprovedPerson &&
+      !state.approvedPeople.has(
+        person.personKey
+      )
+    ) {
+
+      state.statistics.skippedPeople++;
+
+      return {
+        ok: false,
+        skipped: true,
+        reason:
+          "Person is not approved for audio."
+      };
+    }
+
+    const language =
+      resolveLanguage(
+        person,
+        options
+      );
+
+    const themes =
+      resolveThemes(
+        person,
+        options
+      );
+
+    const openingPack =
+      OPENINGS[language] ||
+      OPENINGS.en;
+
+    const personPack =
+      PERSON_LINES[language] ||
+      PERSON_LINES.en;
+
+    const themePack =
+      THEME_LINES[language] ||
+      THEME_LINES.en;
+
+    const closingPack =
+      CLOSINGS[language] ||
+      CLOSINGS.en;
+
+    const personRef =
+      referenceFor(
+        person,
+        options.privacyMode
+      );
+
+    let opening =
+      choose(
+        openingPack,
+        Date.now() +
+        person.personKey.length
+      );
+
+    let personLine =
+      choose(
+        personPack,
+        Date.now() +
+        person.displayName.length
+      );
+
+    personLine =
+      fill(
+        personLine,
+        person
+      );
+
+    const themeLines =
+      themes
+        .map(
+          theme =>
+            themePack[theme]
+        )
+        .filter(Boolean);
+
+    const selectedThemeLines =
+      themeLines.slice(
+        0,
+        Math.min(
+          4,
+          themeLines.length
+        )
+      );
+
+    let closing =
+      choose(
+        closingPack,
+        Date.now() +
+        themes.length
+      );
+
+    const anchor =
+      sacredAnchor(
+        language
+      );
+
+    let body = [
+
+      anchor,
+
+      opening,
+
+      `We hold ${personRef} in a sincere intention of peace, wisdom, dignity and protection.`,
+
+      personLine,
+
+      ...selectedThemeLines,
+
+      closing
+
+    ]
+      .filter(Boolean)
+      .join(" ");
+
+    let novelty =
+      noveltyScore(body);
+
+    let attempts = 0;
+
+    while (
+      novelty <
+        state.settings.minimumNovelty &&
+      attempts < 8
+    ) {
+
+      attempts++;
+
+      state.statistics
+        .noveltyRegenerations++;
+
+      opening =
+        choose(
+          openingPack,
+          Date.now() +
+          attempts * 17
+        );
+
+      personLine =
+        choose(
+          personPack,
+          Date.now() +
+          attempts * 31
+        );
+
+      personLine =
+        fill(
+          personLine,
+          person
+        );
+
+      closing =
+        choose(
+          closingPack,
+          Date.now() +
+          attempts * 43
+        );
+
+      const rotatedThemes =
+        resolveThemes(
+          person,
+          {
+            ...options,
+            themes:
+              themes
+                .slice()
+                .reverse()
+          }
+        );
+
+      const rotatedLines =
+        rotatedThemes
+          .map(
+            theme =>
+              themePack[theme]
+          )
+          .filter(Boolean)
+          .slice(0, 4);
+
+      body = [
+
+        anchor,
+
+        opening,
+
+        `We hold ${personRef} in a sincere intention of peace, wisdom, dignity and protection.`,
+
+        personLine,
+
+        ...rotatedLines,
+
+        closing
+
+      ]
+        .filter(Boolean)
+        .join(" ");
+
+      novelty =
+        noveltyScore(
+          body
+        );
+    }
+
+    const record = {
+
+      prayerId:
+        uid("PRAYER"),
+
+      personKey:
+        person.personKey,
+
+      personReference:
+        personRef,
+
+      language,
+
+      traditionMode:
+        person.traditionMode,
+
+      themes,
+
+      text:
+        body,
+
+      novelty:
+        Number(
+          novelty.toFixed(4)
+        ),
+
+      generationAttempts:
+        attempts,
+
+      generatedAt:
+        now(),
+
+      contentHash:
+        hash(body),
+
+      privacyMode:
+        person.privacyMode,
+
+      provenance:
+        "ORIGINAL_CHIROMBE_DEVOTIONAL",
+
+      disclaimer:
+        "Devotional material generated for user-directed spiritual practice; not presented as a verified quotation."
+    };
+
+    rememberPrayer(
+      person,
+      body,
+      themes
+    );
+
+    state.statistics.personPrayers++;
+
+    emit(
+      "PERSON_PRAYER_GENERATED",
+      {
+        prayerId:
+          record.prayerId,
+
+        personKey:
+          person.personKey,
+
+        themes,
+
+        novelty:
+          record.novelty
+      }
+    );
+
+    return {
+      ok: true,
+      prayer:
+        record
+    };
+  }
+
+  /* ================================================================
+     15. PERSON LOOKUP
+     ================================================================ */
+
+  function getPerson(
+    personKey
+  ) {
+
+    return clone(
+      state.people.get(
+        personKey
+      ) || null
+    );
+  }
+
+  /* ================================================================
+     16. NEXT PERSON SELECTION
+     ================================================================ */
+
+  function chooseNextPerson(
+    options = {}
+  ) {
+
+    const people =
+      [...state.people.values()]
+        .filter(
+          person =>
+            person.consent &&
+            (
+              !state.settings
+                .requireApprovedPerson ||
+              person.approved
+            )
+        );
+
+    if (
+      !people.length
+    ) {
+      return null;
+    }
+
+    const excluded =
+      new Set(
+        arr(
+          options.exclude
+        )
+      );
+
+    const candidates =
+      people.filter(
+        person =>
+          !excluded.has(
+            person.personKey
+          )
+      );
+
+    const pool =
+      candidates.length
+        ? candidates
+        : people;
+
+    /*
+     * Prefer people who have not recently received a prayer.
+     */
+    const sorted =
+      pool.slice().sort(
+        (a, b) => {
+
+          const ai =
+            state.recentPersons
+              .indexOf(
+                a.personKey
+              );
+
+          const bi =
+            state.recentPersons
+              .indexOf(
+                b.personKey
+              );
+
+          const av =
+            ai === -1
+              ? -1
+              : ai;
+
+          const bv =
+            bi === -1
+              ? -1
+              : bi;
+
+          return bv - av;
+        }
+      );
+
+    return sorted[0] ||
+      pool[0];
+  }
+
+  /* ================================================================
+     17. COVERAGE TRACKING
+     ================================================================ */
+
+  function updateCoverage(
+    person,
+    prayer
+  ) {
+
+    if (
+      !person ||
+      !prayer
+    ) {
+      return;
+    }
+
+    const previous =
+      state.coverage.get(
+        person.personKey
+      ) ||
+      {
+        personKey:
+          person.personKey,
+
+        prayerCount:
+          0,
+
+        lastPrayer:
+          null,
+
+        totalDuration:
+          0,
+
+        themes:
+          [],
+
+        languages:
+          [],
+
+        hashes:
+          []
+      };
+
+    previous.prayerCount++;
+
+    previous.lastPrayer =
+      prayer.generatedAt;
+
+    previous.themes =
+      unique([
+        ...previous.themes,
+        ...prayer.themes
+      ]).slice(-50);
+
+    previous.languages =
+      unique([
+        ...previous.languages,
+        prayer.language
+      ]);
+
+    previous.hashes.unshift(
+      prayer.contentHash
+    );
+
+    previous.hashes =
+      previous.hashes.slice(
+        0,
+        50
+      );
+
+    state.coverage.set(
+      person.personKey,
+      previous
+    );
+  }
+
+  function getCoverage(
+    personKey
+  ) {
+
+    if (
+      personKey
+    ) {
+
+      return clone(
+        state.coverage.get(
+          personKey
+        ) || null
+      );
+    }
+
+    return clone(
+      Object.fromEntries(
+        state.coverage.entries()
+      )
+    );
+  }
+
+  /* ================================================================
+     18. PERSON SESSION
+     ================================================================ */
+
+  function createPersonSession(
+    personKey,
+    options = {}
+  ) {
+
+    let person =
+      state.people.get(
+        personKey
+      );
+
+    if (
+      !person
+    ) {
+
+      refreshBloodline();
+
+      person =
+        state.people.get(
+          personKey
+        );
+    }
+
+    if (
+      !person
+    ) {
+      return {
+        ok: false,
+        error:
+          "Person not found in approved/available bloodline data."
+      };
+    }
+
+    state.state =
+      STATES.PLANNING;
+
+    const generated =
+      generatePersonPrayer(
+        person,
+        options
+      );
+
+    if (
+      !generated.ok
+    ) {
+      return generated;
+    }
+
+    const prayer =
+      generated.prayer;
+
+    const session = {
+
+      sessionId:
+        uid("SESSION"),
+
+      mode:
+        SESSION_MODES.PERSON,
+
+      personKeys:
+        [person.personKey],
+
+      currentPersonIndex:
+        0,
+
+      language:
+        prayer.language,
+
+      durationMinutes:
+        clamp(
+          options.duration ||
+          person.preferredDuration,
+          1,
+          180
+        ),
+
+      sections: [
+
+        {
+          type:
+            "PERSON_PRAYER",
+
+          personKey:
+            person.personKey,
+
+          prayerId:
+            prayer.prayerId,
+
+          text:
+            prayer.text,
+
+          themes:
+            prayer.themes
+        }
+
+      ],
+
+      createdAt:
+        now(),
+
+      sourceRevision:
+        state.sourceRevision,
+
+      status:
+        "READY"
+    };
+
+    updateCoverage(
+      person,
+      prayer
+    );
+
+    state.sessions.set(
+      session.sessionId,
+      session
+    );
+
+    state.statistics.sessionsCreated++;
+
+    state.activeSession =
+      session.sessionId;
+
+    persist();
+
+    emit(
+      "PERSON_SESSION_CREATED",
+      {
+        sessionId:
+          session.sessionId,
+
+        personKey:
+          person.personKey,
+
+        prayerId:
+          prayer.prayerId
+      }
+    );
+
+    return {
+      ok: true,
+      session:
+        clone(session)
+    };
+  }
+
+  /* ================================================================
+     19. FAMILY ORDERING
+     ================================================================ */
+
+  function orderFamily(
+    people,
+    options = {}
+  ) {
+
+    let ordered =
+      people.slice();
+
+    const mode =
+      options.order ||
+      "BALANCED";
+
+    if (
+      mode === "SOURCE"
+    ) {
+      return ordered;
+    }
+
+    if (
+      mode === "NAME"
+    ) {
+
+      return ordered.sort(
+        (a, b) =>
+          a.displayName.localeCompare(
+            b.displayName
+          )
+      );
+    }
+
+    if (
+      mode === "GENERATION"
+    ) {
+
+      return ordered.sort(
+        (a, b) =>
+          safe(a.generation)
+            .localeCompare(
+              safe(b.generation)
+            )
+      );
+    }
+
+    /*
+     * BALANCED:
+     * recently prayed people move toward the end.
+     */
+
+    return ordered.sort(
+      (a, b) => {
+
+        const ai =
+          state.recentPersons
+            .indexOf(
+              a.personKey
+            );
+
+        const bi =
+          state.recentPersons
+            .indexOf(
+              b.personKey
+            );
+
+        const av =
+          ai === -1
+            ? 9999
+            : ai;
+
+        const bv =
+          bi === -1
+            ? 9999
+            : bi;
+
+        return bv - av;
+      }
+    );
+  }
+
+  /* ================================================================
+     20. WHOLE BLOODLINE SESSION
+     ================================================================ */
+
+  function createBloodlineSession(
+    options = {}
+  ) {
+
+    refreshBloodline();
+
+    let people =
+      [...state.people.values()]
+        .filter(
+          person =>
+            person.consent &&
+            (
+              !state.settings
+                .requireApprovedPerson ||
+              person.approved
+            )
+        );
+
+    if (
+      options.personKeys &&
+      Array.isArray(
+        options.personKeys
+      )
+    ) {
+
+      const requested =
+        new Set(
+          options.personKeys
+        );
+
+      people =
+        people.filter(
+          person =>
+            requested.has(
+              person.personKey
+            )
+        );
+    }
+
+    if (
+      options.excludePersonKeys
+    ) {
+
+      const excluded =
+        new Set(
+          options.excludePersonKeys
+        );
+
+      people =
+        people.filter(
+          person =>
+            !excluded.has(
+              person.personKey
+            )
+        );
+    }
+
+    people =
+      orderFamily(
+        people,
+        options
+      );
+
+    if (
+      !people.length
+    ) {
+
+      return {
+        ok: false,
+        error:
+          "No eligible family members were available."
+      };
+    }
+
+    state.state =
+      STATES.PLANNING;
+
+    const sections = [];
+
+    const openingLanguage =
+      options.language ||
+      state.settings.defaultLanguage;
+
+    sections.push({
+
+      type:
+        "ARRIVAL",
+
+      text:
+        (
+          openingLanguage === "sn"
+            ? "Ngatipinde pamwe chete murugare, kutenda nekubatana."
+            : "Let us enter this family moment together in peace, gratitude and unity."
+        ),
+
+      themes: [
+        "FAMILY",
+        "UNITY",
+        "PEACE"
+      ]
+    });
+
+    sections.push({
+
+      type:
+        "SACRED_ANCHOR",
+
+      text:
+        sacredAnchor(
+          openingLanguage
+        ),
+
+      themes: [
+        "FAITH",
+        "TRUTH"
+      ]
+    });
+
+    const generatedPeople =
+      [];
+
+    people.forEach(
+      person => {
+
+        const generated =
+          generatePersonPrayer(
+            person,
+            {
+              ...options,
+              language:
+                options.language ||
+                person.preferredLanguage
+            }
+          );
+
+        if (
+          !generated.ok
+        ) {
+
+          state.statistics
+            .skippedPeople++;
+
+          return;
+        }
+
+        generatedPeople.push(
+          generated.prayer
+        );
+
+        sections.push({
+
+          type:
+            "PERSON_PRAYER",
+
+          personKey:
+            person.personKey,
+
+          displayReference:
+            referenceFor(
+              person,
+              options.privacyMode
+            ),
+
+          prayerId:
+            generated.prayer.prayerId,
+
+          text:
+            generated.prayer.text,
+
+          themes:
+            generated.prayer.themes
+        });
+
+        updateCoverage(
+          person,
+          generated.prayer
+        );
+      }
+    );
+
+    sections.push({
+
+      type:
+        "FAMILY_UNITY",
+
+      text:
+        openingLanguage === "sn"
+          ? "Mhuri ngaibatane muchokwadi, murugare, nemoyo murefu. Zvakanaka ngazvichengetedzwe uye zvipfuudzwe nekuchenjera."
+          : "May this family remain connected through truth, peace and patience. May what is good be preserved and carried forward with wisdom.",
+
+      themes: [
+        "FAMILY_UNITY",
+        "TRUTH",
+        "CONTINUITY"
+      ]
+    });
+
+    sections.push({
+
+      type:
+        "INTERCESSION",
+
+      text:
+        openingLanguage === "sn"
+          ? "Tinonamatira mhuri yose kuti iwane njere, ushingi, rugare, rudo uye nzira dzakanaka dzekufamba nadzo."
+          : "We hold the whole family in an intention for wisdom, courage, peace, love and constructive paths forward.",
+
+      themes: [
+        "WISDOM",
+        "COURAGE",
+        "PEACE",
+        "LOVE"
+      ]
+    });
+
+    sections.push({
+
+      type:
+        "CLOSING",
+
+      text:
+        choose(
+          CLOSINGS[
+            openingLanguage
+          ] ||
+          CLOSINGS.en,
+          Date.now()
+        ),
+
+      themes: [
+        "GRATITUDE",
+        "PEACE",
+        "HOPE"
+      ]
+    });
+
+    const session = {
+
+      sessionId:
+        uid("BLOODLINE"),
+
+      mode:
+        SESSION_MODES.BLOODLINE,
+
+      personKeys:
+        people.map(
+          person =>
+            person.personKey
+        ),
+
+      coveredPersonKeys:
+        generatedPeople.map(
+          prayer =>
+            prayer.personKey
+        ),
+
+      sections,
+
+      durationMinutes:
+        clamp(
+          options.duration ||
+          (
+            5 +
+            people.length * 2
+          ),
+          1,
+          240
+        ),
+
+      language:
+        openingLanguage,
+
+      createdAt:
+        now(),
+
+      sourceRevision:
+        state.sourceRevision,
+
+      status:
+        "READY",
+
+      coverage:
+
+        people.length
+          ? generatedPeople.length /
+            people.length
+          : 0,
+
+      privacyMode:
+        options.privacyMode ||
+        state.settings.defaultPrivacy,
+
+      provenance:
+        "ORIGINAL_CHIROMBE_DEVOTIONAL_ORCHESTRATION"
+    };
+
+    state.sessions.set(
+      session.sessionId,
+      session
+    );
+
+    state.statistics.sessionsCreated++;
+    state.statistics.familySessions++;
+
+    state.activeSession =
+      session.sessionId;
+
+    state.state =
+      STATES.READY;
+
+    persist();
+
+    emit(
+      "BLOODLINE_SESSION_CREATED",
+      {
+        sessionId:
+          session.sessionId,
+
+        people:
+          people.length,
+
+        covered:
+          generatedPeople.length,
+
+        coverage:
+          session.coverage
+      }
+    );
+
+    return {
+      ok: true,
+      session:
+        clone(session)
+    };
+  }
+
+  /* ================================================================
+     21. FAMILY COVERAGE REPORT
+     ================================================================ */
+
+  function coverageReport() {
+
+    const people =
+      [...state.people.values()];
+
+    const rows =
+      people.map(
+        person => {
+
+          const coverage =
+            state.coverage.get(
+              person.personKey
+            );
+
+          return {
+
+            personKey:
+              person.personKey,
+
+            reference:
+              referenceFor(
+                person
+              ),
+
+            prayerCount:
+              coverage?.prayerCount ||
+              0,
+
+            lastPrayer:
+              coverage?.lastPrayer ||
+              null,
+
+            themes:
+              coverage?.themes ||
+              [],
+
+            languages:
+              coverage?.languages ||
+              [],
+
+            consent:
+              person.consent,
+
+            approved:
+              person.approved
+          };
+        }
+      );
+
+    const covered =
+      rows.filter(
+        row =>
+          row.prayerCount > 0
+      ).length;
+
+    const eligible =
+      rows.filter(
+        row =>
+          row.consent
+      ).length;
+
+    return {
+
+      totalPeople:
+        rows.length,
+
+      eligiblePeople:
+        eligible,
+
+      coveredPeople:
+        covered,
+
+      coverageRatio:
+        eligible
+          ? Number(
+              (
+                covered /
+                eligible
+              ).toFixed(4)
+            )
+          : 0,
+
+      people:
+        rows
+    };
+  }
+
+  /* ================================================================
+     22. ADAPTIVE NEXT PRAYER
+     ================================================================ */
+
+  function generateAdaptivePersonPrayer(
+    options = {}
+  ) {
+
+    const person =
+      options.personKey
+        ? state.people.get(
+            options.personKey
+          )
+        : chooseNextPerson(
+            options
+          );
+
+    if (
+      !person
+    ) {
+
+      return {
+        ok: false,
+        error:
+          "No eligible person is available."
+      };
+    }
+
+    const themes =
+      resolveThemes(
+        person,
+        options
+      );
+
+    const result =
+      generatePersonPrayer(
+        person,
+        {
+          ...options,
+          themes
+        }
+      );
+
+    if (
+      result.ok
+    ) {
+
+      updateCoverage(
+        person,
+        result.prayer
+      );
+
+      persist();
+    }
+
+    return result;
+  }
+
+  /* ================================================================
+     23. AUDIO BROADCAST INTEGRATION
+     ================================================================ */
+
+  function broadcastPrayer(
+    prayer,
+    options = {}
+  ) {
+
+    if (
+      !prayer
+    ) {
+      return {
+        ok: false,
+        error:
+          "No prayer supplied."
+      };
+    }
+
+    const payload = {
+
+      type:
+        "PERSON_BLESSING",
+
+      priority:
+        options.priority ||
+        "NORMAL",
+
+      personKey:
+        prayer.personKey,
+
+      prayerId:
+        prayer.prayerId,
+
+      language:
+        prayer.language,
+
+      text:
+        prayer.text,
+
+      themes:
+        prayer.themes,
+
+      duration:
+        options.duration ||
+        0,
+
+      provenance:
+        prayer.provenance,
+
+      contentHash:
+        prayer.contentHash
+    };
+
+    try {
+
+      if (
+        typeof AUDIO.queueBroadcast ===
+        "function"
+      ) {
+
+        AUDIO.queueBroadcast(
+          payload
+        );
+
+      } else if (
+        typeof AUDIO.emit ===
+        "function"
+      ) {
+
+        AUDIO.emit(
+          "BLOODLINE_PRAYER_READY",
+          payload
+        );
+      }
+
+    } catch (error) {
+
+      state.statistics.errors++;
+
+      emit(
+        "BLOODLINE_BROADCAST_ERROR",
+        {
+          error:
+            error?.message ||
+            String(error)
+        }
+      );
+
+      return {
+        ok: false,
+        error:
+          error?.message ||
+          String(error)
+      };
+    }
+
+    emit(
+      "BLOODLINE_PRAYER_BROADCAST",
+      payload
+    );
+
+    return {
+      ok: true,
+      payload
+    };
+  }
+
+  /* ================================================================
+     24. GENERATE + BROADCAST
+     ================================================================ */
+
+  function generateAndBroadcast(
+    options = {}
+  ) {
+
+    const result =
+      generateAdaptivePersonPrayer(
+        options
+      );
+
+    if (
+      !result.ok
+    ) {
+      return result;
+    }
+
+    const broadcast =
+      broadcastPrayer(
+        result.prayer,
+        options
+      );
+
+    return {
+      ok:
+        broadcast.ok,
+
+      prayer:
+        result.prayer,
+
+      broadcast
+    };
+  }
+
+  /* ================================================================
+     25. SESSION PROGRESSION
+     ================================================================ */
+
+  function getSession(
+    sessionId
+  ) {
+
+    return clone(
+      state.sessions.get(
+        sessionId
+      ) || null
+    );
+  }
+
+  function completeSession(
+    sessionId
+  ) {
+
+    const session =
+      state.sessions.get(
+        sessionId
+      );
+
+    if (
+      !session
+    ) {
+      return {
+        ok: false,
+        error:
+          "Session not found."
+      };
+    }
+
+    session.status =
+      "COMPLETED";
+
+    session.completedAt =
+      now();
+
+    state.statistics
+      .sessionsCompleted++;
+
+    if (
+      state.activeSession ===
+      sessionId
+    ) {
+      state.activeSession =
+        null;
+    }
+
+    state.state =
+      STATES.COMPLETED;
+
+    persist();
+
+    emit(
+      "BLOODLINE_SESSION_COMPLETED",
+      {
+        sessionId
+      }
+    );
+
+    return {
+      ok: true,
+      session:
+        clone(session)
+    };
+  }
+
+  function pauseSession(
+    sessionId
+  ) {
+
+    const session =
+      state.sessions.get(
+        sessionId
+      );
+
+    if (
+      !session
+    ) {
+      return {
+        ok: false,
+        error:
+          "Session not found."
+      };
+    }
+
+    session.status =
+      "PAUSED";
+
+    session.pausedAt =
+      now();
+
+    state.state =
+      STATES.PAUSED;
+
+    persist();
+
+    emit(
+      "BLOODLINE_SESSION_PAUSED",
+      {
+        sessionId
+      }
+    );
+
+    return {
+      ok: true,
+      session:
+        clone(session)
+    };
+  }
+
+  /* ================================================================
+     26. PERSISTENCE
+     ================================================================ */
+
+  function serialise() {
+
+    return {
+
+      version:
+        VERSION,
+
+      state:
+        state.state,
+
+      sourceRevision:
+        state.sourceRevision,
+
+      coverage:
+        [...state.coverage.values()],
+
+      recentPrayerHashes:
+        state.recentPrayerHashes
+          .slice(
+            0,
+            state.settings.maxRecentHashes
+          ),
+
+      recentThemes:
+        state.recentThemes
+          .slice(
+            0,
+            state.settings.maxRecentThemes
+          ),
+
+      recentPersons:
+        state.recentPersons
+          .slice(
+            0,
+            state.settings.maxRecentPersons
+          ),
+
+      statistics:
+        state.statistics,
+
+      settings:
+        state.settings,
+
+      savedAt:
+        now()
+    };
+  }
+
+  function persist() {
+
+    try {
+
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify(
+          serialise()
+        )
+      );
+
+      if (
+        typeof AUDIO.remember ===
+        "function"
+      ) {
+
+        AUDIO.remember(
+          MEMORY_NAMESPACE,
+          {
+            type:
+              "BLOODLINE_ORCHESTRATOR_STATE",
+
+            sourceRevision:
+              state.sourceRevision,
+
+            coverageCount:
+              state.coverage.size,
+
+            timestamp:
+              now()
+          }
+        );
+      }
+
+      return true;
+
+    } catch (error) {
+
+      console.warn(
+        "[CHIROMBE BLOODLINE AUDIO] Persistence failed",
+        error
+      );
+
+      return false;
+    }
+  }
+
+  function restore() {
+
+    try {
+
+      const raw =
+        localStorage.getItem(
+          STORAGE_KEY
+        );
+
+      if (
+        !raw
+      ) {
+        return false;
+      }
+
+      const data =
+        JSON.parse(raw);
+
+      if (
+        !data
+      ) {
+        return false;
+      }
+
+      if (
+        Array.isArray(
+          data.coverage
+        )
+      ) {
+
+        state.coverage =
+          new Map(
+            data.coverage.map(
+              item =>
+                [
+                  item.personKey,
+                  item
+                ]
+            )
+          );
+      }
+
+      if (
+        Array.isArray(
+          data.recentPrayerHashes
+        )
+      ) {
+
+        state.recentPrayerHashes =
+          data.recentPrayerHashes
+            .slice(
+              0,
+              state.settings.maxRecentHashes
+            );
+      }
+
+      if (
+        Array.isArray(
+          data.recentThemes
+        )
+      ) {
+
+        state.recentThemes =
+          data.recentThemes
+            .slice(
+              0,
+              state.settings.maxRecentThemes
+            );
+      }
+
+      if (
+        Array.isArray(
+          data.recentPersons
+        )
+      ) {
+
+        state.recentPersons =
+          data.recentPersons
+            .slice(
+              0,
+              state.settings.maxRecentPersons
+            );
+      }
+
+      if (
+        data.statistics
+      ) {
+
+        Object.assign(
+          state.statistics,
+          data.statistics
+        );
+      }
+
+      if (
+        Number.isFinite(
+          data.sourceRevision
+        )
+      ) {
+
+        state.sourceRevision =
+          data.sourceRevision;
+      }
+
+      emit(
+        "BLOODLINE_AUDIO_MEMORY_RESTORED",
+        {
+          coverage:
+            state.coverage.size
+        }
+      );
+
+      return true;
+
+    } catch (error) {
+
+      console.warn(
+        "[CHIROMBE BLOODLINE AUDIO] Restore failed",
+        error
+      );
+
+      return false;
+    }
+  }
+
+  /* ================================================================
+     27. EVENT SYSTEM
+     ================================================================ */
+
+  function emit(
+    type,
+    detail = {}
+  ) {
+
+    const payload = {
+
+      type,
+
+      timestamp:
+        now(),
+
+      module:
+        MODULE_ID,
+
+      version:
+        VERSION,
+
+      detail
+    };
+
+    try {
+
+      if (
+        AUDIO &&
+        typeof AUDIO.emit ===
+        "function"
+      ) {
+
+        AUDIO.emit(
+          "BLOODLINE_ORCHESTRATOR_EVENT",
+          payload
+        );
+      }
+
+    } catch (_) {}
+
+    try {
+
+      root.dispatchEvent(
+        new CustomEvent(
+          "CHIROMBE_AUDIO_BLOODLINE_EVENT",
+          {
+            detail:
+              payload
+          }
+        )
+      );
+
+    } catch (_) {}
+
+    return payload;
+  }
+
+  /* ================================================================
+     28. SYSTEM EVENT RESPONSE
+     ================================================================ */
+
+  function observeSystemEvent(
+    event
+  ) {
+
+    const detail =
+      event?.detail ||
+      event ||
+      {};
+
+    const type =
+      safe(
+        detail.type ||
+        detail.event ||
+        detail.name
+      ).toUpperCase();
+
+    if (
+      !type
+    ) {
+      return;
+    }
+
+    const relevant = [
+
+      "LIVING_WATCH_STARTED",
+
+      "FAMILY_UNITY",
+
+      "BLOODLINE_LITURGY_READY",
+
+      "RECOVERY_COMPLETED",
+
+      "SYSTEM_HEALTH_RESTORED",
+
+      "DAILY_LITURGY_REQUESTED"
+
+    ];
+
+    if (
+      !relevant.includes(type)
+    ) {
+      return;
+    }
+
+    try {
+
+      const result =
+        generateAdaptivePersonPrayer({
+          themes:
+            detail.themes ||
+            [],
+          language:
+            detail.language
+        });
+
+      if (
+        result.ok
+      ) {
+
+        emit(
+          "SYSTEM_EVENT_BLOODLINE_PRAYER_READY",
+          {
+            event:
+              type,
+
+            prayerId:
+              result.prayer.prayerId,
+
+            personKey:
+              result.prayer.personKey
+          }
+        );
+      }
+
+    } catch (error) {
+
+      state.statistics.errors++;
+
+      emit(
+        "BLOODLINE_EVENT_HANDLER_ERROR",
+        {
+          event:
+            type,
+
+          error:
+            error?.message ||
+            String(error)
+        }
+      );
+    }
+  }
+
+  try {
+
+    root.addEventListener(
+      "CHIROMBE_AUDIO_EVENT",
+      observeSystemEvent
+    );
+
+    root.addEventListener(
+      "CHIROMBE_LIVING_WATCH_EVENT",
+      observeSystemEvent
+    );
+
+  } catch (_) {}
+
+  if (
+    AUDIO &&
+    typeof AUDIO.on ===
+    "function"
+  ) {
+
+    try {
+
+      AUDIO.on(
+        "SYSTEM_EVENT_OBSERVED",
+        observeSystemEvent
+      );
+
+    } catch (_) {}
+  }
+
+  /* ================================================================
+     29. LIVING WATCH ROTATION
+     ================================================================ */
+
+  function livingWatchStep(
+    options = {}
+  ) {
+
+    if (
+      state.state ===
+      STATES.SAFE_STOP
+    ) {
+      return {
+        ok: false,
+        stopped: true,
+        reason:
+          "Bloodline orchestrator is in SAFE_STOP."
+      };
+    }
+
+    if (
+      !state.people.size
+    ) {
+      refreshBloodline();
+    }
+
+    const result =
+      generateAndBroadcast({
+        ...options,
+
+        exclude:
+          options.exclude ||
+          []
+      });
+
+    if (
+      result.ok
+    ) {
+
+      emit(
+        "LIVING_WATCH_BLOODLINE_STEP",
+        {
+          prayerId:
+            result.prayer.prayerId,
+
+          personKey:
+            result.prayer.personKey,
+
+          themes:
+            result.prayer.themes
+        }
+      );
+    }
+
+    return result;
+  }
+
+  /* ================================================================
+     30. SAFE STOP
+     ================================================================ */
+
+  function safeStop(
+    reason = "Manual stop"
+  ) {
+
+    state.state =
+      STATES.SAFE_STOP;
+
+    state.activeSession =
+      null;
+
+    emit(
+      "BLOODLINE_AUDIO_SAFE_STOP",
+      {
+        reason
+      }
+    );
+
+    persist();
+
+    return {
+      ok: true,
+      state:
+        state.state,
+      reason
+    };
+  }
+
+  function resume() {
+
+    if (
+      state.state ===
+      STATES.SAFE_STOP
+    ) {
+
+      state.state =
+        STATES.READY;
+
+      emit(
+        "BLOODLINE_AUDIO_RESUMED",
+        {}
+      );
+
+      return {
+        ok: true
+      };
+    }
+
+    return {
+      ok: true,
+      state:
+        state.state
+    };
+  }
+
+  /* ================================================================
+     31. FULL STATUS
+     ================================================================ */
+
+  function getStatus() {
+
+    return {
+
+      module:
+        MODULE_ID,
+
+      version:
+        VERSION,
+
+      state:
+        state.state,
+
+      initialized:
+        state.initialized,
+
+      sourceRevision:
+        state.sourceRevision,
+
+      people:
+        state.people.size,
+
+      approvedPeople:
+        state.approvedPeople.size,
+
+      activeSession:
+        state.activeSession,
+
+      sessions:
+        state.sessions.size,
+
+      coverage:
+        coverageReport(),
+
+      statistics:
+        clone(
+          state.statistics
+        ),
+
+      settings:
+        clone(
+          state.settings
+        ),
+
+      timestamp:
+        now()
+    };
+  }
+
+  /* ================================================================
+     32. PUBLIC API
+     ================================================================ */
+
+  const BLOODLINE = {
+
+    MODULE_ID,
+
+    VERSION,
+
+    STATES,
+
+    SESSION_MODES,
+
+    PRIVACY_MODES,
+
+    refresh:
+      refreshBloodline,
+
+    getPerson,
+
+    listPeople:
+      () =>
+        [...state.people.values()]
+          .map(clone),
+
+    chooseNext:
+      chooseNextPerson,
+
+    generatePerson:
+      generatePersonPrayer,
+
+    generateAdaptive:
+      generateAdaptivePersonPrayer,
+
+    createPersonSession,
+
+    createBloodlineSession,
+
+    broadcast:
+      broadcastPrayer,
+
+    generateAndBroadcast,
+
+    livingWatchStep,
+
+    getSession,
+
+    completeSession,
+
+    pauseSession,
+
+    safeStop,
+
+    resume,
+
+    getCoverage,
+
+    coverageReport,
+
+    persist,
+
+    restore,
+
+    getStatus
+  };
+
+  /* ================================================================
+     33. CONNECT TO CHIROMBE NAMESPACE
+     ================================================================ */
+
+  CHIROMBE_AUDIO_BLOODLINE_ORCHESTRATOR =
+    BLOODLINE;
+
+  CHIROMBE.AudioBloodlineOrchestrator =
+    BLOODLINE;
+
+  root.CHIROMBE_AUDIO_BLOODLINE_ORCHESTRATOR =
+    BLOODLINE;
+
+  if (
+    !CHIROMBE.AudioLivingLiturgy
+  ) {
+    CHIROMBE.AudioLivingLiturgy =
+      {};
+  }
+
+  CHIROMBE.AudioLivingLiturgy.Bloodline =
+    BLOODLINE;
+
+  /* ================================================================
+     34. LITURGY COMMANDS
+     ================================================================ */
+
+  if (
+    LITURGY &&
+    typeof LITURGY === "object"
+  ) {
+
+    LITURGY.commands =
+      LITURGY.commands || {};
+
+    LITURGY.commands[
+      "audio.bloodline.refresh"
+    ] =
+      refreshBloodline;
+
+    LITURGY.commands[
+      "audio.bloodline.person"
+    ] =
+      args =>
+        createPersonSession(
+          args?.personKey,
+          args
+        );
+
+    LITURGY.commands[
+      "audio.bloodline.generate"
+    ] =
+      args =>
+        generateAdaptivePersonPrayer(
+          args || {}
+        );
+
+    LITURGY.commands[
+      "audio.bloodline.broadcast"
+    ] =
+      args =>
+        generateAndBroadcast(
+          args || {}
+        );
+
+    LITURGY.commands[
+      "audio.bloodline.session"
+    ] =
+      args =>
+        createBloodlineSession(
+          args || {}
+        );
+
+    LITURGY.commands[
+      "audio.bloodline.coverage"
+    ] =
+      coverageReport;
+
+    LITURGY.commands[
+      "audio.bloodline.watch"
+    ] =
+      args =>
+        livingWatchStep(
+          args || {}
+        );
+
+    LITURGY.commands[
+      "audio.bloodline.stop"
+    ] =
+      args =>
+        safeStop(
+          args?.reason ||
+          "Commanded safe stop"
+        );
+
+    LITURGY.commands[
+      "audio.bloodline.resume"
+    ] =
+      resume;
+
+  }
+
+  /* ================================================================
+     35. AUDIO QUEUE INTEGRATION
+     ================================================================ */
+
+  function queueSession(
+    sessionId,
+    options = {}
+  ) {
+
+    const session =
+      state.sessions.get(
+        sessionId
+      );
+
+    if (
+      !session
+    ) {
+
+      return {
+        ok: false,
+        error:
+          "Session not found."
+      };
+    }
+
+    let queued =
+      0;
+
+    session.sections
+      .forEach(
+        section => {
+
+          if (
+            !section.text
+          ) {
+            return;
+          }
+
+          const payload = {
+
+            type:
+              section.type,
+
+            sessionId,
+
+            personKey:
+              section.personKey ||
+              null,
+
+            text:
+              section.text,
+
+            language:
+              session.language,
+
+            themes:
+              section.themes ||
+              [],
+
+            provenance:
+              "CHIROMBE_ORCHESTRATED",
+
+            priority:
+              options.priority ||
+              "NORMAL"
+          };
+
+          try {
+
+            if (
+              typeof AUDIO.queueBroadcast ===
+              "function"
+            ) {
+
+              AUDIO.queueBroadcast(
+                payload
+              );
+
+              queued++;
+
+            } else if (
+              typeof AUDIO.emit ===
+              "function"
+            ) {
+
+              AUDIO.emit(
+                "BLOODLINE_SECTION_READY",
+                payload
+              );
+
+              queued++;
+            }
+
+          } catch (error) {
+
+            state.statistics.errors++;
+
+            emit(
+              "BLOODLINE_SECTION_QUEUE_ERROR",
+              {
+                sessionId,
+                error:
+                  error?.message ||
+                  String(error)
+              }
+            );
+          }
+        }
+      );
+
+    emit(
+      "BLOODLINE_SESSION_QUEUED",
+      {
+        sessionId,
+        queued
+      }
+    );
+
+    return {
+      ok: true,
+      queued
+    };
+  }
+
+  BLOODLINE.queueSession =
+    queueSession;
+
+  if (
+    LITURGY &&
+    LITURGY.commands
+  ) {
+
+    LITURGY.commands[
+      "audio.bloodline.queue"
+    ] =
+      args =>
+        queueSession(
+          args?.sessionId,
+          args || {}
+        );
+  }
+
+  /* ================================================================
+     36. INITIALISATION
+     ================================================================ */
+
+  function initialise() {
+
+    if (
+      state.initialized
+    ) {
+      return;
+    }
+
+    restore();
+
+    refreshBloodline();
+
+    state.initialized =
+      true;
+
+    state.state =
+      STATES.READY;
+
+    emit(
+      "BLOODLINE_AUDIO_ORCHESTRATOR_READY",
+      getStatus()
+    );
+
+    console.info(
+      "[CHIROMBE AUDIO] Bloodline Prayer Orchestrator ready.",
+      getStatus()
+    );
+  }
+
+  /* ================================================================
+     37. START
+     ================================================================ */
+
+  initialise();
+
+})();
