@@ -9872,3 +9872,3258 @@
 /* ================================================================
    END CHIROMBE WATCHDOG ENGINE
    ================================================================ */
+/* ================================================================
+   CHIROMBE KNOWLEDGE INTELLIGENCE ENGINE
+   ================================================================
+   Protocol : CHEP-07
+   Version  : 1.0.0
+
+   ARCHITECTURE POSITION
+   ---------------------
+
+        CORE
+          │
+        MEMORY
+          │
+        WORKERS
+          │
+       EVOLUTION
+          │
+       PATHWAYS
+          │
+       WATCHDOG
+          │
+          ▼
+   ┌───────────────────────┐
+   │ KNOWLEDGE ENGINE      │
+   │                       │
+   │ CONCEPTS              │
+   │ RELATIONSHIPS         │
+   │ OBSERVATIONS          │
+   │ PATTERNS              │
+   │ LESSONS               │
+   │ SOURCES              │
+   │ SEMANTIC INDEX        │
+   │ KNOWLEDGE GRAPH       │
+   │ INFERENCE             │
+   │ LEARNING              │
+   │ CONFIDENCE            │
+   └───────────┬───────────┘
+               │
+               ▼
+        FUTURE BUILD /
+        ORCHESTRATOR /
+        EXTERNAL AI
+
+   IMPORTANT
+   ----------
+   This engine creates structured computational knowledge.
+
+   "Inference" means model-based computational inference.
+   "Quantum" terminology, where later used, refers to
+   quantum-inspired mathematical modelling rather than
+   demonstrated quantum physical effects.
+
+   The engine does not treat an unverified claim as established fact.
+   Knowledge records therefore retain source, confidence, status,
+   timestamps and provenance.
+
+   ================================================================ */
+
+(function (global) {
+    "use strict";
+
+    if (!global.CHIROMBE) {
+        console.error(
+            "[CHIROMBE KNOWLEDGE] Core not loaded."
+        );
+        return;
+    }
+
+    const CORE = global.CHIROMBE;
+
+    const MEMORY =
+        global.CHIROMBE_MEMORY || null;
+
+    const WORKERS =
+        global.CHIROMBE_WORKERS || null;
+
+    const EVOLUTION =
+        global.CHIROMBE_EVOLUTION ||
+        global.CHIROMBE_EVOLUTION_ENGINE ||
+        null;
+
+    const PATHWAYS =
+        global.CHIROMBE_PATHWAYS ||
+        global.CHIROMBE_PATHWAY_ENGINE ||
+        null;
+
+    const WATCHDOG =
+        global.CHIROMBE_WATCHDOG ||
+        global.CHIROMBE_WATCHDOG_ENGINE ||
+        null;
+
+    /* ============================================================
+       CONFIGURATION
+       ============================================================ */
+
+    const CONFIG = {
+
+        protocol:
+            "CHEP-07",
+
+        version:
+            "1.0.0",
+
+        maximumConcepts:
+            5000,
+
+        maximumRelations:
+            10000,
+
+        maximumObservations:
+            5000,
+
+        maximumPatterns:
+            2000,
+
+        maximumLessons:
+            2000,
+
+        maximumSources:
+            2000,
+
+        maximumSearchResults:
+            100,
+
+        learningInterval:
+            45000,
+
+        indexingInterval:
+            60000,
+
+        analysisInterval:
+            90000,
+
+        persistenceNamespace:
+            "KNOWLEDGE",
+
+        automaticLearning:
+            true,
+
+        automaticIndexing:
+            true,
+
+        automaticAnalysis:
+            true,
+
+        minimumInferenceConfidence:
+            0.55,
+
+        minimumPromotionConfidence:
+            0.75,
+
+        protectedConcepts: [
+            "SYSTEM",
+            "CHIROMBE",
+            "CORE",
+            "MEMORY",
+            "WORKERS",
+            "EVOLUTION",
+            "PATHWAYS",
+            "WATCHDOG",
+            "KNOWLEDGE"
+        ]
+    };
+
+    /* ============================================================
+       STATE
+       ============================================================ */
+
+    const STATE = {
+
+        booted:
+            false,
+
+        running:
+            false,
+
+        startedAt:
+            Date.now(),
+
+        cycle:
+            0,
+
+        concepts:
+            {},
+
+        relations:
+            {},
+
+        observations:
+            {},
+
+        patterns:
+            {},
+
+        lessons:
+            {},
+
+        sources:
+            {},
+
+        index:
+            {},
+
+        inferenceHistory:
+            [],
+
+        learningHistory:
+            [],
+
+        metrics: {
+
+            conceptsCreated:
+                0,
+
+            relationsCreated:
+                0,
+
+            observationsCreated:
+                0,
+
+            patternsDetected:
+                0,
+
+            lessonsCreated:
+                0,
+
+            searches:
+                0,
+
+            inferences:
+                0,
+
+            learningCycles:
+                0,
+
+            indexCycles:
+                0,
+
+            analysisCycles:
+                0
+        },
+
+        lastLearning:
+            0,
+
+        lastIndexing:
+            0,
+
+        lastAnalysis:
+            0,
+
+        timers:
+            []
+    };
+
+    /* ============================================================
+       UTILITY FUNCTIONS
+       ============================================================ */
+
+    function uid(prefix) {
+
+        return (
+            String(prefix || "KN") +
+            "_" +
+            Date.now().toString(36) +
+            "_" +
+            Math.random()
+                .toString(36)
+                .slice(2, 10)
+        ).toUpperCase();
+    }
+
+    function now() {
+        return Date.now();
+    }
+
+    function clone(value) {
+
+        try {
+
+            return JSON.parse(
+                JSON.stringify(value)
+            );
+
+        } catch (e) {
+
+            return {
+                cloneError:
+                    e.message
+            };
+        }
+    }
+
+    function normalize(value) {
+
+        return String(
+            value === undefined ||
+            value === null
+                ? ""
+                : value
+        )
+            .trim()
+            .toLowerCase();
+    }
+
+    function tokenize(text) {
+
+        return normalize(text)
+            .replace(
+                /[^a-z0-9_\-\s]/g,
+                " "
+            )
+            .split(/\s+/)
+            .filter(Boolean);
+    }
+
+    function unique(array) {
+
+        return Array.from(
+            new Set(
+                array || []
+            )
+        );
+    }
+
+    function similarity(
+        a,
+        b
+    ) {
+
+        const A =
+            new Set(
+                tokenize(a)
+            );
+
+        const B =
+            new Set(
+                tokenize(b)
+            );
+
+        if (
+            A.size === 0 &&
+            B.size === 0
+        ) {
+            return 1;
+        }
+
+        if (
+            A.size === 0 ||
+            B.size === 0
+        ) {
+            return 0;
+        }
+
+        let intersection = 0;
+
+        A.forEach(
+            function (word) {
+
+                if (
+                    B.has(word)
+                ) {
+                    intersection++;
+                }
+            }
+        );
+
+        const union =
+            new Set(
+                [
+                    ...A,
+                    ...B
+                ]
+            ).size;
+
+        return (
+            intersection /
+            union
+        );
+    }
+
+    async function digest(value) {
+
+        const text =
+            typeof value === "string"
+                ? value
+                : JSON.stringify(value);
+
+        try {
+
+            if (
+                global.crypto &&
+                global.crypto.subtle &&
+                typeof TextEncoder !==
+                    "undefined"
+            ) {
+
+                const bytes =
+                    new TextEncoder()
+                        .encode(text);
+
+                const buffer =
+                    await global.crypto
+                        .subtle
+                        .digest(
+                            "SHA-256",
+                            bytes
+                        );
+
+                return Array
+                    .from(
+                        new Uint8Array(
+                            buffer
+                        )
+                    )
+                    .map(
+                        function (b) {
+
+                            return b
+                                .toString(16)
+                                .padStart(
+                                    2,
+                                    "0"
+                                );
+                        }
+                    )
+                    .join("");
+            }
+
+        } catch (e) {}
+
+        let hash =
+            2166136261;
+
+        for (
+            let i = 0;
+            i < text.length;
+            i++
+        ) {
+
+            hash ^=
+                text.charCodeAt(i);
+
+            hash =
+                Math.imul(
+                    hash,
+                    16777619
+                );
+        }
+
+        return (
+            hash >>> 0
+        )
+            .toString(16)
+            .padStart(
+                8,
+                "0"
+            );
+    }
+
+    async function persist(
+        key,
+        value
+    ) {
+
+        if (
+            !MEMORY ||
+            typeof MEMORY.write !==
+                "function"
+        ) {
+            return false;
+        }
+
+        try {
+
+            await MEMORY.write(
+                CONFIG.persistenceNamespace,
+                key,
+                value,
+                {
+                    source:
+                        "CHIROMBE_KNOWLEDGE",
+                    protocol:
+                        CONFIG.protocol,
+                    timestamp:
+                        now()
+                }
+            );
+
+            return true;
+
+        } catch (e) {
+
+            console.warn(
+                "[CHIROMBE KNOWLEDGE] Persistence failure:",
+                e
+            );
+
+            return false;
+        }
+    }
+
+    function emit(
+        event,
+        payload
+    ) {
+
+        try {
+
+            if (
+                CORE &&
+                typeof CORE.emit ===
+                    "function"
+            ) {
+
+                CORE.emit(
+                    event,
+                    payload
+                );
+            }
+
+        } catch (e) {}
+    }
+
+    /* ============================================================
+       SOURCE ENGINE
+       ============================================================ */
+
+    async function createSource(
+        source
+    ) {
+
+        source =
+            source || {};
+
+        const record = {
+
+            id:
+                source.id ||
+                uid("SRC"),
+
+            title:
+                source.title ||
+                "Untitled Source",
+
+            type:
+                source.type ||
+                "INTERNAL",
+
+            location:
+                source.location ||
+                null,
+
+            description:
+                source.description ||
+                "",
+
+            provenance:
+                source.provenance ||
+                "UNKNOWN",
+
+            reliability:
+                Number(
+                    source.reliability
+                ) || 0.5,
+
+            timestamp:
+                source.timestamp ||
+                now(),
+
+            metadata:
+                clone(
+                    source.metadata ||
+                    {}
+                )
+        };
+
+        STATE.sources[
+            record.id
+        ] = record;
+
+        const count =
+            Object.keys(
+                STATE.sources
+            ).length;
+
+        if (
+            count >
+            CONFIG.maximumSources
+        ) {
+
+            const keys =
+                Object.keys(
+                    STATE.sources
+                );
+
+            delete STATE.sources[
+                keys[0]
+            ];
+        }
+
+        await persist(
+            "SOURCE_" +
+                record.id,
+            record
+        );
+
+        return clone(record);
+    }
+
+    /* ============================================================
+       CONCEPT ENGINE
+       ============================================================ */
+
+    async function createConcept(
+        input
+    ) {
+
+        input =
+            input || {};
+
+        const name =
+            String(
+                input.name ||
+                input.label ||
+                "Unnamed Concept"
+            )
+                .trim();
+
+        const normalized =
+            normalize(name);
+
+        /*
+         * Avoid unnecessary duplicate concepts.
+         */
+
+        const existingId =
+            Object.keys(
+                STATE.concepts
+            ).find(
+                function (id) {
+
+                    return (
+                        STATE.concepts[id]
+                            .normalized ===
+                        normalized
+                    );
+                }
+            );
+
+        if (existingId) {
+
+            const existing =
+                STATE.concepts[
+                    existingId
+                ];
+
+            if (
+                input.description
+            ) {
+
+                existing.description =
+                    input.description;
+            }
+
+            return clone(existing);
+        }
+
+        const concept = {
+
+            id:
+                input.id ||
+                uid("CON"),
+
+            name:
+                name,
+
+            normalized:
+                normalized,
+
+            description:
+                input.description ||
+                "",
+
+            category:
+                input.category ||
+                "GENERAL",
+
+            tags:
+                unique(
+                    input.tags || []
+                ),
+
+            aliases:
+                unique(
+                    input.aliases || []
+                ),
+
+            confidence:
+                Math.max(
+                    0,
+                    Math.min(
+                        1,
+                        Number(
+                            input.confidence
+                        ) || 0.5
+                    )
+                ),
+
+            status:
+                input.status ||
+                "UNVERIFIED",
+
+            sourceIds:
+                unique(
+                    input.sourceIds || []
+                ),
+
+            metadata:
+                clone(
+                    input.metadata ||
+                    {}
+                ),
+
+            createdAt:
+                now(),
+
+            updatedAt:
+                now(),
+
+            accessCount:
+                0
+        };
+
+        STATE.concepts[
+            concept.id
+        ] = concept;
+
+        STATE.metrics
+            .conceptsCreated++;
+
+        await persist(
+            "CONCEPT_" +
+                concept.id,
+            concept
+        );
+
+        emit(
+            "KNOWLEDGE_CONCEPT_CREATED",
+            concept
+        );
+
+        return clone(concept);
+    }
+
+    /* ============================================================
+       RELATION ENGINE
+       ============================================================ */
+
+    async function createRelation(
+        input
+    ) {
+
+        input =
+            input || {};
+
+        const from =
+            input.from ||
+            input.source;
+
+        const to =
+            input.to ||
+            input.target;
+
+        if (
+            !from ||
+            !to
+        ) {
+
+            throw new Error(
+                "Relation requires source and target."
+            );
+        }
+
+        const relationType =
+            String(
+                input.type ||
+                "RELATED_TO"
+            )
+                .toUpperCase();
+
+        const relation = {
+
+            id:
+                input.id ||
+                uid("REL"),
+
+            from:
+                from,
+
+            to:
+                to,
+
+            type:
+                relationType,
+
+            weight:
+                Math.max(
+                    0,
+                    Math.min(
+                        1,
+                        Number(
+                            input.weight
+                        ) || 0.5
+                    )
+                ),
+
+            confidence:
+                Math.max(
+                    0,
+                    Math.min(
+                        1,
+                        Number(
+                            input.confidence
+                        ) || 0.5
+                    )
+                ),
+
+            bidirectional:
+                input.bidirectional !==
+                    false,
+
+            evidence:
+                clone(
+                    input.evidence ||
+                    []
+                ),
+
+            metadata:
+                clone(
+                    input.metadata ||
+                    {}
+                ),
+
+            createdAt:
+                now(),
+
+            updatedAt:
+                now()
+        };
+
+        STATE.relations[
+            relation.id
+        ] = relation;
+
+        STATE.metrics
+            .relationsCreated++;
+
+        await persist(
+            "RELATION_" +
+                relation.id,
+            relation
+        );
+
+        return clone(relation);
+    }
+
+    /* ============================================================
+       OBSERVATION ENGINE
+       ============================================================ */
+
+    async function recordObservation(
+        input
+    ) {
+
+        input =
+            input || {};
+
+        const observation = {
+
+            id:
+                input.id ||
+                uid("OBS"),
+
+            subject:
+                input.subject ||
+                "SYSTEM",
+
+            type:
+                input.type ||
+                "OBSERVATION",
+
+            content:
+                input.content ||
+                "",
+
+            sourceId:
+                input.sourceId ||
+                null,
+
+            timestamp:
+                input.timestamp ||
+                now(),
+
+            confidence:
+                Math.max(
+                    0,
+                    Math.min(
+                        1,
+                        Number(
+                            input.confidence
+                        ) || 0.5
+                    )
+                ),
+
+            tags:
+                unique(
+                    input.tags || []
+                ),
+
+            metadata:
+                clone(
+                    input.metadata ||
+                    {}
+                )
+        };
+
+        STATE.observations[
+            observation.id
+        ] = observation;
+
+        STATE.metrics
+            .observationsCreated++;
+
+        await persist(
+            "OBSERVATION_" +
+                observation.id,
+            observation
+        );
+
+        emit(
+            "KNOWLEDGE_OBSERVATION",
+            observation
+        );
+
+        return clone(
+            observation
+        );
+    }
+
+    /* ============================================================
+       INDEX ENGINE
+       ============================================================ */
+
+    async function indexConcept(
+        concept
+    ) {
+
+        if (!concept) {
+            return;
+        }
+
+        const terms =
+            unique(
+                [
+                    concept.name,
+                    concept.normalized,
+                    ...(concept.tags || []),
+                    ...(concept.aliases || []),
+                    ...tokenize(
+                        concept.description
+                    )
+                ]
+            );
+
+        terms.forEach(
+            function (term) {
+
+                const key =
+                    normalize(term);
+
+                if (!key) {
+                    return;
+                }
+
+                if (
+                    !STATE.index[key]
+                ) {
+                    STATE.index[key] =
+                        [];
+                }
+
+                if (
+                    STATE.index[key]
+                        .indexOf(
+                            concept.id
+                        ) === -1
+                ) {
+
+                    STATE.index[key]
+                        .push(
+                            concept.id
+                        );
+                }
+            }
+        );
+    }
+
+    async function rebuildIndex() {
+
+        STATE.index = {};
+
+        Object.keys(
+            STATE.concepts
+        ).forEach(
+            function (id) {
+
+                indexConcept(
+                    STATE.concepts[id]
+                );
+            }
+        );
+
+        STATE.lastIndexing =
+            now();
+
+        STATE.metrics
+            .indexCycles++;
+
+        await persist(
+            "INDEX_SNAPSHOT",
+            {
+                timestamp:
+                    now(),
+
+                index:
+                    clone(
+                        STATE.index
+                    )
+            }
+        );
+
+        return {
+            timestamp:
+                STATE.lastIndexing,
+
+            terms:
+                Object.keys(
+                    STATE.index
+                ).length
+        };
+    }
+
+    /* ============================================================
+       SEARCH ENGINE
+       ============================================================ */
+
+    function search(
+        query,
+        options
+    ) {
+
+        options =
+            options || {};
+
+        const q =
+            normalize(query);
+
+        if (!q) {
+            return [];
+        }
+
+        STATE.metrics.searches++;
+
+        const queryTokens =
+            tokenize(q);
+
+        const scored = [];
+
+        Object.keys(
+            STATE.concepts
+        ).forEach(
+            function (id) {
+
+                const concept =
+                    STATE.concepts[id];
+
+                let score =
+                    similarity(
+                        q,
+                        concept.name
+                    );
+
+                const descriptionScore =
+                    similarity(
+                        q,
+                        concept.description
+                    );
+
+                score =
+                    Math.max(
+                        score,
+                        descriptionScore
+                    );
+
+                queryTokens.forEach(
+                    function (token) {
+
+                        if (
+                            concept.tags
+                                .map(
+                                    normalize
+                                )
+                                .indexOf(
+                                    token
+                                ) !== -1
+                        ) {
+
+                            score +=
+                                0.15;
+                        }
+
+                        if (
+                            concept.aliases
+                                .map(
+                                    normalize
+                                )
+                                .indexOf(
+                                    token
+                                ) !== -1
+                        ) {
+
+                            score +=
+                                0.2;
+                        }
+                    }
+                );
+
+                score =
+                    Math.min(
+                        1,
+                        score
+                    );
+
+                if (
+                    score >=
+                    (
+                        Number(
+                            options
+                                .threshold
+                        ) || 0
+                    )
+                ) {
+
+                    scored.push({
+                        concept:
+                            clone(
+                                concept
+                            ),
+
+                        score:
+                            score
+                    });
+                }
+            }
+        );
+
+        scored.sort(
+            function (a, b) {
+
+                return (
+                    b.score -
+                    a.score
+                );
+            }
+        );
+
+        return scored
+            .slice(
+                0,
+                Number(
+                    options.limit
+                ) ||
+                    CONFIG.maximumSearchResults
+            );
+    }
+
+    /* ============================================================
+       GRAPH QUERY
+       ============================================================ */
+
+    function relatedConcepts(
+        conceptId,
+        options
+    ) {
+
+        options =
+            options || {};
+
+        const results = [];
+
+        Object.keys(
+            STATE.relations
+        ).forEach(
+            function (id) {
+
+                const relation =
+                    STATE.relations[id];
+
+                if (
+                    relation.from ===
+                        conceptId
+                    ||
+                    (
+                        relation.bidirectional &&
+                        relation.to ===
+                            conceptId
+                    )
+                ) {
+
+                    results.push({
+                        relation:
+                            clone(
+                                relation
+                            ),
+
+                        concept:
+                            clone(
+                                STATE.concepts[
+                                    relation.to ===
+                                        conceptId
+                                        ? relation.from
+                                        : relation.to
+                                ]
+                            )
+                    });
+                }
+            }
+        );
+
+        return results.slice(
+            0,
+            Number(
+                options.limit
+            ) || 100
+        );
+    }
+
+    /* ============================================================
+       CONCEPT LINKING
+       ============================================================ */
+
+    async function connectConcepts(
+        first,
+        second,
+        type,
+        confidence
+    ) {
+
+        const relation =
+            await createRelation({
+
+                from:
+                    first,
+
+                to:
+                    second,
+
+                type:
+                    type ||
+                    "RELATED_TO",
+
+                confidence:
+                    confidence ||
+                    0.5,
+
+                weight:
+                    confidence ||
+                    0.5,
+
+                bidirectional:
+                    true
+            });
+
+        return relation;
+    }
+
+    /* ============================================================
+       PATTERN DETECTION
+       ============================================================ */
+
+    async function detectPatterns() {
+
+        const observations =
+            Object.values(
+                STATE.observations
+            );
+
+        const patterns = [];
+
+        const buckets = {};
+
+        observations.forEach(
+            function (observation) {
+
+                const key =
+                    normalize(
+                        observation.type
+                    ) +
+                    "::" +
+                    normalize(
+                        observation.subject
+                    );
+
+                if (
+                    !buckets[key]
+                ) {
+
+                    buckets[key] =
+                        [];
+                }
+
+                buckets[key].push(
+                    observation
+                );
+            }
+        );
+
+        Object.keys(
+            buckets
+        ).forEach(
+            function (key) {
+
+                const group =
+                    buckets[key];
+
+                if (
+                    group.length <
+                    2
+                ) {
+                    return;
+                }
+
+                const confidence =
+                    group.reduce(
+                        function (
+                            total,
+                            item
+                        ) {
+
+                            return (
+                                total +
+                                (
+                                    Number(
+                                        item.confidence
+                                    ) || 0
+                                )
+                            );
+                        },
+                        0
+                    ) /
+                    group.length;
+
+                const pattern = {
+
+                    id:
+                        uid("PAT"),
+
+                    key:
+                        key,
+
+                    type:
+                        "RECURRING_OBSERVATION",
+
+                    occurrences:
+                        group.length,
+
+                    confidence:
+                        confidence,
+
+                    observationIds:
+                        group.map(
+                            function (
+                                item
+                            ) {
+
+                                return item.id;
+                            }
+                        ),
+
+                    detectedAt:
+                        now()
+                };
+
+                STATE.patterns[
+                    pattern.id
+                ] = pattern;
+
+                STATE.metrics
+                    .patternsDetected++;
+                
+                patterns.push(
+                    pattern
+                );
+            }
+        );
+
+        for (
+            let i = 0;
+            i < patterns.length;
+            i++
+        ) {
+
+            await persist(
+                "PATTERN_" +
+                    patterns[i].id,
+                patterns[i]
+            );
+        }
+
+        return patterns;
+    }
+
+    /* ============================================================
+       LESSON ENGINE
+       ============================================================ */
+
+    async function createLesson(
+        input
+    ) {
+
+        input =
+            input || {};
+
+        const lesson = {
+
+            id:
+                input.id ||
+                uid("LES"),
+
+            title:
+                input.title ||
+                "Untitled Lesson",
+
+            statement:
+                input.statement ||
+                "",
+
+            basis:
+                input.basis ||
+                "OBSERVATION",
+
+            confidence:
+                Math.max(
+                    0,
+                    Math.min(
+                        1,
+                        Number(
+                            input.confidence
+                        ) || 0.5
+                    )
+                ),
+
+            evidenceIds:
+                unique(
+                    input.evidenceIds ||
+                    []
+                ),
+
+            conceptIds:
+                unique(
+                    input.conceptIds ||
+                    []
+                ),
+
+            status:
+                input.status ||
+                "PROVISIONAL",
+
+            createdAt:
+                now(),
+
+            updatedAt:
+                now(),
+
+            metadata:
+                clone(
+                    input.metadata ||
+                    {}
+                )
+        };
+
+        STATE.lessons[
+            lesson.id
+        ] = lesson;
+
+        STATE.metrics
+            .lessonsCreated++;
+
+        await persist(
+            "LESSON_" +
+                lesson.id,
+            lesson
+        );
+
+        emit(
+            "KNOWLEDGE_LESSON_CREATED",
+            lesson
+        );
+
+        return clone(lesson);
+    }
+
+    /* ============================================================
+       AUTOMATIC LESSON GENERATION
+       ============================================================ */
+
+    async function generateLessons() {
+
+        const generated = [];
+
+        Object.keys(
+            STATE.patterns
+        ).forEach(
+            function (id) {
+
+                const pattern =
+                    STATE.patterns[id];
+
+                if (
+                    pattern.confidence <
+                    CONFIG
+                        .minimumInferenceConfidence
+                ) {
+                    return;
+                }
+
+                const existing =
+                    Object.values(
+                        STATE.lessons
+                    ).some(
+                        function (lesson) {
+
+                            return (
+                                lesson.metadata &&
+                                lesson.metadata
+                                    .patternId ===
+                                pattern.id
+                            );
+                        }
+                    );
+
+                if (existing) {
+                    return;
+                }
+
+                generated.push(
+                    createLesson({
+                        title:
+                            "Pattern-derived lesson",
+
+                        statement:
+                            "Recurring pattern detected in " +
+                            pattern.key,
+
+                        basis:
+                            "PATTERN_ANALYSIS",
+
+                        confidence:
+                            pattern.confidence,
+
+                        evidenceIds:
+                            pattern.observationIds,
+
+                        status:
+                            pattern.confidence >=
+                            CONFIG
+                                .minimumPromotionConfidence
+                                ? "SUPPORTED"
+                                : "PROVISIONAL",
+
+                        metadata: {
+                            patternId:
+                                pattern.id
+                        }
+                    })
+                );
+            }
+        );
+
+        const results =
+            await Promise.all(
+                generated
+            );
+
+        return results;
+    }
+
+    /* ============================================================
+       INFERENCE ENGINE
+       ============================================================ */
+
+    async function infer(
+        query,
+        options
+    ) {
+
+        options =
+            options || {};
+
+        STATE.metrics.inferences++;
+
+        const matches =
+            search(
+                query,
+                {
+                    threshold:
+                        options.threshold ||
+                        0.15,
+
+                    limit:
+                        options.limit ||
+                        20
+                }
+            );
+
+        const supportingRelations =
+            [];
+
+        matches.forEach(
+            function (match) {
+
+                const relations =
+                    relatedConcepts(
+                        match.concept.id,
+                        {
+                            limit:
+                                20
+                        }
+                    );
+
+                relations.forEach(
+                    function (item) {
+
+                        supportingRelations
+                            .push(
+                                item
+                            );
+                    }
+                );
+            }
+        );
+
+        const evidence =
+            matches.map(
+                function (item) {
+
+                    return {
+                        type:
+                            "CONCEPT_MATCH",
+
+                        id:
+                            item.concept.id,
+
+                        score:
+                            item.score
+                    };
+                }
+            );
+
+        const relationEvidence =
+            supportingRelations.map(
+                function (item) {
+
+                    return {
+                        type:
+                            "RELATION",
+
+                        relation:
+                            item.relation,
+
+                        concept:
+                            item.concept
+                    };
+                }
+            );
+
+        const combined =
+            [
+                ...evidence,
+                ...relationEvidence
+            ];
+
+        const confidence =
+            matches.length
+                ? Math.min(
+                    1,
+                    matches.reduce(
+                        function (
+                            total,
+                            item
+                        ) {
+
+                            return (
+                                total +
+                                item.score
+                            );
+                        },
+                        0
+                    ) /
+                    matches.length
+                )
+                : 0;
+
+        const result = {
+
+            id:
+                uid("INF"),
+
+            query:
+                query,
+
+            timestamp:
+                now(),
+
+            confidence:
+                confidence,
+
+            matches:
+                matches,
+
+            evidence:
+                combined,
+
+            interpretation:
+                confidence >=
+                CONFIG
+                    .minimumInferenceConfidence
+                    ? "SUPPORTED_BY_INDEXED_KNOWLEDGE"
+                    : "INSUFFICIENT_EVIDENCE"
+        };
+
+        STATE.inferenceHistory.unshift(
+            result
+        );
+
+        if (
+            STATE.inferenceHistory
+                .length > 500
+        ) {
+
+            STATE.inferenceHistory =
+                STATE.inferenceHistory
+                    .slice(
+                        0,
+                        500
+                    );
+        }
+
+        await persist(
+            "INFERENCE_" +
+                result.id,
+            result
+        );
+
+        return clone(result);
+    }
+
+    /* ============================================================
+       LEARNING FROM SYSTEM
+       ============================================================ */
+
+    async function learnFromSystem() {
+
+        STATE.cycle++;
+
+        const created = {
+
+            concepts:
+                [],
+
+            relations:
+                [],
+
+            observations:
+                []
+        };
+
+        /*
+         * CORE
+         */
+
+        const core =
+            await createConcept({
+
+                name:
+                    "CHIROMBE CORE",
+
+                category:
+                    "SYSTEM",
+
+                description:
+                    "Central runtime coordination layer.",
+
+                confidence:
+                    1,
+
+                status:
+                    "SYSTEM_DEFINED",
+
+                tags: [
+                    "core",
+                    "runtime",
+                    "system"
+                ]
+            });
+
+        created.concepts.push(
+            core
+        );
+
+        /*
+         * MEMORY
+         */
+
+        if (MEMORY) {
+
+            const memory =
+                await createConcept({
+
+                    name:
+                        "CHIROMBE MEMORY",
+
+                    category:
+                        "SYSTEM",
+
+                    description:
+                        "Persistent memory and evolutionary record layer.",
+
+                    confidence:
+                        1,
+
+                    status:
+                        "SYSTEM_DEFINED",
+
+                    tags: [
+                        "memory",
+                        "persistence",
+                        "records"
+                    ]
+                });
+
+            created.concepts.push(
+                memory
+            );
+
+            await connectConcepts(
+                core.id,
+                memory.id,
+                "USES",
+                1
+            );
+        }
+
+        /*
+         * WORKERS
+         */
+
+        if (WORKERS) {
+
+            const workers =
+                await createConcept({
+
+                    name:
+                        "CHIROMBE WORKERS",
+
+                    category:
+                        "SYSTEM",
+
+                    description:
+                        "Task execution and worker orchestration layer.",
+
+                    confidence:
+                        1,
+
+                    status:
+                        "SYSTEM_DEFINED",
+
+                    tags: [
+                        "workers",
+                        "tasks",
+                        "execution"
+                    ]
+                });
+
+            created.concepts.push(
+                workers
+            );
+
+            await connectConcepts(
+                core.id,
+                workers.id,
+                "ORCHESTRATES",
+                1
+            );
+        }
+
+        /*
+         * EVOLUTION
+         */
+
+        if (EVOLUTION) {
+
+            const evolution =
+                await createConcept({
+
+                    name:
+                        "CHIROMBE EVOLUTION",
+
+                    category:
+                        "SYSTEM",
+
+                    description:
+                        "Controlled proposal, experimentation and improvement layer.",
+
+                    confidence:
+                        1,
+
+                    status:
+                        "SYSTEM_DEFINED",
+
+                    tags: [
+                        "evolution",
+                        "experiments",
+                        "improvement"
+                    ]
+                });
+
+            created.concepts.push(
+                evolution
+            );
+
+            await connectConcepts(
+                core.id,
+                evolution.id,
+                "SUPPORTS",
+                1
+            );
+        }
+
+        /*
+         * PATHWAYS
+         */
+
+        if (PATHWAYS) {
+
+            const pathways =
+                await createConcept({
+
+                    name:
+                        "CHIROMBE PATHWAYS",
+
+                    category:
+                        "SYSTEM",
+
+                    description:
+                        "Graph-based pathway and routing intelligence.",
+
+                    confidence:
+                        1,
+
+                    status:
+                        "SYSTEM_DEFINED",
+
+                    tags: [
+                        "pathways",
+                        "graph",
+                        "routing"
+                    ]
+                });
+
+            created.concepts.push(
+                pathways
+            );
+
+            await connectConcepts(
+                core.id,
+                pathways.id,
+                "SUPPORTS",
+                1
+            );
+        }
+
+        /*
+         * WATCHDOG
+         */
+
+        if (WATCHDOG) {
+
+            const watchdog =
+                await createConcept({
+
+                    name:
+                        "CHIROMBE WATCHDOG",
+
+                    category:
+                        "SYSTEM",
+
+                    description:
+                        "Integrity, health monitoring and recovery layer.",
+
+                    confidence:
+                        1,
+
+                    status:
+                        "SYSTEM_DEFINED",
+
+                    tags: [
+                        "watchdog",
+                        "integrity",
+                        "recovery",
+                        "health"
+                    ]
+                });
+
+            created.concepts.push(
+                watchdog
+            );
+
+            await connectConcepts(
+                core.id,
+                watchdog.id,
+                "MONITORED_BY",
+                1
+            );
+        }
+
+        /*
+         * KNOWLEDGE
+         */
+
+        const knowledge =
+            await createConcept({
+
+                name:
+                    "CHIROMBE KNOWLEDGE",
+
+                category:
+                    "SYSTEM",
+
+                description:
+                    "Structured knowledge, relationships, observations and inference layer.",
+
+                confidence:
+                    1,
+
+                status:
+                    "SYSTEM_DEFINED",
+
+                tags: [
+                    "knowledge",
+                    "learning",
+                    "inference"
+                ]
+            });
+
+        created.concepts.push(
+            knowledge
+        );
+
+        await connectConcepts(
+            core.id,
+            knowledge.id,
+            "EXTENDS",
+            1
+        );
+
+        STATE.lastLearning =
+            now();
+
+        STATE.metrics
+            .learningCycles++;
+
+        STATE.learningHistory.push({
+
+            timestamp:
+                now(),
+
+            cycle:
+                STATE.cycle,
+
+            created:
+                clone(created)
+        });
+
+        emit(
+            "KNOWLEDGE_LEARNING_COMPLETE",
+            created
+        );
+
+        return created;
+    }
+
+    /* ============================================================
+       SYSTEM EVENT INGESTION
+       ============================================================ */
+
+    async function ingestEvent(
+        eventName,
+        payload
+    ) {
+
+        const observation =
+            await recordObservation({
+
+                subject:
+                    "SYSTEM",
+
+                type:
+                    eventName ||
+                    "SYSTEM_EVENT",
+
+                content:
+                    JSON.stringify(
+                        payload || {}
+                    ),
+
+                confidence:
+                    0.5,
+
+                metadata: {
+                    source:
+                        "SYSTEM_EVENT"
+                }
+            });
+
+        return observation;
+    }
+
+    /* ============================================================
+       EVOLUTION INGESTION
+       ============================================================ */
+
+    async function ingestEvolution() {
+
+        if (
+            !EVOLUTION
+        ) {
+            return {
+                available:
+                    false
+            };
+        }
+
+        let proposals = [];
+
+        try {
+
+            if (
+                typeof EVOLUTION.proposals ===
+                    "function"
+            ) {
+
+                proposals =
+                    EVOLUTION.proposals();
+            }
+
+        } catch (e) {
+
+            proposals = [];
+        }
+
+        const imported = [];
+
+        if (
+            Array.isArray(
+                proposals
+            )
+        ) {
+
+            for (
+                let i = 0;
+                i < proposals.length;
+                i++
+            ) {
+
+                const proposal =
+                    proposals[i];
+
+                const concept =
+                    await createConcept({
+
+                        name:
+                            proposal.title ||
+                            proposal.id ||
+                            "Evolution Proposal",
+
+                        category:
+                            "EVOLUTION",
+
+                        description:
+                            proposal.description ||
+                            JSON.stringify(
+                                proposal
+                            ),
+
+                        confidence:
+                            Number(
+                                proposal.score
+                            ) || 0.5,
+
+                        status:
+                            "PROPOSED",
+
+                        metadata: {
+                            proposal:
+                                clone(
+                                    proposal
+                                )
+                        }
+                    });
+
+                imported.push(
+                    concept
+                );
+            }
+        }
+
+        return {
+            available:
+                true,
+
+            imported:
+                imported
+        };
+    }
+
+    /* ============================================================
+       PATHWAY INGESTION
+       ============================================================ */
+
+    async function ingestPathways() {
+
+        if (!PATHWAYS) {
+
+            return {
+                available:
+                    false
+            };
+        }
+
+        let status = null;
+
+        try {
+
+            if (
+                typeof PATHWAYS.status ===
+                    "function"
+            ) {
+
+                status =
+                    PATHWAYS.status();
+            }
+
+        } catch (e) {
+
+            status = {
+                error:
+                    e.message
+            };
+        }
+
+        const concept =
+            await createConcept({
+
+                name:
+                    "PATHWAY SYSTEM STATE",
+
+                category:
+                    "PATHWAY",
+
+                description:
+                    "Current pathway intelligence state.",
+
+                confidence:
+                    0.8,
+
+                status:
+                    "OBSERVED",
+
+                metadata: {
+                    status:
+                        clone(status)
+                }
+            });
+
+        return {
+            available:
+                true,
+
+            concept:
+                concept
+        };
+    }
+
+    /* ============================================================
+       KNOWLEDGE ANALYSIS
+       ============================================================ */
+
+    async function analyseKnowledge() {
+
+        const patterns =
+            await detectPatterns();
+
+        const lessons =
+            await generateLessons();
+
+        STATE.lastAnalysis =
+            now();
+
+        STATE.metrics
+            .analysisCycles++;
+
+        return {
+
+            timestamp:
+                now(),
+
+            patterns:
+                patterns,
+
+            lessons:
+                lessons
+        };
+    }
+
+    /* ============================================================
+       AUTONOMOUS CYCLE
+       ============================================================ */
+
+    async function cycle() {
+
+        try {
+
+            await learnFromSystem();
+
+            await ingestEvolution();
+
+            await ingestPathways();
+
+            await rebuildIndex();
+
+            await analyseKnowledge();
+
+        } catch (e) {
+
+            console.error(
+                "[CHIROMBE KNOWLEDGE] Cycle failure:",
+                e
+            );
+
+            emit(
+                "KNOWLEDGE_ERROR",
+                {
+                    message:
+                        e.message
+                }
+            );
+        }
+
+        return status();
+    }
+
+    /* ============================================================
+       SCHEDULER
+       ============================================================ */
+
+    function start() {
+
+        if (
+            STATE.running
+        ) {
+            return;
+        }
+
+        STATE.running =
+            true;
+
+        const learningTimer =
+            setInterval(
+                function () {
+
+                    if (
+                        CONFIG
+                            .automaticLearning
+                    ) {
+
+                        learnFromSystem();
+                    }
+
+                },
+                CONFIG.learningInterval
+            );
+
+        const indexingTimer =
+            setInterval(
+                function () {
+
+                    if (
+                        CONFIG
+                            .automaticIndexing
+                    ) {
+
+                        rebuildIndex();
+                    }
+
+                },
+                CONFIG.indexingInterval
+            );
+
+        const analysisTimer =
+            setInterval(
+                function () {
+
+                    if (
+                        CONFIG
+                            .automaticAnalysis
+                    ) {
+
+                        analyseKnowledge();
+                    }
+
+                },
+                CONFIG.analysisInterval
+            );
+
+        STATE.timers.push(
+            learningTimer,
+            indexingTimer,
+            analysisTimer
+        );
+
+        console.log(
+            "[CHIROMBE KNOWLEDGE] Scheduler online."
+        );
+    }
+
+    function stop() {
+
+        STATE.timers.forEach(
+            function (timer) {
+
+                clearInterval(
+                    timer
+                );
+            }
+        );
+
+        STATE.timers = [];
+
+        STATE.running =
+            false;
+
+        console.log(
+            "[CHIROMBE KNOWLEDGE] Scheduler stopped."
+        );
+    }
+
+    /* ============================================================
+       STATUS
+       ============================================================ */
+
+    function status() {
+
+        return {
+
+            protocol:
+                CONFIG.protocol,
+
+            version:
+                CONFIG.version,
+
+            booted:
+                STATE.booted,
+
+            running:
+                STATE.running,
+
+            uptime:
+                now() -
+                STATE.startedAt,
+
+            cycle:
+                STATE.cycle,
+
+            counts: {
+
+                concepts:
+                    Object.keys(
+                        STATE.concepts
+                    ).length,
+
+                relations:
+                    Object.keys(
+                        STATE.relations
+                    ).length,
+
+                observations:
+                    Object.keys(
+                        STATE.observations
+                    ).length,
+
+                patterns:
+                    Object.keys(
+                        STATE.patterns
+                    ).length,
+
+                lessons:
+                    Object.keys(
+                        STATE.lessons
+                    ).length,
+
+                sources:
+                    Object.keys(
+                        STATE.sources
+                    ).length,
+
+                indexTerms:
+                    Object.keys(
+                        STATE.index
+                    ).length
+            },
+
+            metrics:
+                clone(
+                    STATE.metrics
+                ),
+
+            lastLearning:
+                STATE.lastLearning,
+
+            lastIndexing:
+                STATE.lastIndexing,
+
+            lastAnalysis:
+                STATE.lastAnalysis
+        };
+    }
+
+    /* ============================================================
+       QUERY HELPERS
+       ============================================================ */
+
+    function getConcept(
+        id
+    ) {
+
+        if (
+            !STATE.concepts[id]
+        ) {
+
+            return null;
+        }
+
+        STATE.concepts[id]
+            .accessCount++;
+
+        return clone(
+            STATE.concepts[id]
+        );
+    }
+
+    function getRelation(
+        id
+    ) {
+
+        return clone(
+            STATE.relations[id] ||
+            null
+        );
+    }
+
+    function getLesson(
+        id
+    ) {
+
+        return clone(
+            STATE.lessons[id] ||
+            null
+        );
+    }
+
+    function getPattern(
+        id
+    ) {
+
+        return clone(
+            STATE.patterns[id] ||
+            null
+        );
+    }
+
+    function allConcepts() {
+
+        return Object.values(
+            STATE.concepts
+        ).map(
+            clone
+        );
+    }
+
+    function allRelations() {
+
+        return Object.values(
+            STATE.relations
+        ).map(
+            clone
+        );
+    }
+
+    function allLessons() {
+
+        return Object.values(
+            STATE.lessons
+        ).map(
+            clone
+        );
+    }
+
+    function allPatterns() {
+
+        return Object.values(
+            STATE.patterns
+        ).map(
+            clone
+        );
+    }
+
+    /* ============================================================
+       KNOWLEDGE EXPORT
+       ============================================================ */
+
+    async function exportKnowledge() {
+
+        const packageData = {
+
+            protocol:
+                CONFIG.protocol,
+
+            version:
+                CONFIG.version,
+
+            exportedAt:
+                now(),
+
+            concepts:
+                clone(
+                    STATE.concepts
+                ),
+
+            relations:
+                clone(
+                    STATE.relations
+                ),
+
+            observations:
+                clone(
+                    STATE.observations
+                ),
+
+            patterns:
+                clone(
+                    STATE.patterns
+                ),
+
+            lessons:
+                clone(
+                    STATE.lessons
+                ),
+
+            sources:
+                clone(
+                    STATE.sources
+                )
+        };
+
+        packageData.integrity =
+            await digest(
+                packageData
+            );
+
+        return packageData;
+    }
+
+    /* ============================================================
+       KNOWLEDGE IMPORT
+       ============================================================ */
+
+    async function importKnowledge(
+        packageData
+    ) {
+
+        if (
+            !packageData ||
+            typeof packageData !==
+                "object"
+        ) {
+
+            throw new Error(
+                "Invalid knowledge package."
+            );
+        }
+
+        if (
+            packageData.concepts
+        ) {
+
+            Object.assign(
+                STATE.concepts,
+                clone(
+                    packageData.concepts
+                )
+            );
+        }
+
+        if (
+            packageData.relations
+        ) {
+
+            Object.assign(
+                STATE.relations,
+                clone(
+                    packageData.relations
+                )
+            );
+        }
+
+        if (
+            packageData.observations
+        ) {
+
+            Object.assign(
+                STATE.observations,
+                clone(
+                    packageData.observations
+                )
+            );
+        }
+
+        if (
+            packageData.patterns
+        ) {
+
+            Object.assign(
+                STATE.patterns,
+                clone(
+                    packageData.patterns
+                )
+            );
+        }
+
+        if (
+            packageData.lessons
+        ) {
+
+            Object.assign(
+                STATE.lessons,
+                clone(
+                    packageData.lessons
+                )
+            );
+        }
+
+        if (
+            packageData.sources
+        ) {
+
+            Object.assign(
+                STATE.sources,
+                clone(
+                    packageData.sources
+                )
+            );
+        }
+
+        await rebuildIndex();
+
+        emit(
+            "KNOWLEDGE_IMPORTED",
+            {
+                timestamp:
+                    now()
+            }
+        );
+
+        return status();
+    }
+
+    /* ============================================================
+       PUBLIC COMMAND INTERFACE
+       ============================================================ */
+
+    async function command(
+        action,
+        payload
+    ) {
+
+        payload =
+            payload || {};
+
+        switch (
+            String(action)
+                .toUpperCase()
+        ) {
+
+            case "STATUS":
+
+                return status();
+
+            case "SEARCH":
+
+                return search(
+                    payload.query || "",
+                    payload
+                );
+
+            case "INFER":
+
+                return infer(
+                    payload.query || "",
+                    payload
+                );
+
+            case "LEARN":
+
+                return learnFromSystem();
+
+            case "ANALYSE":
+
+                return analyseKnowledge();
+
+            case "INDEX":
+
+                return rebuildIndex();
+
+            case "PATTERNS":
+
+                return detectPatterns();
+
+            case "LESSONS":
+
+                return allLessons();
+
+            case "CONCEPTS":
+
+                return allConcepts();
+
+            case "RELATIONS":
+
+                return allRelations();
+
+            case "EXPORT":
+
+                return exportKnowledge();
+
+            case "START":
+
+                start();
+
+                return status();
+
+            case "STOP":
+
+                stop();
+
+                return status();
+
+            default:
+
+                return {
+
+                    success:
+                        false,
+
+                    error:
+                        "UNKNOWN_KNOWLEDGE_COMMAND"
+                };
+        }
+    }
+
+    /* ============================================================
+       PUBLIC API
+       ============================================================ */
+
+    const API = {
+
+        protocol:
+            CONFIG.protocol,
+
+        version:
+            CONFIG.version,
+
+        config:
+            CONFIG,
+
+        state:
+            STATE,
+
+        status:
+            status,
+
+        createSource:
+            createSource,
+
+        createConcept:
+            createConcept,
+
+        createRelation:
+            createRelation,
+
+        connect:
+            connectConcepts,
+
+        observe:
+            recordObservation,
+
+        search:
+            search,
+
+        infer:
+            infer,
+
+        related:
+            relatedConcepts,
+
+        createLesson:
+            createLesson,
+
+        patterns:
+            detectPatterns,
+
+        lessons:
+            allLessons,
+
+        concepts:
+            allConcepts,
+
+        relations:
+            allRelations,
+
+        getConcept:
+            getConcept,
+
+        getRelation:
+            getRelation,
+
+        getLesson:
+            getLesson,
+
+        getPattern:
+            getPattern,
+
+        learn:
+            learnFromSystem,
+
+        analyse:
+            analyseKnowledge,
+
+        index:
+            rebuildIndex,
+
+        ingestEvent:
+            ingestEvent,
+
+        ingestEvolution:
+            ingestEvolution,
+
+        ingestPathways:
+            ingestPathways,
+
+        export:
+            exportKnowledge,
+
+        import:
+            importKnowledge,
+
+        command:
+            command,
+
+        cycle:
+            cycle,
+
+        start:
+            start,
+
+        stop:
+            stop
+    };
+
+    /* ============================================================
+       GLOBAL REGISTRATION
+       ============================================================ */
+
+    global.CHIROMBE_KNOWLEDGE =
+        API;
+
+    global.CHIROMBE_KNOWLEDGE_ENGINE =
+        API;
+
+    /* ============================================================
+       EVENT MONITORING
+       ============================================================ */
+
+    function installEventListeners() {
+
+        if (
+            !CORE ||
+            typeof CORE.on !==
+                "function"
+        ) {
+            return;
+        }
+
+        const events = [
+
+            "WATCHDOG_INCIDENT",
+
+            "WATCHDOG_BOOTED",
+
+            "EVOLUTION_DECISION",
+
+            "EVOLUTION_PROPOSAL",
+
+            "PATHWAY_ANALYSIS_COMPLETE",
+
+            "PATHWAY_ROUTE_CREATED",
+
+            "MEMORY_UPDATED",
+
+            "TASK_COMPLETED",
+
+            "TASK_FAILED"
+        ];
+
+        events.forEach(
+            function (eventName) {
+
+                try {
+
+                    CORE.on(
+                        eventName,
+                        function (
+                            payload
+                        ) {
+
+                            ingestEvent(
+                                eventName,
+                                payload
+                            );
+                        }
+                    );
+
+                } catch (e) {}
+            }
+        );
+    }
+
+    /* ============================================================
+       BOOT
+       ============================================================ */
+
+    async function boot() {
+
+        if (
+            STATE.booted
+        ) {
+
+            return API;
+        }
+
+        STATE.booted =
+            true;
+
+        console.log(
+            "================================================"
+        );
+
+        console.log(
+            "CHIROMBE KNOWLEDGE INTELLIGENCE ENGINE"
+        );
+
+        console.log(
+            "Protocol:",
+            CONFIG.protocol
+        );
+
+        console.log(
+            "Version:",
+            CONFIG.version
+        );
+
+        console.log(
+            "Booting structured knowledge layer..."
+        );
+
+        installEventListeners();
+
+        await learnFromSystem();
+
+        await ingestEvolution();
+
+        await ingestPathways();
+
+        await rebuildIndex();
+
+        await analyseKnowledge();
+
+        if (
+            WORKERS &&
+            typeof WORKERS.register ===
+                "function"
+        ) {
+
+            try {
+
+                WORKERS.register(
+                    "KNOWLEDGE_LEARNING",
+                    async function () {
+
+                        return learnFromSystem();
+                    },
+                    {
+                        priority:
+                            70
+                    }
+                );
+
+                WORKERS.register(
+                    "KNOWLEDGE_INDEX",
+                    async function () {
+
+                        return rebuildIndex();
+                    },
+                    {
+                        priority:
+                            65
+                    }
+                );
+
+                WORKERS.register(
+                    "KNOWLEDGE_ANALYSIS",
+                    async function () {
+
+                        return analyseKnowledge();
+                    },
+                    {
+                        priority:
+                            60
+                    }
+                );
+
+                WORKERS.register(
+                    "KNOWLEDGE_INFERENCE",
+                    async function (
+                        payload
+                    ) {
+
+                        return infer(
+                            payload &&
+                            payload.query
+                                ? payload.query
+                                : "",
+                            payload || {}
+                        );
+                    },
+                    {
+                        priority:
+                            55
+                    }
+                );
+
+                WORKERS.register(
+                    "KNOWLEDGE_STATUS",
+                    async function () {
+
+                        return status();
+                    },
+                    {
+                        priority:
+                            50
+                    }
+                );
+
+            } catch (e) {
+
+                console.warn(
+                    "[CHIROMBE KNOWLEDGE] Worker registration issue:",
+                    e.message
+                );
+            }
+        }
+
+        start();
+
+        emit(
+            "KNOWLEDGE_BOOTED",
+            status()
+        );
+
+        console.log(
+            "Knowledge engine online."
+        );
+
+        console.log(
+            "Semantic indexing active."
+        );
+
+        console.log(
+            "Knowledge graph active."
+        );
+
+        console.log(
+            "Learning layer active."
+        );
+
+        console.log(
+            "Inference layer active."
+        );
+
+        console.log(
+            "================================================"
+        );
+
+        return API;
+    }
+
+    /* ============================================================
+       START ENGINE
+       ============================================================ */
+
+    boot().catch(
+        function (e) {
+
+            console.error(
+                "[CHIROMBE KNOWLEDGE] BOOT FAILURE:",
+                e
+            );
+        }
+    );
+
+})(window);
+
+/* ================================================================
+   END CHIROMBE KNOWLEDGE INTELLIGENCE ENGINE
+   ================================================================ */
