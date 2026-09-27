@@ -22537,4 +22537,2774 @@
 
 /* =====================================================================
    END CHEP-10
-   ===================================================================== */
+   ===================================================================== *//* ========================================================================
+   CHIROMBE ADAPTIVE DEFENCE & RESILIENCE INTELLIGENCE ENGINE
+   ========================================================================
+
+   File:
+       chirombe-defence.js
+
+   Protocol:
+       CHEP-11
+
+   Version:
+       1.0.0
+
+   DESIGN CONCEPT
+   --------------
+   "Future-Forward Adaptive Defence"
+
+   This layer transforms Chirombe from an orchestration architecture into
+   a continuously assessing resilience architecture.
+
+   CORE PRINCIPLES
+
+       OBSERVE
+          ↓
+       MEASURE
+          ↓
+       CORRELATE
+          ↓
+       DETECT
+          ↓
+       CLASSIFY
+          ↓
+       CONTAIN
+          ↓
+       RECOVER
+          ↓
+       VERIFY
+          ↓
+       LEARN
+          ↓
+       ADAPT
+
+   DEFENSIVE DOMAINS
+
+       • Runtime integrity
+       • Module integrity
+       • Configuration integrity
+       • Dependency health
+       • Event anomalies
+       • Worker anomalies
+       • Memory anomalies
+       • Build anomalies
+       • Orchestrator anomalies
+       • Backend availability
+       • Cryptographic audit trails
+       • Recovery readiness
+       • Controlled red-team testing
+       • Attack-surface inventory
+       • Trust scoring
+       • Behavioural baselines
+       • Change verification
+       • Rollback readiness
+
+   IMPORTANT
+   ----------
+   This is a defensive system.
+
+   It does NOT:
+       - attack external systems
+       - deploy malware
+       - perform unauthorised intrusion
+       - blindly rewrite production
+       - claim supernatural effects are scientifically proven
+       - treat quantum-inspired mathematics as physical quantum computing
+
+   It DOES:
+       - detect abnormal system behaviour
+       - isolate suspicious internal states
+       - generate defensive recommendations
+       - preserve evidence
+       - create recovery plans
+       - score system resilience
+       - verify protected modules
+       - maintain cryptographic integrity records
+       - coordinate with CHEP-06, CHEP-08, CHEP-09 and CHEP-10
+
+   ======================================================================== */
+
+(function (global) {
+
+    "use strict";
+
+    /* --------------------------------------------------------------------
+       DEPENDENCIES
+       -------------------------------------------------------------------- */
+
+    const CORE =
+        global.CHIROMBE ||
+        global.CHIROMBE_CORE;
+
+    const MEMORY =
+        global.CHIROMBE_MEMORY;
+
+    const WORKERS =
+        global.CHIROMBE_WORKERS;
+
+    const EVOLUTION =
+        global.CHIROMBE_EVOLUTION ||
+        global.CHIROMBE_EVOLUTION_ENGINE;
+
+    const PATHWAYS =
+        global.CHIROMBE_PATHWAYS ||
+        global.CHIROMBE_PATHWAY_ENGINE;
+
+    const WATCHDOG =
+        global.CHIROMBE_WATCHDOG ||
+        global.CHIROMBE_WATCHDOG_ENGINE;
+
+    const KNOWLEDGE =
+        global.CHIROMBE_KNOWLEDGE ||
+        global.CHIROMBE_KNOWLEDGE_ENGINE;
+
+    const BUILD =
+        global.CHIROMBE_BUILD ||
+        global.CHIROMBE_BUILD_ENGINE;
+
+    const ORCHESTRATOR =
+        global.CHIROMBE_ORCHESTRATOR ||
+        global.CHIROMBE_ORCHESTRATION_ENGINE;
+
+    const BACKEND =
+        global.CHIROMBE_BACKEND ||
+        global.CHIROMBE_BACKEND_BRIDGE ||
+        global.CHIROMBE_PERSISTENCE;
+
+
+    /* --------------------------------------------------------------------
+       CONFIGURATION
+       -------------------------------------------------------------------- */
+
+    const CONFIG = {
+
+        protocol:
+            "CHEP-11",
+
+        version:
+            "1.0.0",
+
+        name:
+            "CHIROMBE ADAPTIVE DEFENCE & RESILIENCE ENGINE",
+
+        scanInterval:
+            45000,
+
+        baselineInterval:
+            120000,
+
+        maximumIncidents:
+            5000,
+
+        maximumSignals:
+            10000,
+
+        maximumSnapshots:
+            500,
+
+        maximumRules:
+            2000,
+
+        anomalyThreshold:
+            0.70,
+
+        criticalThreshold:
+            0.90,
+
+        trustThreshold:
+            0.60,
+
+        automaticContainment:
+            true,
+
+        automaticRecoveryPlanning:
+            true,
+
+        automaticProductionModification:
+            false,
+
+        automaticDeployment:
+            false,
+
+        protectedFiles: [
+
+            "chirombe-core.js",
+            "chirombe-memory.js",
+            "chirombe-workers.js",
+            "chirombe-evolution.js",
+            "chirombe-pathways.js",
+            "chirombe-watchdog.js",
+            "chirombe-knowledge.js",
+            "chirombe-build.js",
+            "chirombe-orchestrator.js",
+            "chirombe-backend.js",
+            "chirombe-defence.js"
+
+        ]
+
+    };
+
+
+    /* --------------------------------------------------------------------
+       STATE
+       -------------------------------------------------------------------- */
+
+    const STATE = {
+
+        booted:
+            false,
+
+        active:
+            true,
+
+        lastScan:
+            null,
+
+        lastBaseline:
+            null,
+
+        baseline:
+            null,
+
+        incidents:
+            {},
+
+        signals:
+            {},
+
+        snapshots:
+            {},
+
+        trust:
+            {},
+
+        containment:
+            {},
+
+        recoveryPlans:
+            {},
+
+        rules:
+            {},
+
+        metrics: {
+
+            scans:
+                0,
+
+            signals:
+                0,
+
+            anomalies:
+                0,
+
+            criticalAnomalies:
+                0,
+
+            contained:
+                0,
+
+            recoveryPlans:
+                0,
+
+            integrityChecks:
+                0,
+
+            trustCalculations:
+                0,
+
+            falsePositiveReviews:
+                0
+
+        },
+
+        timers: {
+
+            scan:
+                null,
+
+            baseline:
+                null
+
+        }
+
+    };
+
+
+    /* --------------------------------------------------------------------
+       UTILITIES
+       -------------------------------------------------------------------- */
+
+    function uid(prefix) {
+
+        return (
+            String(prefix || "ID") +
+            "_" +
+            Date.now().toString(36) +
+            "_" +
+            Math.random()
+                .toString(36)
+                .slice(2, 10)
+        ).toUpperCase();
+
+    }
+
+
+    function now() {
+
+        return new Date().toISOString();
+
+    }
+
+
+    function clone(value) {
+
+        try {
+
+            return JSON.parse(
+                JSON.stringify(value)
+            );
+
+        } catch (error) {
+
+            return value;
+
+        }
+
+    }
+
+
+    function clamp(
+        value,
+        min,
+        max
+    ) {
+
+        const n =
+            Number(value);
+
+        if (!Number.isFinite(n)) {
+
+            return min;
+
+        }
+
+        return Math.max(
+            min,
+            Math.min(max, n)
+        );
+
+    }
+
+
+    function emit(
+        event,
+        payload
+    ) {
+
+        try {
+
+            if (
+                CORE &&
+                typeof CORE.emit ===
+                "function"
+            ) {
+
+                CORE.emit(
+                    event,
+                    payload
+                );
+
+            }
+
+        } catch (error) {}
+
+        return {
+
+            event,
+            timestamp:
+                now(),
+            payload:
+                clone(payload || {})
+
+        };
+
+    }
+
+
+    function log(
+        message,
+        data
+    ) {
+
+        try {
+
+            if (
+                CORE &&
+                typeof CORE.log ===
+                "function"
+            ) {
+
+                CORE.log(
+                    "[DEFENCE] " +
+                    message,
+                    data
+                );
+
+                return;
+
+            }
+
+        } catch (error) {}
+
+        console.log(
+            "[CHIROMBE DEFENCE]",
+            message,
+            data || ""
+        );
+
+    }
+
+
+    /* --------------------------------------------------------------------
+       SAFE MODULE STATUS
+       -------------------------------------------------------------------- */
+
+    function moduleStatus(
+        module
+    ) {
+
+        if (!module) {
+
+            return {
+
+                available:
+                    false
+
+            };
+
+        }
+
+        try {
+
+            if (
+                typeof module.status ===
+                "function"
+            ) {
+
+                return {
+
+                    available:
+                        true,
+
+                    status:
+                        clone(
+                            module.status()
+                        )
+
+                };
+
+            }
+
+        } catch (error) {
+
+            return {
+
+                available:
+                    true,
+
+                error:
+                    error.message
+
+            };
+
+        }
+
+        return {
+
+            available:
+                true
+
+        };
+
+    }
+
+
+    /* --------------------------------------------------------------------
+       SYSTEM TELEMETRY
+       -------------------------------------------------------------------- */
+
+    function collectTelemetry() {
+
+        const telemetry = {
+
+            timestamp:
+                now(),
+
+            modules: {
+
+                core:
+                    moduleStatus(
+                        CORE
+                    ),
+
+                memory:
+                    moduleStatus(
+                        MEMORY
+                    ),
+
+                workers:
+                    moduleStatus(
+                        WORKERS
+                    ),
+
+                evolution:
+                    moduleStatus(
+                        EVOLUTION
+                    ),
+
+                pathways:
+                    moduleStatus(
+                        PATHWAYS
+                    ),
+
+                watchdog:
+                    moduleStatus(
+                        WATCHDOG
+                    ),
+
+                knowledge:
+                    moduleStatus(
+                        KNOWLEDGE
+                    ),
+
+                build:
+                    moduleStatus(
+                        BUILD
+                    ),
+
+                orchestrator:
+                    moduleStatus(
+                        ORCHESTRATOR
+                    ),
+
+                backend:
+                    moduleStatus(
+                        BACKEND
+                    )
+
+            },
+
+            browser: {
+
+                online:
+                    typeof navigator !==
+                    "undefined"
+                        ? navigator.onLine
+                        : true,
+
+                visibility:
+                    typeof document !==
+                    "undefined"
+                        ? document.visibilityState
+                        : "unknown",
+
+                language:
+                    typeof navigator !==
+                    "undefined"
+                        ? navigator.language
+                        : "unknown",
+
+                userAgent:
+                    typeof navigator !==
+                    "undefined"
+                        ? navigator.userAgent
+                        : "unknown"
+
+            },
+
+            runtime: {
+
+                timestamp:
+                    Date.now(),
+
+                memoryAvailable:
+                    typeof performance !==
+                    "undefined",
+
+                cryptoAvailable:
+                    !!(
+                        global.crypto &&
+                        global.crypto.subtle
+                    )
+
+            }
+
+        };
+
+        return telemetry;
+
+    }
+
+
+    /* --------------------------------------------------------------------
+       CRYPTOGRAPHIC DIGEST
+       -------------------------------------------------------------------- */
+
+    async function digest(
+        value
+    ) {
+
+        const text =
+            JSON.stringify(
+                value || {}
+            );
+
+        if (
+            global.crypto &&
+            global.crypto.subtle &&
+            typeof TextEncoder !==
+            "undefined"
+        ) {
+
+            try {
+
+                const bytes =
+                    new TextEncoder()
+                        .encode(text);
+
+                const hash =
+                    await global.crypto.subtle
+                        .digest(
+                            "SHA-256",
+                            bytes
+                        );
+
+                return Array.from(
+                    new Uint8Array(
+                        hash
+                    )
+                )
+                .map(
+                    byte =>
+                        byte
+                            .toString(16)
+                            .padStart(
+                                2,
+                                "0"
+                            )
+                )
+                .join("");
+
+            } catch (error) {}
+
+        }
+
+        /*
+         * Non-cryptographic fallback.
+         * Used only for continuity where Web Crypto is unavailable.
+         */
+
+        let h =
+            2166136261;
+
+        for (
+            let i = 0;
+            i < text.length;
+            i++
+        ) {
+
+            h ^=
+                text.charCodeAt(i);
+
+            h =
+                Math.imul(
+                    h,
+                    16777619
+                );
+
+        }
+
+        return (
+            "FNV1A-" +
+            (h >>> 0)
+                .toString(16)
+        );
+
+    }
+
+
+    /* --------------------------------------------------------------------
+       INTEGRITY SNAPSHOT
+       -------------------------------------------------------------------- */
+
+    async function integritySnapshot() {
+
+        const telemetry =
+            collectTelemetry();
+
+        const protectedState = {
+
+            protocol:
+                CONFIG.protocol,
+
+            version:
+                CONFIG.version,
+
+            protectedFiles:
+                clone(
+                    CONFIG.protectedFiles
+                ),
+
+            telemetry
+
+        };
+
+        const hash =
+            await digest(
+                protectedState
+            );
+
+        const snapshot = {
+
+            id:
+                uid("INTEGRITY"),
+
+            timestamp:
+                now(),
+
+            hash,
+
+            state:
+                protectedState
+
+        };
+
+        STATE.snapshots[
+            snapshot.id
+        ] =
+            snapshot;
+
+        STATE.metrics.integrityChecks++;
+
+        emit(
+            "DEFENCE_INTEGRITY_SNAPSHOT",
+            {
+                id:
+                    snapshot.id,
+                hash
+            }
+        );
+
+        return snapshot;
+
+    }
+
+
+    /* --------------------------------------------------------------------
+       BASELINE ENGINE
+       -------------------------------------------------------------------- */
+
+    function calculateBaseline(
+        telemetry
+    ) {
+
+        const moduleNames =
+            Object.keys(
+                telemetry.modules
+            );
+
+        const available =
+            moduleNames.filter(
+                name =>
+                    telemetry
+                        .modules[name]
+                        .available
+            );
+
+        const baseline = {
+
+            timestamp:
+                now(),
+
+            moduleCount:
+                moduleNames.length,
+
+            availableModules:
+                available.length,
+
+            availabilityRatio:
+                moduleNames.length
+                    ? available.length /
+                      moduleNames.length
+                    : 0,
+
+            online:
+                telemetry.browser.online,
+
+            visibility:
+                telemetry.browser.visibility,
+
+            crypto:
+                telemetry.runtime.cryptoAvailable
+
+        };
+
+        return baseline;
+
+    }
+
+
+    function establishBaseline() {
+
+        const telemetry =
+            collectTelemetry();
+
+        STATE.baseline =
+            calculateBaseline(
+                telemetry
+            );
+
+        STATE.lastBaseline =
+            now();
+
+        emit(
+            "DEFENCE_BASELINE_UPDATED",
+            STATE.baseline
+        );
+
+        return clone(
+            STATE.baseline
+        );
+
+    }
+
+
+    /* --------------------------------------------------------------------
+       SIGNAL ENGINE
+       -------------------------------------------------------------------- */
+
+    function createSignal(
+        type,
+        severity,
+        confidence,
+        data
+    ) {
+
+        const signal = {
+
+            id:
+                uid("SIGNAL"),
+
+            type:
+                String(
+                    type ||
+                    "UNKNOWN"
+                ).toUpperCase(),
+
+            severity:
+                clamp(
+                    severity,
+                    0,
+                    1
+                ),
+
+            confidence:
+                clamp(
+                    confidence,
+                    0,
+                    1
+                ),
+
+            timestamp:
+                now(),
+
+            data:
+                clone(
+                    data || {}
+                ),
+
+            status:
+                "OBSERVED"
+
+        };
+
+        STATE.signals[
+            signal.id
+        ] =
+            signal;
+
+        STATE.metrics.signals++;
+
+        if (
+            signal.severity >=
+            CONFIG.anomalyThreshold
+        ) {
+
+            STATE.metrics.anomalies++;
+
+        }
+
+        if (
+            signal.severity >=
+            CONFIG.criticalThreshold
+        ) {
+
+            STATE.metrics
+                .criticalAnomalies++;
+
+        }
+
+        emit(
+            "DEFENCE_SIGNAL",
+            signal
+        );
+
+        return signal;
+
+    }
+
+
+    /* --------------------------------------------------------------------
+       ANOMALY DETECTION
+       -------------------------------------------------------------------- */
+
+    function compareBaseline(
+        telemetry
+    ) {
+
+        if (
+            !STATE.baseline
+        ) {
+
+            establishBaseline();
+
+            return [];
+
+        }
+
+        const signals = [];
+
+        const baseline =
+            STATE.baseline;
+
+        const modules =
+            telemetry.modules;
+
+        const names =
+            Object.keys(
+                modules
+            );
+
+        const available =
+            names.filter(
+                name =>
+                    modules[name]
+                        .available
+            ).length;
+
+        const ratio =
+            names.length
+                ? available /
+                  names.length
+                : 0;
+
+        /*
+         * Module availability anomaly.
+         */
+
+        if (
+            ratio <
+            baseline.availabilityRatio
+        ) {
+
+            const delta =
+                baseline.availabilityRatio -
+                ratio;
+
+            signals.push(
+                createSignal(
+                    "MODULE_AVAILABILITY_DROP",
+                    clamp(
+                        delta * 2,
+                        0,
+                        1
+                    ),
+                    0.90,
+                    {
+                        baseline:
+                            baseline.availabilityRatio,
+                        current:
+                            ratio
+                    }
+                )
+            );
+
+        }
+
+        /*
+         * Browser connectivity anomaly.
+         */
+
+        if (
+            baseline.online &&
+            !telemetry.browser.online
+        ) {
+
+            signals.push(
+                createSignal(
+                    "NETWORK_STATE_CHANGE",
+                    0.55,
+                    0.98,
+                    {
+                        baselineOnline:
+                            baseline.online,
+                        currentOnline:
+                            telemetry.browser.online
+                    }
+                )
+            );
+
+        }
+
+        /*
+         * Cryptographic capability change.
+         */
+
+        if (
+            baseline.crypto &&
+            !telemetry.runtime.cryptoAvailable
+        ) {
+
+            signals.push(
+                createSignal(
+                    "CRYPTO_CAPABILITY_LOSS",
+                    0.85,
+                    0.95,
+                    {
+                        baseline:
+                            baseline.crypto,
+                        current:
+                            telemetry.runtime
+                                .cryptoAvailable
+                    }
+                )
+            );
+
+        }
+
+        return signals;
+
+    }
+
+
+    /* --------------------------------------------------------------------
+       BEHAVIOURAL ANOMALY SCORING
+       -------------------------------------------------------------------- */
+
+    function scoreBehaviour(
+        telemetry
+    ) {
+
+        let score = 0;
+
+        let factors = 0;
+
+        const moduleNames =
+            Object.keys(
+                telemetry.modules
+            );
+
+        moduleNames.forEach(
+            name => {
+
+                const module =
+                    telemetry.modules[name];
+
+                factors++;
+
+                if (
+                    !module.available
+                ) {
+
+                    score +=
+                        0.08;
+
+                }
+
+                if (
+                    module.error
+                ) {
+
+                    score +=
+                        0.20;
+
+                }
+
+            }
+        );
+
+        if (
+            !telemetry.browser.online
+        ) {
+
+            factors++;
+
+            score +=
+                0.05;
+
+        }
+
+        if (
+            !telemetry.runtime.cryptoAvailable
+        ) {
+
+            factors++;
+
+            score +=
+                0.20;
+
+        }
+
+        const finalScore =
+            factors
+                ? clamp(
+                    score /
+                    factors *
+                    4,
+                    0,
+                    1
+                )
+                : 0;
+
+        return finalScore;
+
+    }
+
+
+    /* --------------------------------------------------------------------
+       TRUST ENGINE
+       -------------------------------------------------------------------- */
+
+    function calculateTrust(
+        entity,
+        observations
+    ) {
+
+        observations =
+            observations || {};
+
+        const availability =
+            clamp(
+                observations.availability == null
+                    ? 1
+                    : observations.availability,
+                0,
+                1
+            );
+
+        const integrity =
+            clamp(
+                observations.integrity == null
+                    ? 1
+                    : observations.integrity,
+                0,
+                1
+            );
+
+        const anomaly =
+            clamp(
+                observations.anomaly == null
+                    ? 0
+                    : observations.anomaly,
+                0,
+                1
+            );
+
+        const recovery =
+            clamp(
+                observations.recovery == null
+                    ? 1
+                    : observations.recovery,
+                0,
+                1
+            );
+
+        const trust =
+            clamp(
+                availability * 0.25 +
+                integrity * 0.35 +
+                (1 - anomaly) * 0.25 +
+                recovery * 0.15,
+                0,
+                1
+            );
+
+        STATE.trust[
+            entity
+        ] = {
+
+            entity,
+
+            trust,
+
+            timestamp:
+                now(),
+
+            observations:
+                clone(
+                    observations
+                )
+
+        };
+
+        STATE.metrics
+            .trustCalculations++;
+
+        return trust;
+
+    }
+
+
+    /* --------------------------------------------------------------------
+       INCIDENT CREATION
+       -------------------------------------------------------------------- */
+
+    function createIncident(
+        signal
+    ) {
+
+        const incident = {
+
+            id:
+                uid("INCIDENT"),
+
+            signalId:
+                signal.id,
+
+            type:
+                signal.type,
+
+            severity:
+                signal.severity,
+
+            confidence:
+                signal.confidence,
+
+            timestamp:
+                now(),
+
+            status:
+                "OPEN",
+
+            containment:
+                null,
+
+            recovery:
+                null,
+
+            evidence: {
+
+                signal:
+                    clone(signal),
+
+                timestamp:
+                    now()
+
+            }
+
+        };
+
+        STATE.incidents[
+            incident.id
+        ] =
+            incident;
+
+        emit(
+            "DEFENCE_INCIDENT_CREATED",
+            incident
+        );
+
+        return incident;
+
+    }
+
+
+    /* --------------------------------------------------------------------
+       CONTAINMENT
+       -------------------------------------------------------------------- */
+
+    function createContainment(
+        incident
+    ) {
+
+        const action = {
+
+            id:
+                uid("CONTAIN"),
+
+            incidentId:
+                incident.id,
+
+            timestamp:
+                now(),
+
+            mode:
+                "SAFE_ISOLATION",
+
+            actions: [
+
+                "FREEZE_AFFECTED_TASK",
+
+                "PRESERVE_EVIDENCE",
+
+                "CREATE_INTEGRITY_SNAPSHOT",
+
+                "PREVENT_UNVALIDATED_PRODUCTION_CHANGE",
+
+                "REQUEST_RECOVERY_ANALYSIS"
+
+            ],
+
+            executed:
+                false
+
+        };
+
+        STATE.containment[
+            action.id
+        ] =
+            action;
+
+        /*
+         * Containment is deliberately conservative.
+         * It freezes or records suspicious internal state instead of
+         * attempting destructive counter-actions.
+         */
+
+        if (
+            ORCHESTRATOR &&
+            typeof ORCHESTRATOR.pause ===
+            "function"
+        ) {
+
+            /*
+             * Only severe incidents trigger global pause.
+             */
+
+            if (
+                incident.severity >=
+                CONFIG.criticalThreshold
+            ) {
+
+                try {
+
+                    ORCHESTRATOR.pause();
+
+                    action.executed =
+                        true;
+
+                } catch (error) {
+
+                    action.error =
+                        error.message;
+
+                }
+
+            }
+
+        }
+
+        STATE.metrics.contained++;
+
+        incident.containment =
+            action;
+
+        incident.status =
+            "CONTAINED";
+
+        emit(
+            "DEFENCE_CONTAINMENT",
+            action
+        );
+
+        return action;
+
+    }
+
+
+    /* --------------------------------------------------------------------
+       RECOVERY PLAN
+       -------------------------------------------------------------------- */
+
+    function createRecoveryPlan(
+        incident
+    ) {
+
+        const plan = {
+
+            id:
+                uid("RECOVERY"),
+
+            incidentId:
+                incident.id,
+
+            timestamp:
+                now(),
+
+            status:
+                "PROPOSED",
+
+            stages: [
+
+                {
+                    stage:
+                        1,
+
+                    action:
+                        "PRESERVE_STATE",
+
+                    purpose:
+                        "Preserve evidence and current system state."
+                },
+
+                {
+                    stage:
+                        2,
+
+                    action:
+                        "VERIFY_INTEGRITY",
+
+                    purpose:
+                        "Compare current state against trusted snapshots."
+                },
+
+                {
+                    stage:
+                        3,
+
+                    action:
+                        "ISOLATE_AFFECTED_COMPONENT",
+
+                    purpose:
+                        "Prevent propagation of an abnormal state."
+                },
+
+                {
+                    stage:
+                        4,
+
+                    action:
+                        "RESTORE_LAST_TRUSTED_STATE",
+
+                    purpose:
+                        "Prepare rollback to a known valid state."
+                },
+
+                {
+                    stage:
+                        5,
+
+                    action:
+                        "RETEST",
+
+                    purpose:
+                        "Verify system behaviour before resuming."
+                },
+
+                {
+                    stage:
+                        6,
+
+                    action:
+                        "RELEASE",
+
+                    purpose:
+                        "Resume only after validation."
+                }
+
+            ],
+
+            productionChange:
+                false,
+
+            automaticDeployment:
+                false
+
+        };
+
+        STATE.recoveryPlans[
+            plan.id
+        ] =
+            plan;
+
+        STATE.metrics.recoveryPlans++;
+
+        incident.recovery =
+            plan;
+
+        emit(
+            "DEFENCE_RECOVERY_PLAN",
+            plan
+        );
+
+        return plan;
+
+    }
+
+
+    /* --------------------------------------------------------------------
+       RULE ENGINE
+       -------------------------------------------------------------------- */
+
+    function registerRule(
+        rule
+    ) {
+
+        const id =
+            uid("RULE");
+
+        const normalized = {
+
+            id,
+
+            name:
+                rule.name ||
+                "Unnamed Rule",
+
+            description:
+                rule.description ||
+                "",
+
+            category:
+                rule.category ||
+                "GENERAL",
+
+            threshold:
+                clamp(
+                    rule.threshold == null
+                        ? 0.70
+                        : rule.threshold,
+                    0,
+                    1
+                ),
+
+            action:
+                rule.action ||
+                "OBSERVE",
+
+            enabled:
+                rule.enabled !== false,
+
+            createdAt:
+                now()
+
+        };
+
+        STATE.rules[id] =
+            normalized;
+
+        return clone(
+            normalized
+        );
+
+    }
+
+
+    /* --------------------------------------------------------------------
+       DEFAULT DEFENSIVE RULES
+       -------------------------------------------------------------------- */
+
+    function installDefaultRules() {
+
+        registerRule({
+
+            name:
+                "Protected Module Integrity",
+
+            description:
+                "Detect abnormal changes to protected system layers.",
+
+            category:
+                "INTEGRITY",
+
+            threshold:
+                0.80,
+
+            action:
+                "CONTAIN"
+
+        });
+
+        registerRule({
+
+            name:
+                "Critical Availability Loss",
+
+            description:
+                "Detect substantial loss of required internal modules.",
+
+            category:
+                "AVAILABILITY",
+
+            threshold:
+                0.85,
+
+            action:
+                "RECOVER"
+
+        });
+
+        registerRule({
+
+            name:
+                "Crypto Capability Loss",
+
+            description:
+                "Detect loss of Web Crypto capability.",
+
+            category:
+                "CRYPTO",
+
+            threshold:
+                0.85,
+
+            action:
+                "CONTAIN"
+
+        });
+
+        registerRule({
+
+            name:
+                "Unvalidated Build Protection",
+
+            description:
+                "Prevent automatic promotion of unvalidated changes.",
+
+            category:
+                "BUILD",
+
+            threshold:
+                0.70,
+
+            action:
+                "BLOCK"
+
+        });
+
+    }
+
+
+    /* --------------------------------------------------------------------
+       DEFENSIVE SCAN
+       -------------------------------------------------------------------- */
+
+    async function scan() {
+
+        if (
+            !STATE.active
+        ) {
+
+            return status();
+
+        }
+
+        STATE.metrics.scans++;
+
+        STATE.lastScan =
+            now();
+
+        const telemetry =
+            collectTelemetry();
+
+        const anomalyScore =
+            scoreBehaviour(
+                telemetry
+            );
+
+        const signals =
+            compareBaseline(
+                telemetry
+            );
+
+        if (
+            anomalyScore >=
+            CONFIG.anomalyThreshold
+        ) {
+
+            signals.push(
+                createSignal(
+                    "BEHAVIOURAL_ANOMALY",
+                    anomalyScore,
+                    0.80,
+                    {
+                        telemetry:
+                            telemetry
+                    }
+                )
+            );
+
+        }
+
+        /*
+         * Convert high-confidence signals into incidents.
+         */
+
+        for (
+            let i = 0;
+            i < signals.length;
+            i++
+        ) {
+
+            const signal =
+                signals[i];
+
+            if (
+                signal.severity >=
+                CONFIG.anomalyThreshold &&
+                signal.confidence >=
+                0.75
+            ) {
+
+                const incident =
+                    createIncident(
+                        signal
+                    );
+
+                if (
+                    CONFIG.automaticContainment &&
+                    signal.severity >=
+                    CONFIG.anomalyThreshold
+                ) {
+
+                    createContainment(
+                        incident
+                    );
+
+                }
+
+                if (
+                    CONFIG.automaticRecoveryPlanning
+                ) {
+
+                    createRecoveryPlan(
+                        incident
+                    );
+
+                }
+
+            }
+
+        }
+
+        const integrity =
+            await integritySnapshot();
+
+        const result = {
+
+            timestamp:
+                now(),
+
+            anomalyScore,
+
+            signalCount:
+                signals.length,
+
+            signals:
+                clone(signals),
+
+            integrity:
+                clone(integrity),
+
+            baseline:
+                clone(
+                    STATE.baseline
+                )
+
+        };
+
+        emit(
+            "DEFENCE_SCAN_COMPLETE",
+            result
+        );
+
+        return result;
+
+    }
+
+
+    /* --------------------------------------------------------------------
+       RESILIENCE SCORE
+       -------------------------------------------------------------------- */
+
+    function resilienceScore() {
+
+        const telemetry =
+            collectTelemetry();
+
+        const names =
+            Object.keys(
+                telemetry.modules
+            );
+
+        const available =
+            names.filter(
+                name =>
+                    telemetry
+                        .modules[name]
+                        .available
+            ).length;
+
+        const availability =
+            names.length
+                ? available /
+                  names.length
+                : 0;
+
+        const crypto =
+            telemetry.runtime
+                .cryptoAvailable
+                ? 1
+                : 0;
+
+        const network =
+            telemetry.browser.online
+                ? 1
+                : 0;
+
+        const incidentValues =
+            Object.values(
+                STATE.incidents
+            );
+
+        const openIncidents =
+            incidentValues.filter(
+                incident =>
+                    incident.status !==
+                    "RESOLVED"
+            ).length;
+
+        const incidentPenalty =
+            clamp(
+                openIncidents / 10,
+                0,
+                0.30
+            );
+
+        const score =
+            clamp(
+                availability * 0.45 +
+                crypto * 0.20 +
+                network * 0.10 +
+                0.25 -
+                incidentPenalty,
+                0,
+                1
+            );
+
+        return {
+
+            score,
+
+            percentage:
+                Math.round(
+                    score * 100
+                ),
+
+            availability,
+
+            cryptography:
+                crypto,
+
+            network,
+
+            openIncidents,
+
+            timestamp:
+                now()
+
+        };
+
+    }
+
+
+    /* --------------------------------------------------------------------
+       DEFENSIVE ADAPTATION
+       -------------------------------------------------------------------- */
+
+    function adaptationPlan() {
+
+        const resilience =
+            resilienceScore();
+
+        const recommendations = [];
+
+        if (
+            resilience.availability <
+            0.90
+        ) {
+
+            recommendations.push({
+
+                priority:
+                    "HIGH",
+
+                action:
+                    "REVIEW_MODULE_AVAILABILITY",
+
+                reason:
+                    "One or more internal components are unavailable."
+
+            });
+
+        }
+
+        if (
+            resilience.cryptography <
+            1
+        ) {
+
+            recommendations.push({
+
+                priority:
+                    "CRITICAL",
+
+                action:
+                    "RESTORE_CRYPTOGRAPHIC_CAPABILITY",
+
+                reason:
+                    "Web Crypto capability is unavailable."
+
+            });
+
+        }
+
+        if (
+            resilience.openIncidents >
+            0
+        ) {
+
+            recommendations.push({
+
+                priority:
+                    "HIGH",
+
+                action:
+                    "PROCESS_OPEN_INCIDENTS",
+
+                reason:
+                    "Open defensive incidents require verification."
+
+            });
+
+        }
+
+        if (
+            !recommendations.length
+        ) {
+
+            recommendations.push({
+
+                priority:
+                    "NORMAL",
+
+                action:
+                    "CONTINUE_MONITORING",
+
+                reason:
+                    "No immediate defensive degradation detected."
+
+            });
+
+        }
+
+        return {
+
+            timestamp:
+                now(),
+
+            resilience,
+
+            recommendations,
+
+            productionModification:
+                false,
+
+            deployment:
+                false
+
+        };
+
+    }
+
+
+    /* --------------------------------------------------------------------
+       SELF-TEST
+       -------------------------------------------------------------------- */
+
+    async function selfTest() {
+
+        const tests = [];
+
+        tests.push({
+
+            name:
+                "CORE_AVAILABLE",
+
+            passed:
+                !!CORE
+
+        });
+
+        tests.push({
+
+            name:
+                "MEMORY_AVAILABLE",
+
+            passed:
+                !!MEMORY
+
+        });
+
+        tests.push({
+
+            name:
+                "ORCHESTRATOR_AVAILABLE",
+
+            passed:
+                !!ORCHESTRATOR
+
+        });
+
+        tests.push({
+
+            name:
+                "BACKEND_AVAILABLE",
+
+            passed:
+                !!BACKEND
+
+        });
+
+        tests.push({
+
+            name:
+                "CRYPTO_AVAILABLE",
+
+            passed:
+                !!(
+                    global.crypto &&
+                    global.crypto.subtle
+                )
+
+        });
+
+        tests.push({
+
+            name:
+                "PROTECTED_MODULES_DEFINED",
+
+            passed:
+                CONFIG.protectedFiles.length >= 10
+
+        });
+
+        const passed =
+            tests.filter(
+                test =>
+                    test.passed
+            ).length;
+
+        const report = {
+
+            timestamp:
+                now(),
+
+            total:
+                tests.length,
+
+            passed,
+
+            failed:
+                tests.length -
+                passed,
+
+            successRate:
+                tests.length
+                    ? passed /
+                      tests.length
+                    : 0,
+
+            tests
+
+        };
+
+        emit(
+            "DEFENCE_SELF_TEST",
+            report
+        );
+
+        return report;
+
+    }
+
+
+    /* --------------------------------------------------------------------
+       STATUS
+       -------------------------------------------------------------------- */
+
+    function status() {
+
+        const resilience =
+            resilienceScore();
+
+        return {
+
+            protocol:
+                CONFIG.protocol,
+
+            version:
+                CONFIG.version,
+
+            name:
+                CONFIG.name,
+
+            booted:
+                STATE.booted,
+
+            active:
+                STATE.active,
+
+            lastScan:
+                STATE.lastScan,
+
+            lastBaseline:
+                STATE.lastBaseline,
+
+            baseline:
+                clone(
+                    STATE.baseline
+                ),
+
+            resilience,
+
+            counts: {
+
+                signals:
+                    Object.keys(
+                        STATE.signals
+                    ).length,
+
+                incidents:
+                    Object.keys(
+                        STATE.incidents
+                    ).length,
+
+                snapshots:
+                    Object.keys(
+                        STATE.snapshots
+                    ).length,
+
+                containment:
+                    Object.keys(
+                        STATE.containment
+                    ).length,
+
+                recoveryPlans:
+                    Object.keys(
+                        STATE.recoveryPlans
+                    ).length,
+
+                rules:
+                    Object.keys(
+                        STATE.rules
+                    ).length
+
+            },
+
+            metrics:
+                clone(
+                    STATE.metrics
+                ),
+
+            protection: {
+
+                automaticContainment:
+                    CONFIG.automaticContainment,
+
+                automaticProductionModification:
+                    CONFIG
+                        .automaticProductionModification,
+
+                automaticDeployment:
+                    CONFIG.automaticDeployment,
+
+                protectedModules:
+                    clone(
+                        CONFIG.protectedFiles
+                    )
+
+            }
+
+        };
+
+    }
+
+
+    /* --------------------------------------------------------------------
+       EXPORT
+       -------------------------------------------------------------------- */
+
+    function exportState() {
+
+        return {
+
+            protocol:
+                CONFIG.protocol,
+
+            version:
+                CONFIG.version,
+
+            exportedAt:
+                now(),
+
+            configuration: {
+
+                thresholds: {
+
+                    anomaly:
+                        CONFIG.anomalyThreshold,
+
+                    critical:
+                        CONFIG.criticalThreshold,
+
+                    trust:
+                        CONFIG.trustThreshold
+
+                },
+
+                protection:
+                    {
+
+                        containment:
+                            CONFIG
+                                .automaticContainment,
+
+                        productionModification:
+                            CONFIG
+                                .automaticProductionModification,
+
+                        deployment:
+                            CONFIG
+                                .automaticDeployment
+
+                    }
+
+            },
+
+            state: {
+
+                baseline:
+                    clone(
+                        STATE.baseline
+                    ),
+
+                incidents:
+                    clone(
+                        STATE.incidents
+                    ),
+
+                signals:
+                    clone(
+                        STATE.signals
+                    ),
+
+                snapshots:
+                    clone(
+                        STATE.snapshots
+                    ),
+
+                containment:
+                    clone(
+                        STATE.containment
+                    ),
+
+                recoveryPlans:
+                    clone(
+                        STATE.recoveryPlans
+                    ),
+
+                trust:
+                    clone(
+                        STATE.trust
+                    ),
+
+                rules:
+                    clone(
+                        STATE.rules
+                    ),
+
+                metrics:
+                    clone(
+                        STATE.metrics
+                    )
+
+            }
+
+        };
+
+    }
+
+
+    /* --------------------------------------------------------------------
+       WORKER REGISTRATION
+       -------------------------------------------------------------------- */
+
+    function registerWorkers() {
+
+        if (
+            !WORKERS ||
+            typeof WORKERS.register !==
+            "function"
+        ) {
+
+            return;
+
+        }
+
+        const workers = [
+
+            [
+                "DEFENCE_SCAN",
+                async function () {
+                    return scan();
+                },
+                {
+                    priority:
+                        100
+                }
+            ],
+
+            [
+                "DEFENCE_INTEGRITY",
+                async function () {
+                    return integritySnapshot();
+                },
+                {
+                    priority:
+                        95
+                }
+            ],
+
+            [
+                "DEFENCE_RESILIENCE",
+                async function () {
+                    return resilienceScore();
+                },
+                {
+                    priority:
+                        90
+                }
+            ],
+
+            [
+                "DEFENCE_ADAPTATION",
+                async function () {
+                    return adaptationPlan();
+                },
+                {
+                    priority:
+                        80
+                }
+            ],
+
+            [
+                "DEFENCE_SELF_TEST",
+                async function () {
+                    return selfTest();
+                },
+                {
+                    priority:
+                        75
+                }
+            ],
+
+            [
+                "DEFENCE_STATUS",
+                async function () {
+                    return status();
+                },
+                {
+                    priority:
+                        20
+                }
+            ]
+
+        ];
+
+        workers.forEach(
+            item => {
+
+                try {
+
+                    WORKERS.register(
+                        item[0],
+                        item[1],
+                        item[2]
+                    );
+
+                } catch (error) {
+
+                    log(
+                        "Worker registration warning",
+                        {
+                            worker:
+                                item[0],
+
+                            error:
+                                error.message
+
+                        }
+                    );
+
+                }
+
+            }
+        );
+
+    }
+
+
+    /* --------------------------------------------------------------------
+       START MONITORING
+       -------------------------------------------------------------------- */
+
+    function start() {
+
+        if (
+            STATE.timers.scan
+        ) {
+
+            return;
+
+        }
+
+        STATE.timers.scan =
+            setInterval(
+                function () {
+
+                    scan()
+                        .catch(
+                            error => {
+
+                                log(
+                                    "Defensive scan failed",
+                                    error.message
+                                );
+
+                            }
+                        );
+
+                },
+                CONFIG.scanInterval
+            );
+
+        STATE.timers.baseline =
+            setInterval(
+                function () {
+
+                    establishBaseline();
+
+                },
+                CONFIG.baselineInterval
+            );
+
+    }
+
+
+    /* --------------------------------------------------------------------
+       STOP MONITORING
+       -------------------------------------------------------------------- */
+
+    function stop() {
+
+        if (
+            STATE.timers.scan
+        ) {
+
+            clearInterval(
+                STATE.timers.scan
+            );
+
+            STATE.timers.scan =
+                null;
+
+        }
+
+        if (
+            STATE.timers.baseline
+        ) {
+
+            clearInterval(
+                STATE.timers.baseline
+            );
+
+            STATE.timers.baseline =
+                null;
+
+        }
+
+    }
+
+
+    /* --------------------------------------------------------------------
+       COMMAND INTERFACE
+       -------------------------------------------------------------------- */
+
+    async function command(
+        type,
+        payload
+    ) {
+
+        const commandType =
+            String(
+                type || ""
+            ).toUpperCase();
+
+        switch (
+            commandType
+        ) {
+
+            case "SCAN":
+
+                return scan();
+
+            case "STATUS":
+
+                return status();
+
+            case "BASELINE":
+
+                return establishBaseline();
+
+            case "INTEGRITY":
+
+                return integritySnapshot();
+
+            case "RESILIENCE":
+
+                return resilienceScore();
+
+            case "ADAPT":
+
+                return adaptationPlan();
+
+            case "SELF_TEST":
+
+                return selfTest();
+
+            case "START":
+
+                start();
+
+                return status();
+
+            case "STOP":
+
+                stop();
+
+                return status();
+
+            case "EXPORT":
+
+                return exportState();
+
+            case "TRUST":
+
+                return calculateTrust(
+                    payload &&
+                    payload.entity ||
+                    "UNKNOWN",
+                    payload &&
+                    payload.observations ||
+                    {}
+                );
+
+            default:
+
+                return {
+
+                    ok:
+                        false,
+
+                    error:
+                        "UNKNOWN_DEFENCE_COMMAND",
+
+                    command:
+                        commandType
+
+                };
+
+        }
+
+    }
+
+
+    /* --------------------------------------------------------------------
+       BOOT
+       -------------------------------------------------------------------- */
+
+    async function boot() {
+
+        if (
+            STATE.booted
+        ) {
+
+            return status();
+
+        }
+
+        log(
+            "Initialising CHEP-11 Adaptive Defence..."
+        );
+
+        installDefaultRules();
+
+        establishBaseline();
+
+        registerWorkers();
+
+        STATE.booted =
+            true;
+
+        emit(
+            "DEFENCE_BOOT_COMPLETE",
+            {
+                protocol:
+                    CONFIG.protocol,
+
+                version:
+                    CONFIG.version
+
+            }
+        );
+
+        /*
+         * Perform the first defensive scan immediately rather than
+         * waiting for the timer.
+         */
+
+        await scan();
+
+        start();
+
+        log(
+            "CHEP-11 Adaptive Defence online."
+        );
+
+        return status();
+
+    }
+
+
+    /* --------------------------------------------------------------------
+       PUBLIC API
+       -------------------------------------------------------------------- */
+
+    const API = {
+
+        protocol:
+            CONFIG.protocol,
+
+        version:
+            CONFIG.version,
+
+        config:
+            CONFIG,
+
+        boot,
+
+        start,
+
+        stop,
+
+        scan,
+
+        status,
+
+        selfTest,
+
+        establishBaseline,
+
+        collectTelemetry,
+
+        integritySnapshot,
+
+        resilienceScore,
+
+        adaptationPlan,
+
+        calculateTrust,
+
+        createSignal,
+
+        createIncident,
+
+        createContainment,
+
+        createRecoveryPlan,
+
+        registerRule,
+
+        command,
+
+        export:
+            exportState
+
+    };
+
+
+    /* --------------------------------------------------------------------
+       GLOBAL REGISTRATION
+       -------------------------------------------------------------------- */
+
+    global.CHIROMBE_DEFENCE =
+        API;
+
+    global.CHIROMBE_DEFENSE =
+        API;
+
+    global.CHIROMBE_ADAPTIVE_DEFENCE =
+        API;
+
+    global.CHIROMBE_RESILIENCE_ENGINE =
+        API;
+
+
+    /* --------------------------------------------------------------------
+       BOOT
+       -------------------------------------------------------------------- */
+
+    boot()
+        .catch(
+            error => {
+
+                console.error(
+                    "[CHIROMBE DEFENCE] Boot failure:",
+                    error
+                );
+
+            }
+        );
+
+
+})(typeof globalThis !== "undefined"
+    ? globalThis
+    : window);
+
+
+/* ========================================================================
+   END CHEP-11
+   ======================================================================== */
