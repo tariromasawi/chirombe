@@ -759,4 +759,1111 @@
     fail("CHIROMBE CORE BOOT FAILURE:", error);
   });
 
+})();/* ============================================================
+   CHIROMBE AUTONOMOUS EVOLUTION ENGINE
+   PERSISTENT EVOLUTIONARY MEMORY — PART 02 / 10
+   Version: 1.0.0
+   Protocol: CHEP-02
+   ============================================================ */
+
+(() => {
+  "use strict";
+
+  const CORE = globalThis.CHIROMBE;
+  const ROOT = globalThis.CHIROMBE_CORE;
+
+  if (!CORE || !ROOT) {
+    console.error(
+      "[CHIROMBE MEMORY] Core kernel not detected."
+    );
+    return;
+  }
+
+  const ENGINE = {
+    name: "CHIROMBE_PERSISTENT_MEMORY",
+    version: "1.0.0",
+    protocol: "CHEP-02",
+
+    namespaces: new Map(),
+    index: new Map(),
+    journal: [],
+    snapshots: [],
+    counters: {
+      writes: 0,
+      reads: 0,
+      updates: 0,
+      deletes: 0,
+      recoveries: 0,
+      snapshots: 0
+    },
+
+    limits: {
+      journal: 10000,
+      snapshots: 500,
+      indexEntries: 20000
+    }
+  };
+
+  /* ============================================================
+     UTILITIES
+     ============================================================ */
+
+  const timestamp = () => Date.now();
+
+  const identity = (prefix = "mem") =>
+    prefix + "_" +
+    Date.now().toString(36) + "_" +
+    Math.random().toString(36).slice(2, 10);
+
+  const clone = value => {
+    try {
+      return JSON.parse(JSON.stringify(value));
+    } catch {
+      return value;
+    }
+  };
+
+  const normalise = value =>
+    typeof value === "string"
+      ? value.trim().toLowerCase()
+      : String(value).toLowerCase();
+
+  const validName = value =>
+    typeof value === "string" &&
+    /^[a-zA-Z0-9_.:-]{1,120}$/.test(value);
+
+  /* ============================================================
+     NAMESPACE MANAGEMENT
+     ============================================================ */
+
+  function createNamespace(name, metadata = {}) {
+
+    if (!validName(name)) {
+      throw new Error(
+        "Invalid memory namespace: " + name
+      );
+    }
+
+    if (!ENGINE.namespaces.has(name)) {
+
+      ENGINE.namespaces.set(name, {
+        name,
+        created: timestamp(),
+        updated: timestamp(),
+        records: new Map(),
+        metadata: clone(metadata)
+      });
+
+      CORE.emit(
+        "memory:namespace_created",
+        { name }
+      );
+    }
+
+    return ENGINE.namespaces.get(name);
+  }
+
+  function namespace(name) {
+    return ENGINE.namespaces.get(name)
+      || createNamespace(name);
+  }
+
+  /* ============================================================
+     RECORD CREATION
+     ============================================================ */
+
+  async function createRecord(
+    namespaceName,
+    key,
+    value,
+    metadata = {}
+  ) {
+
+    const space =
+      namespace(namespaceName);
+
+    const id = identity("record");
+
+    const record = {
+      id,
+      namespace: namespaceName,
+      key,
+      value: clone(value),
+
+      metadata: {
+        ...clone(metadata)
+      },
+
+      version: 1,
+
+      created: timestamp(),
+      updated: timestamp(),
+
+      previous: null,
+      active: true
+    };
+
+    space.records.set(key, record);
+
+    space.updated = timestamp();
+
+    ENGINE.counters.writes++;
+
+    await journal(
+      "CREATE",
+      record
+    );
+
+    indexRecord(record);
+
+    persistNamespace(space);
+
+    return clone(record);
+  }
+
+  /* ============================================================
+     READ
+     ============================================================ */
+
+  function readRecord(
+    namespaceName,
+    key,
+    fallback = null
+  ) {
+
+    ENGINE.counters.reads++;
+
+    const space =
+      ENGINE.namespaces.get(namespaceName);
+
+    if (!space) {
+      return fallback;
+    }
+
+    const record =
+      space.records.get(key);
+
+    return record
+      ? clone(record)
+      : fallback;
+  }
+
+  /* ============================================================
+     WRITE / UPDATE
+     ============================================================ */
+
+  async function write(
+    namespaceName,
+    key,
+    value,
+    metadata = {}
+  ) {
+
+    const space =
+      namespace(namespaceName);
+
+    const existing =
+      space.records.get(key);
+
+    if (!existing) {
+      return createRecord(
+        namespaceName,
+        key,
+        value,
+        metadata
+      );
+    }
+
+    const previous =
+      clone(existing);
+
+    const updated = {
+      ...existing,
+
+      value: clone(value),
+
+      metadata: {
+        ...existing.metadata,
+        ...clone(metadata)
+      },
+
+      version:
+        Number(existing.version || 0) + 1,
+
+      updated: timestamp(),
+
+      previous: previous.id
+    };
+
+    space.records.set(
+      key,
+      updated
+    );
+
+    space.updated = timestamp();
+
+    ENGINE.counters.updates++;
+
+    await journal(
+      "UPDATE",
+      {
+        previous,
+        current: updated
+      }
+    );
+
+    indexRecord(updated);
+
+    persistNamespace(space);
+
+    return clone(updated);
+  }
+
+  /* ============================================================
+     DELETE
+     ============================================================ */
+
+  async function remove(
+    namespaceName,
+    key
+  ) {
+
+    const space =
+      ENGINE.namespaces.get(namespaceName);
+
+    if (!space) return false;
+
+    const existing =
+      space.records.get(key);
+
+    if (!existing) return false;
+
+    existing.active = false;
+    existing.updated = timestamp();
+
+    ENGINE.counters.deletes++;
+
+    await journal(
+      "DELETE",
+      existing
+    );
+
+    space.records.delete(key);
+
+    removeIndexEntries(
+      existing.id
+    );
+
+    persistNamespace(space);
+
+    return true;
+  }
+
+  /* ============================================================
+     INDEXING ENGINE
+     ============================================================ */
+
+  function indexToken(token, recordId) {
+
+    const key =
+      normalise(token);
+
+    if (!key) return;
+
+    if (!ENGINE.index.has(key)) {
+      ENGINE.index.set(
+        key,
+        new Set()
+      );
+    }
+
+    ENGINE.index
+      .get(key)
+      .add(recordId);
+  }
+
+  function indexRecord(record) {
+
+    if (!record) return;
+
+    const tokens = [];
+
+    tokens.push(record.key);
+    tokens.push(record.namespace);
+
+    if (record.metadata) {
+      Object.keys(record.metadata)
+        .forEach(key => {
+          tokens.push(key);
+          tokens.push(
+            record.metadata[key]
+          );
+        });
+    }
+
+    if (
+      typeof record.value === "string"
+    ) {
+      tokens.push(record.value);
+    }
+
+    tokens
+      .join(" ")
+      .split(/[\s,.;:!?()[\]{}]+/)
+      .filter(Boolean)
+      .forEach(token =>
+        indexToken(token, record.id)
+      );
+  }
+
+  function removeIndexEntries(
+    recordId
+  ) {
+
+    for (
+      const [token, ids]
+      of ENGINE.index
+    ) {
+
+      ids.delete(recordId);
+
+      if (!ids.size) {
+        ENGINE.index.delete(token);
+      }
+    }
+  }
+
+  /* ============================================================
+     SEARCH
+     ============================================================ */
+
+  function search(query, options = {}) {
+
+    const limit =
+      Number(options.limit || 50);
+
+    const terms =
+      normalise(query)
+        .split(/\s+/)
+        .filter(Boolean);
+
+    const matches =
+      new Map();
+
+    for (const term of terms) {
+
+      const ids =
+        ENGINE.index.get(term);
+
+      if (!ids) continue;
+
+      for (const id of ids) {
+
+        matches.set(
+          id,
+          (matches.get(id) || 0) + 1
+        );
+      }
+    }
+
+    const results = [];
+
+    for (
+      const [id, score]
+      of matches
+    ) {
+
+      const record =
+        locateRecord(id);
+
+      if (!record) continue;
+
+      results.push({
+        record: clone(record),
+        score
+      });
+    }
+
+    results.sort(
+      (a, b) =>
+        b.score - a.score
+    );
+
+    return results.slice(
+      0,
+      limit
+    );
+  }
+
+  function locateRecord(id) {
+
+    for (
+      const space
+      of ENGINE.namespaces.values()
+    ) {
+
+      for (
+        const record
+        of space.records.values()
+      ) {
+
+        if (record.id === id) {
+          return record;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /* ============================================================
+     EVOLUTION JOURNAL
+     ============================================================ */
+
+  async function journal(
+    action,
+    payload
+  ) {
+
+    const entry = {
+      id: identity("journal"),
+
+      sequence:
+        ENGINE.journal.length + 1,
+
+      action,
+
+      timestamp: timestamp(),
+
+      payload: clone(payload),
+
+      previousHash:
+        ENGINE.journal.length
+          ? ENGINE.journal[
+              ENGINE.journal.length - 1
+            ].hash
+          : null
+    };
+
+    entry.hash =
+      await calculateHash(entry);
+
+    ENGINE.journal.push(entry);
+
+    if (
+      ENGINE.journal.length >
+      ENGINE.limits.journal
+    ) {
+      ENGINE.journal.shift();
+    }
+
+    CORE.emit(
+      "memory:journal",
+      {
+        action,
+        id: entry.id
+      }
+    );
+
+    return entry;
+  }
+
+  async function calculateHash(value) {
+
+    if (
+      crypto &&
+      crypto.subtle &&
+      typeof TextEncoder !==
+        "undefined"
+    ) {
+
+      try {
+
+        const data =
+          new TextEncoder()
+            .encode(
+              JSON.stringify(value)
+            );
+
+        const digest =
+          await crypto.subtle.digest(
+            "SHA-256",
+            data
+          );
+
+        return Array.from(
+          new Uint8Array(digest)
+        )
+          .map(
+            byte =>
+              byte
+                .toString(16)
+                .padStart(2, "0")
+          )
+          .join("");
+
+      } catch {}
+    }
+
+    return String(
+      JSON.stringify(value)
+    )
+      .split("")
+      .reduce(
+        (hash, char) =>
+          ((hash << 5) -
+            hash +
+            char.charCodeAt(0)) |
+          0,
+        0
+      )
+      .toString(16);
+  }
+
+  /* ============================================================
+     SNAPSHOT ENGINE
+     ============================================================ */
+
+  async function createSnapshot(
+    label = "automatic"
+  ) {
+
+    const snapshot = {
+
+      id: identity("snapshot"),
+
+      label,
+
+      timestamp: timestamp(),
+
+      namespaces:
+        exportNamespaces(),
+
+      journalLength:
+        ENGINE.journal.length,
+
+      counters:
+        clone(ENGINE.counters)
+    };
+
+    snapshot.hash =
+      await calculateHash(snapshot);
+
+    ENGINE.snapshots.push(
+      snapshot
+    );
+
+    if (
+      ENGINE.snapshots.length >
+      ENGINE.limits.snapshots
+    ) {
+      ENGINE.snapshots.shift();
+    }
+
+    ENGINE.counters.snapshots++;
+
+    persistSnapshots();
+
+    await journal(
+      "SNAPSHOT",
+      {
+        id: snapshot.id,
+        hash: snapshot.hash
+      }
+    );
+
+    return clone(snapshot);
+  }
+
+  /* ============================================================
+     EXPORT
+     ============================================================ */
+
+  function exportNamespaces() {
+
+    const output = {};
+
+    for (
+      const [
+        name,
+        space
+      ]
+      of ENGINE.namespaces
+    ) {
+
+      output[name] = {
+
+        name: space.name,
+
+        created:
+          space.created,
+
+        updated:
+          space.updated,
+
+        metadata:
+          clone(space.metadata),
+
+        records:
+          Array.from(
+            space.records.values()
+          ).map(clone)
+      };
+    }
+
+    return output;
+  }
+
+  function exportState() {
+
+    return {
+      engine: ENGINE.name,
+
+      version:
+        ENGINE.version,
+
+      exported:
+        timestamp(),
+
+      counters:
+        clone(ENGINE.counters),
+
+      namespaces:
+        exportNamespaces(),
+
+      journal:
+        clone(ENGINE.journal),
+
+      snapshots:
+        clone(ENGINE.snapshots)
+    };
+  }
+
+  /* ============================================================
+     IMPORT / RECOVERY
+     ============================================================ */
+
+  function importState(data) {
+
+    if (!data || typeof data !== "object") {
+      throw new Error(
+        "Invalid memory state"
+      );
+    }
+
+    if (data.namespaces) {
+
+      for (
+        const name
+        of Object.keys(
+          data.namespaces
+        )
+      ) {
+
+        const source =
+          data.namespaces[name];
+
+        const space =
+          createNamespace(
+            name,
+            source.metadata || {}
+          );
+
+        if (
+          Array.isArray(
+            source.records
+          )
+        ) {
+
+          source.records.forEach(
+            record => {
+
+              if (
+                record &&
+                record.key
+              ) {
+
+                space.records.set(
+                  record.key,
+                  record
+                );
+
+                indexRecord(
+                  record
+                );
+              }
+            }
+          );
+        }
+      }
+    }
+
+    if (Array.isArray(data.journal)) {
+      ENGINE.journal =
+        data.journal.slice(
+          -ENGINE.limits.journal
+        );
+    }
+
+    if (
+      Array.isArray(
+        data.snapshots
+      )
+    ) {
+
+      ENGINE.snapshots =
+        data.snapshots.slice(
+          -ENGINE.limits.snapshots
+        );
+    }
+
+    ENGINE.counters.recoveries++;
+
+    CORE.emit(
+      "memory:recovered",
+      {
+        namespaces:
+          ENGINE.namespaces.size
+      }
+    );
+
+    return true;
+  }
+
+  /* ============================================================
+     PERSISTENCE ADAPTER
+     ============================================================ */
+
+  function persistNamespace(
+    space
+  ) {
+
+    const records =
+      Array.from(
+        space.records.values()
+      );
+
+    try {
+
+      localStorage.setItem(
+        "CHIROMBE_MEMORY_NAMESPACE_" +
+          space.name,
+        JSON.stringify({
+          name: space.name,
+          metadata: space.metadata,
+          created: space.created,
+          updated: space.updated,
+          records
+        })
+      );
+
+    } catch (error) {
+
+      console.warn(
+        "[CHIROMBE MEMORY] Namespace persistence unavailable",
+        error
+      );
+    }
+  }
+
+  function persistSnapshots() {
+
+    try {
+
+      localStorage.setItem(
+        "CHIROMBE_MEMORY_SNAPSHOTS",
+        JSON.stringify(
+          ENGINE.snapshots
+        )
+      );
+
+    } catch {}
+  }
+
+  function recoverLocalStorage() {
+
+    try {
+
+      for (
+        let i = 0;
+        i < localStorage.length;
+        i++
+      ) {
+
+        const key =
+          localStorage.key(i);
+
+        if (
+          !key ||
+          !key.startsWith(
+            "CHIROMBE_MEMORY_NAMESPACE_"
+          )
+        ) {
+          continue;
+        }
+
+        const raw =
+          localStorage.getItem(key);
+
+        const data =
+          JSON.parse(raw);
+
+        if (!data.name) continue;
+
+        const space =
+          createNamespace(
+            data.name,
+            data.metadata || {}
+          );
+
+        if (
+          Array.isArray(
+            data.records
+          )
+        ) {
+
+          data.records.forEach(
+            record => {
+
+              if (
+                record &&
+                record.key
+              ) {
+
+                space.records.set(
+                  record.key,
+                  record
+                );
+
+                indexRecord(
+                  record
+                );
+              }
+            }
+          );
+        }
+      }
+
+      const snapshotRaw =
+        localStorage.getItem(
+          "CHIROMBE_MEMORY_SNAPSHOTS"
+        );
+
+      if (snapshotRaw) {
+
+        const snapshots =
+          JSON.parse(
+            snapshotRaw
+          );
+
+        if (
+          Array.isArray(
+            snapshots
+          )
+        ) {
+          ENGINE.snapshots =
+            snapshots;
+        }
+      }
+
+    } catch (error) {
+
+      console.warn(
+        "[CHIROMBE MEMORY] Recovery warning:",
+        error
+      );
+    }
+  }
+
+  /* ============================================================
+     AUTOMATIC MEMORY WORKER
+     ============================================================ */
+
+  CORE.registerWorker(
+    "MEMORY_SNAPSHOT",
+    async payload => {
+
+      return createSnapshot(
+        payload?.label ||
+          "worker"
+      );
+    },
+    {
+      system: true,
+      subsystem: ENGINE.name
+    }
+  );
+
+  CORE.registerWorker(
+    "MEMORY_SEARCH",
+    async payload => {
+
+      return search(
+        payload?.query || "",
+        payload?.options || {}
+      );
+    },
+    {
+      system: true,
+      subsystem: ENGINE.name
+    }
+  );
+
+  /* ============================================================
+     PUBLIC MEMORY API
+     ============================================================ */
+
+  const API = {
+
+    name: ENGINE.name,
+
+    version:
+      ENGINE.version,
+
+    createNamespace,
+
+    write,
+
+    read: readRecord,
+
+    delete: remove,
+
+    search,
+
+    snapshot:
+      createSnapshot,
+
+    export:
+      exportState,
+
+    import:
+      importState,
+
+    journal() {
+      return clone(
+        ENGINE.journal
+      );
+    },
+
+    snapshots() {
+      return clone(
+        ENGINE.snapshots
+      );
+    },
+
+    namespaces() {
+      return Array.from(
+        ENGINE.namespaces.keys()
+      );
+    },
+
+    statistics() {
+
+      let records = 0;
+
+      for (
+        const space
+        of ENGINE.namespaces.values()
+      ) {
+        records +=
+          space.records.size;
+      }
+
+      return {
+
+        engine:
+          ENGINE.name,
+
+        version:
+          ENGINE.version,
+
+        namespaces:
+          ENGINE.namespaces.size,
+
+        records,
+
+        indexTerms:
+          ENGINE.index.size,
+
+        journal:
+          ENGINE.journal.length,
+
+        snapshots:
+          ENGINE.snapshots.length,
+
+        counters:
+          clone(
+            ENGINE.counters
+          )
+      };
+    }
+  };
+
+  /* ============================================================
+     GLOBAL REGISTRATION
+     ============================================================ */
+
+  globalThis.CHIROMBE_MEMORY =
+    API;
+
+  CORE.registerModule(
+    "PERSISTENT_MEMORY",
+    API,
+    {
+      version:
+        ENGINE.version,
+
+      protocol:
+        ENGINE.protocol,
+
+      purpose:
+        "Persistent evolutionary memory, indexing, journaling and recovery"
+    }
+  );
+
+  /* ============================================================
+     INITIAL MEMORY STRUCTURE
+     ============================================================ */
+
+  [
+    "SYSTEM",
+    "EVOLUTION",
+    "KNOWLEDGE",
+    "WORKERS",
+    "PATHWAYS",
+    "INTEGRITY",
+    "DECISIONS",
+    "EXPERIMENTS",
+    "RECOVERY"
+  ].forEach(name =>
+    createNamespace(name)
+  );
+
+  recoverLocalStorage();
+
+  API.write(
+    "SYSTEM",
+    "memory_engine",
+    {
+      status: "ONLINE",
+      protocol:
+        ENGINE.protocol,
+      activated:
+        timestamp()
+    },
+    {
+      type: "system",
+      permanent: true
+    }
+  );
+
+  CORE.emit(
+    "memory:online",
+    API.statistics()
+  );
+
+  console.log(
+    "[CHIROMBE MEMORY] Persistent memory engine ONLINE."
+  );
+
 })();
