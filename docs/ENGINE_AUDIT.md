@@ -135,6 +135,9 @@ Canonical roster: `data/family.json` (House of Masawi). `ChirombeCore` keeps a f
 
 Conflict, left untouched: Tarry is `spouse` in `data/family.json` and the core fallback, and `son` in `js/zcca.js` and `docs/DATA_MODEL.md`.
 
+Superseded on 2026-09-27 by an explicit owner statement: Tarry is his son. The spouse label is kept as `previousGeneration`. Nobody was removed.
+
+
 ## Q. Intention / resonance
 
 `MwarindiCovenant` is an additive symbolic reminder (`Mwari ndi Mwari. Zvapera.`). Liturgy scripts compose prayer text. `ChirombeResonance` is a user-gesture oscillator at 136.1 Hz and its own comment says it is not a curse-removal frequency. These stay symbolic or acoustic. The engine does not claim supernatural causation.

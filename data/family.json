@@ -9,7 +9,7 @@
     {"id":"FAM-F-SABASTIAN","name":"Sabastian Karumekangu Masawi","generation":"father","role":"PARENT","protect":true},
     {"id":"FAM-M-RISTO","name":"Risto Kasirori Masawi","generation":"mother","role":"PARENT","protect":true},
     {"id":"FAM-SELF-TARIRO","name":"HRH Saint Tariro Masawi","generation":"self","role":"CORE","protect":true},
-    {"id":"FAM-SP-TARRY","name":"HRH Tarry Kupakwashe Masawi","generation":"spouse","role":"CORE","protect":true},
+    {"id":"FAM-SP-TARRY","name":"HRH Tarry Kupakwashe Masawi","alsoKnownAs":["Tarry"],"generation":"son","previousGeneration":"spouse","role":"CORE","protect":true,"lineageCorrection":{"from":"spouse","to":"son","of":"HRH Saint Tariro Masawi","authority":"explicit statement by HRH Saint Tariro Masawi","idPreserved":"FAM-SP-TARRY","personRemoved":false}},
     {"id":"FAM-BR-TENDERAYI","name":"Tenderayi","generation":"brother","role":"SIBLING","protect":true},
     {"id":"FAM-BR-SILENT","name":"Silent","generation":"brother","role":"SIBLING","protect":true},
     {"id":"FAM-BR-TRYMORE","name":"Trymore","generation":"brother","role":"SIBLING","protect":true},
@@ -34,5 +34,8 @@
     ["Risto Kasirori Masawi","Abigail"],["Risto Kasirori Masawi","Corinna"],
     ["HRH Saint Tariro Masawi","HRH Tarry Kupakwashe Masawi"],
     ["House of Masawi","Descendants of the House — named and unnamed"]
+  ],
+  "lineageNotes": [
+    {"subject":"HRH Tarry Kupakwashe Masawi","alsoKnownAs":["Tarry"],"relation":"son","of":"HRH Saint Tariro Masawi","previousLabel":"spouse","resolved":"2026-09-27","personRemoved":false}
   ]
 }

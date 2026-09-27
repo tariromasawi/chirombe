@@ -133,7 +133,7 @@
       { status: "KNOWN", confidence: 0.95, category: "architecture", description: "Live browser core is js/*.js plus app.html. The file named 'chirombe engine' is not referenced by any HTML page.", source: "repository-audit", provenance: "file scan 2026-09-27" },
       { status: "KNOWN", confidence: 0.99, category: "integrity", description: "chirombe engine does not parse: a git rejection sentence is spliced at line 1869.", source: "node --check", provenance: "syntax check" },
       { status: "KNOWN", confidence: 0.9, category: "bus", description: "js/command-bus.js was syntactically broken (unclosed registerCommand). A one-brace repair restored the existing bus. No commands were renamed.", source: "repository-audit", provenance: "node --check before and after" },
-      { status: "CONFLICTING", confidence: 0.9, category: "bloodline", description: "Tarry is spouse in data/family.json and ChirombeCore fallback, and son in js/zcca.js and docs/DATA_MODEL.md. Records were not edited.", source: "repository-audit", provenance: "cross-file comparison" },
+      { status: "KNOWN", confidence: 1, category: "bloodline", description: "HRH Tarry Kupakwashe Masawi, also known as Tarry, is the son of HRH Saint Tariro Masawi. An earlier spouse label is retained as previousGeneration. No person was removed.", source: "explicit owner statement 2026-09-27", provenance: "data/family.json lineageCorrection" },
       { status: "KNOWN", confidence: 0.85, category: "security", description: "No API keys or private keys were found in repository JavaScript. Zion HMAC key is generated in-session.", source: "repository-audit", provenance: "secret scan" },
       { status: "UNVERIFIED", confidence: 0.4, category: "backend", description: "No production backend URL is configured. Static JSON is the public data surface.", source: "repository-audit", provenance: "docs/ENDPOINTS.md" },
       { status: "KNOWN", confidence: 0.8, category: "duplicate", description: "Family rosters are repeated in data/family.json, ChirombeCore, ZCCA, and several workers. They are preserved, not merged by deletion.", source: "repository-audit", provenance: "file scan" }
@@ -146,7 +146,7 @@
     adapters.evolution.propose({ summary: "Do not execute the preserved chirombe engine artifact until it is split into parseable modules with a rollback.", hypothesis: "Loading it would throw at line 1869 and could disturb the live pages.", action: "KEEP_PRESERVED" });
     adapters.evolution.propose({ summary: "Missing files named inside the artifact (chirombe-memory.js and the rest) should be created only as adapters around live globals, never as silent replacements.", hypothesis: "The live equivalents already exist under different names.", action: "ADAPTERS_ONLY" });
     adapters.evolution.propose({ summary: "ZionProtectionCore drops audit entries after 400. That conflicts with NO_HISTORY_ERASURE.", hypothesis: "An archive key could hold overflow later.", action: "REVIEW_ONLY" });
-    adapters.evolution.propose({ summary: "Tarry relation conflict stays unresolved until an explicit data operation.", hypothesis: "Choosing spouse or son here would overwrite a preserved record.", action: "REPORT_CONFLICTING" });
+    adapters.evolution.propose({ summary: "Tarry is recorded as son. The old spouse label remains on the same record as previousGeneration.", hypothesis: "The owner resolved the conflict. Deleting the old label would hide the correction.", action: "RECORDED" });
   }
 
   function seedRecovery() {

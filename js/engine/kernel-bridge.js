@@ -20,7 +20,7 @@
     "workers/covenant-worker.js"
   ];
 
-  function sanitize(source) {
+  function sanitize(source, part03) {
     var text = String(source);
     var notes = [];
     var splice = "})();Expected branch to point to\n\"c39d86f66b64819e711634fec3a4e02c026a44\n66\" but it did not. Pull and try again.";
@@ -61,10 +61,20 @@
     if (text.indexOf(entityAnchor) < 0) throw new Error("CHEP17_ANCHOR_MISSING");
     text = text.replace(entityAnchor, "(function(global){\n\n\"use strict\";\n\nconst VERSION = \"1.0.0\";\n\n/* =========================================================================\n   01 — ENTITY IDENTITY\n   ========================================================================= */");
     notes.push("CHEP17_VERSION_SHIM");
+    if (part03) {
+      var marker = "PRESERVED_SPLICE_NOT_DELETED";
+      var at = text.indexOf(marker);
+      var close = at < 0 ? -1 : text.indexOf("*/", at);
+      if (close < 0) throw new Error("PART03_INSERT_MISSING");
+      var facade = "try {\n  var __swarm = globalThis.CHIROMBE_WORKERS;\n  if (__swarm && typeof __swarm.createWorker === \"function\") {\n    if (typeof __swarm.register !== \"function\") {\n      __swarm.register = function (a, b, c) {\n        var name, fn, meta;\n        if (a && typeof a === \"object\") { name = a.id || a.name; fn = a.handler || a.worker || a.fn; meta = a; }\n        else { name = a; fn = b; meta = c || {}; }\n        return __swarm.createWorker(String(name), typeof fn === \"function\" ? fn : function () { return { idle: true, name: name }; }, meta || {});\n      };\n      __swarm.registerWorker = __swarm.register;\n    }\n    if (typeof __swarm.status !== \"function\") {\n      __swarm.status = function () {\n        return { protocol: \"CHEP-03\", name: __swarm.name, statistics: __swarm.statistics ? __swarm.statistics() : null, workers: __swarm.workers ? __swarm.workers() : [] };\n      };\n    }\n    if (!__swarm.state) __swarm.state = { protocol: \"CHEP-03\" };\n  }\n} catch (error) {}\n";
+      text = text.slice(0, close + 2) + "\n" + String(part03) + "\n" + facade + text.slice(close + 2);
+      notes.push("CHEP03_INJECTED_INTO_PROJECTION");
+    } else notes.push("CHEP03_NOT_INJECTED");
     return { source: text, notes: notes };
   }
 
   function installWorkerBridge() {
+    if (g.CHIROMBE_WORKERS && g.CHIROMBE_WORKERS.name === "CHIROMBE_WORKER_SWARM") return g.CHIROMBE_WORKERS;
     if (g.CHIROMBE_WORKERS && g.CHIROMBE_WORKERS.register) return g.CHIROMBE_WORKERS;
     var registry = [];
     function adapt(a, b, c) {
@@ -88,7 +98,7 @@
     }
     g.CHIROMBE_WORKERS = {
       bridge: true,
-      part03: "MISSING_FROM_ARTIFACT_BRIDGE_ONLY",
+      part03: "HELD_UNTIL_CHEP03",
       register: adapt,
       registerWorker: adapt,
       dispatch: function (name, payload) {
@@ -102,7 +112,36 @@
       state: { bridge: true },
       list: function () { return registry.slice(); }
     };
+    g.CHIROMBE_WORKERS_BRIDGE = g.CHIROMBE_WORKERS;
     return g.CHIROMBE_WORKERS;
+  }
+
+  function adoptSwarm() {
+    var swarm = g.CHIROMBE_WORKERS;
+    var bridge = g.CHIROMBE_WORKERS_BRIDGE;
+    if (!swarm || swarm.bridge || typeof swarm.createWorker !== "function" || !bridge || !bridge.list) return { adopted: 0 };
+    var present = {};
+    if (typeof swarm.workers === "function") swarm.workers().forEach(function (worker) { present[worker.name] = true; });
+    var adopted = 0;
+    bridge.list().forEach(function (row) {
+      if (!row || present[row.name] || typeof row.handler !== "function") return;
+      try { swarm.createWorker(row.name, row.handler, row.meta || {}); adopted += 1; } catch (e) {}
+    });
+    if (!bridge.__forwarding) {
+      var previous = bridge.register;
+      bridge.register = function () {
+        var row = previous.apply(bridge, arguments);
+        try {
+          if (g.CHIROMBE_WORKERS && typeof g.CHIROMBE_WORKERS.createWorker === "function" && row && row.name) {
+            g.CHIROMBE_WORKERS.createWorker(row.name, row.handler, row.meta || {});
+          }
+        } catch (e) {}
+        return row;
+      };
+      bridge.registerWorker = bridge.register;
+      bridge.__forwarding = true;
+    }
+    return { adopted: adopted, swarm: swarm.name || "WORKER_SWARM" };
   }
 
   function rememberExisting() {
@@ -191,7 +230,8 @@
 
   function arm(saved) {
     restoreClashes(saved);
-    var state = { kernel: true, sentinel: !!g.CHIROMBE_SENTINEL, bloodline: !!g.CHIROMBE_BLOODLINE, defence: !!g.CHIROMBE_DEFENCE, intention: !!g.CHIROMBE_INTENTION };
+    var swarm = adoptSwarm();
+    var state = { kernel: true, sentinel: !!g.CHIROMBE_SENTINEL, bloodline: !!g.CHIROMBE_BLOODLINE, defence: !!g.CHIROMBE_DEFENCE, intention: !!g.CHIROMBE_INTENTION, swarm: swarm };
     if (g.ZCCA && typeof g.ZCCA.activate === "function") {
       try { g.ZCCA.activate(); state.zcca = "ACTIVE"; } catch (e) { state.zcca = "FAILED"; }
     }
@@ -259,33 +299,84 @@
     g.CHIROMBE_KERNEL_STATE = state;
   }
 
+  function sha256(text) {
+    if (!g.crypto || !g.crypto.subtle || typeof TextEncoder === "undefined") return Promise.resolve(null);
+    return g.crypto.subtle.digest("SHA-256", new TextEncoder().encode(String(text))).then(function (buf) {
+      return Array.prototype.map.call(new Uint8Array(buf), function (b) { return ("0" + b.toString(16)).slice(-2); }).join("");
+    }).catch(function () { return null; });
+  }
+
+  function quarantine(name, detail) {
+    if (!g.CHIROMBE_QUARANTINE) g.CHIROMBE_QUARANTINE = [];
+    g.CHIROMBE_QUARANTINE.push({ name: name, at: new Date().toISOString(), detail: detail || {} });
+    journal("QUARANTINE", name);
+  }
+
+  function cacheTrusted(path, text) {
+    if (!g.caches || typeof Response === "undefined") return;
+    g.caches.open("CHIROMBE_TRUSTED_v1").then(function (cache) {
+      return cache.put(path, new Response(text));
+    }).catch(function () {});
+  }
+
+  function readText(url) {
+    return fetch(url).then(function (response) {
+      if (!response.ok) throw new Error("FETCH_" + response.status);
+      return response.text();
+    });
+  }
+
   function load() {
     if (g.__CHIROMBE_KERNEL_LOADING__ || g.__CHIROMBE_KERNEL_LOADED__) return g.__CHIROMBE_KERNEL_PROMISE__ || Promise.resolve(g.CHIROMBE_KERNEL_STATE || null);
     g.__CHIROMBE_KERNEL_LOADING__ = true;
     installWorkerBridge();
     var saved = rememberExisting();
-    g.__CHIROMBE_KERNEL_PROMISE__ = fetch("./chirombe%20engine").then(function (response) {
-      if (!response.ok) throw new Error("KERNEL_FETCH_" + response.status);
-      return response.text();
-    }).then(function (raw) {
-      g.CHIROMBE_KERNEL_INGEST = { text: raw, lines: raw.split("\n").length, chars: raw.length, original: true };
-      var prepared = sanitize(raw);
-      g.CHIROMBE_KERNEL_NOTES = prepared.notes;
-      return new Promise(function (resolve, reject) {
-        var blob = new Blob([prepared.source], { type: "text/javascript" });
-        var url = URL.createObjectURL(blob);
-        var script = document.createElement("script");
-        script.src = url;
-        script.onload = function () {
-          URL.revokeObjectURL(url);
-          g.__CHIROMBE_KERNEL_LOADED__ = true;
-          try { resolve(arm(saved)); } catch (error) { reject(error); }
-        };
-        script.onerror = function () {
-          URL.revokeObjectURL(url);
-          reject(new Error("KERNEL_SCRIPT_FAILED"));
-        };
-        document.head.appendChild(script);
+    g.__CHIROMBE_KERNEL_PROMISE__ = Promise.all([
+      readText("./chirombe%20engine"),
+      readText("./engine/chep-03-worker-swarm.js").catch(function () { return null; }),
+      readText("./data/trusted-manifest.json").catch(function () { return null; })
+    ]).then(function (parts) {
+      var raw = parts[0];
+      var part03 = parts[1];
+      var manifest = null;
+      try { manifest = parts[2] ? JSON.parse(parts[2]) : null; } catch (e) { manifest = null; }
+      var files = manifest && manifest.files || {};
+      return Promise.all([sha256(raw), part03 ? sha256(part03) : Promise.resolve(null)]).then(function (hashes) {
+        var engineHash = hashes[0];
+        var partHash = hashes[1];
+        var expectedEngine = files["chirombe engine"] && files["chirombe engine"].sha256;
+        var expectedPart = files["engine/chep-03-worker-swarm.js"] && files["engine/chep-03-worker-swarm.js"].sha256;
+        if (expectedEngine && engineHash && engineHash !== expectedEngine) {
+          quarantine("chirombe engine", { hash: engineHash, expected: expectedEngine });
+          throw new Error("ENGINE_HASH_MISMATCH");
+        }
+        if (part03 && expectedPart && partHash && partHash !== expectedPart) {
+          quarantine("engine/chep-03-worker-swarm.js", { hash: partHash, expected: expectedPart });
+          part03 = null;
+        }
+        g.CHIROMBE_KERNEL_INGEST = { text: raw, lines: raw.split("\n").length, chars: raw.length, original: true, sha256: engineHash };
+        if (part03) g.__CHIROMBE_PART03_SOURCE__ = part03;
+        var prepared = sanitize(raw, part03);
+        g.CHIROMBE_KERNEL_NOTES = prepared.notes;
+        cacheTrusted("./chirombe%20engine", raw);
+        if (part03) cacheTrusted("./engine/chep-03-worker-swarm.js", part03);
+        return new Promise(function (resolve, reject) {
+          var blob = new Blob([prepared.source], { type: "text/javascript" });
+          var url = URL.createObjectURL(blob);
+          var script = document.createElement("script");
+          script.src = url;
+          script.onload = function () {
+            URL.revokeObjectURL(url);
+            g.__CHIROMBE_KERNEL_LOADING__ = false;
+            g.__CHIROMBE_KERNEL_LOADED__ = true;
+            try { resolve(arm(saved)); } catch (error) { reject(error); }
+          };
+          script.onerror = function () {
+            URL.revokeObjectURL(url);
+            reject(new Error("KERNEL_SCRIPT_FAILED"));
+          };
+          document.head.appendChild(script);
+        });
       });
     }).catch(function (error) {
       g.__CHIROMBE_KERNEL_LOADING__ = false;
@@ -296,7 +387,20 @@
     return g.__CHIROMBE_KERNEL_PROMISE__;
   }
 
-  g.CHIROMBE_KERNEL_BRIDGE = { sanitize: sanitize, installWorkerBridge: installWorkerBridge, load: load };
+  function rebuild() {
+    if (g.CHIROMBE && (g.CHIROMBE.name || g.CHIROMBE.version)) return Promise.resolve({ state: "INTACT", rebuilt: false });
+    if (g.__CHIROMBE_REBUILDS__ >= 1) return Promise.resolve({ state: "REBUILD_HELD", reason: "ONE_REBUILD_PER_PAGE" });
+    g.__CHIROMBE_REBUILDS__ = (g.__CHIROMBE_REBUILDS__ || 0) + 1;
+    quarantine("CHIROMBE", { reason: "ABSENT_OR_UNNAMED" });
+    g.__CHIROMBE_KERNEL_LOADING__ = false;
+    g.__CHIROMBE_KERNEL_LOADED__ = false;
+    g.__CHIROMBE_KERNEL_PROMISE__ = null;
+    return load().then(function (state) { return { state: "REBUILT", rebuilt: true, kernel: state }; }, function (error) {
+      return { state: "REBUILD_FAILED", rebuilt: false, error: String(error && error.message || error) };
+    });
+  }
+
+  g.CHIROMBE_KERNEL_BRIDGE = { sanitize: sanitize, installWorkerBridge: installWorkerBridge, load: load, rebuild: rebuild, adoptSwarm: adoptSwarm };
 
   function start() {
     if (!g.document) return;

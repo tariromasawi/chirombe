@@ -436,16 +436,21 @@
             auditSnapshot: {
               recordedAt: "2026-09-27",
               subject: "HRH Tarry Kupakwashe Masawi",
-              status: "CONFLICTING",
-              staleRisk: true,
-              action: "NOT_MODIFIED",
+              alsoKnownAs: ["Tarry"],
+              relation: "son",
+              of: "HRH Saint Tariro Masawi",
+              status: "RESOLVED",
+              staleRisk: false,
+              action: "CORRECTED_BY_OWNER",
+              personRemoved: false,
               records: [
-                { source: "data/family.json", relation: "spouse" },
-                { source: "js/chirombe-core.js fallback", relation: "spouse" },
+                { source: "data/family.json", relation: "son", previous: "spouse" },
+                { source: "js/chirombe-core.js fallback", relation: "son", previous: "spouse" },
                 { source: "js/zcca.js", relation: "son" },
-                { source: "docs/DATA_MODEL.md", relation: "son" }
+                { source: "docs/DATA_MODEL.md", relation: "son" },
+                { source: "js/cm90-family-matrix.js", relation: "son" }
               ],
-              note: "File-audit snapshot. Not a new lineage fact. Not written back to any roster."
+              note: "Owner stated Tarry is his son. The spouse label is kept as previousGeneration. The historical id FAM-SP-TARRY was not deleted."
             },
             invented: 0,
             mode: "READ_ONLY"

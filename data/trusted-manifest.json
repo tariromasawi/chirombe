@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "note": "Pins for served files. A mismatch is quarantined and not executed. Git history remains the record if the pin itself is rewritten.",
+  "files": {
+    "chirombe engine": {
+      "sha256": "f1df5408bf0374365fb6149dc35a9b992a5645a671d921e804634f3e2f844ddc"
+    },
+    "engine/chep-03-worker-swarm.js": {
+      "sha256": "1b3059b51064ef3cfed4ea1058db7c3fcf8d0ad261195edb607cb0027b69280e"
+    },
+    "data/family.json": {
+      "sha256": "587a5bb2ad39390b5d5a3def39479851d276fe136895dd3f94dd91a91b089cfc",
+      "supersedes": "b68e29c408a101b0b3270459410ac62167f04a94edefd9a47317ef2779cc7605",
+      "reason": "Tarry corrected from spouse to son. previousGeneration kept. No person removed."
+    },
+    "js/engine/kernel-bridge.js": {
+      "sha256": "27f44017183512f3c710fe58aa489fd031ccbd051f28141acfa3b6d292ace21a"
+    },
+    "js/engine/recovery.js": {
+      "sha256": "39db1414b0d4e4baf378427a38f1331326637b374ab2a38199d83370068c2a2f"
+    }
+  }
+}

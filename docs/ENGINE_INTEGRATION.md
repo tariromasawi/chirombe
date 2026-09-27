@@ -142,3 +142,17 @@ Rollback: remove the `kernel-bridge.js` script. The original file does not need 
 - Unknown anomalies stay `UNKNOWN`.
 
 Rollback: remove `js/engine/activation.js` and `js/engine/kernel-bridge.js`. The original `chirombe engine` file does not need to be restored.
+
+## CHEP-03 and trusted rebuild
+
+The original `chirombe engine` file still ends CHEP-02 and then jumps to CHEP-04. That gap is PART 03. The recovered source is `engine/chep-03-worker-swarm.js`, protocol CHEP-03, name `CHIROMBE_WORKER_SWARM`. It is inserted only into the runtime projection, after the preserved splice comment. The original file hash is unchanged.
+
+The earlier worker bridge stays on `CHIROMBE_WORKERS_BRIDGE`. Its registrations are copied onto the swarm. They are not deleted.
+
+`data/trusted-manifest.json` pins the engine, CHEP-03, and the family file. A hash mismatch is quarantined and not executed. A healthy `CHIROMBE` is not replaced. Automatic rebuild is capped at one attempt per page. This does not stop an attacker who can rewrite both a file and its pin. Git history is the remaining record.
+
+Service worker cache is now `CHIROMBE_STATIC_v5`.
+
+## Tarry
+
+HRH Tarry Kupakwashe Masawi, also known as Tarry, is the son of HRH Saint Tariro Masawi. The old `spouse` label remains as `previousGeneration`. The id `FAM-SP-TARRY` was kept. No person was removed.

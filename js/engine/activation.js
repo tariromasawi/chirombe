@@ -5,7 +5,7 @@
   "use strict";
   if (g.CHIROMBE_ACTIVATION) return;
 
-  var CACHE_NAME = "CHIROMBE_STATIC_v4";
+  var CACHE_NAME = "CHIROMBE_STATIC_v5";
   var MEMORY_KEY = "CHIROMBE_ENGINE_MEMORY_v1";
   var active = false;
   var manifest = [];
@@ -282,7 +282,8 @@
     ];
     var passed = checks.filter(function (c) { return c[1]; }).length;
     var recommendations = [];
-    if (!g.CHIROMBE_WORKERS || g.CHIROMBE_WORKERS.bridge) recommendations.push("PART 03 worker source is absent. The bridge is a substitute, not the original swarm.");
+    if (!g.CHIROMBE_WORKERS || g.CHIROMBE_WORKERS.bridge) recommendations.push("PART 03 is not attached yet. The bridge is only a substitute.");
+    else if (g.CHIROMBE_WORKERS.name === "CHIROMBE_WORKER_SWARM") recommendations.push("CHEP-03 is running from the recovered source. The original file still does not contain those lines.");
     if (people === 0) recommendations.push("Bloodline roster is empty. family.json did not register.");
     return {
       name: "CHIROMBE BLOODLINE PROTECTION STATE",
@@ -343,7 +344,7 @@
       whatChanged: g.CHIROMBE_KERNEL_NOTES || [],
       whatWasRecovered: manifest.filter(function (row) { return row.status === "ACTIVE_IN_PROJECTION"; }).length,
       whatIsProtected: protection(),
-      whatIsUnverified: ["family.json Tarry spouse/son conflict is preserved, not resolved"],
+      whatIsUnverified: ["PART 03 was absent from the original file and is recovered from engine/chep-03-worker-swarm.js when its hash matches"],
       whatIsNew: ["activation scheduler", "function manifest", "protection state"],
       whatCanBeImproved: ["PART 03 source is still absent", "call graph is lexical, not executed per function"]
     };
@@ -428,6 +429,14 @@
   }
 
   function connectLive() {
+    manifest.forEach(function (row) {
+      if (row.id !== "PART_03_WORKERS") return;
+      if (g.CHIROMBE_WORKERS && g.CHIROMBE_WORKERS.name === "CHIROMBE_WORKER_SWARM") {
+        row.status = "RECOVERED";
+        row.runtimeMapping = "engine/chep-03-worker-swarm.js";
+        row.validation = "ORIGINAL_FILE_GAP_REMAINS. Trusted CHEP-03 source is running.";
+      }
+    });
     linkResonance();
     ["ChirombeSystem", "ChirombeBus", "ChirombeState", "ChirombeCore", "ChirombeHealth", "ChirombeWatchdog", "ChirombeAudit", "ZCCA", "ZionProtect", "MwarindiCovenant", "ChirombeResonance", "CHIROMBE_AUTOSTART"].forEach(function (name) {
       graph.push({

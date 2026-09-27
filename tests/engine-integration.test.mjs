@@ -103,7 +103,9 @@ test("engine connects without erasing or deploying", async () => {
   engine.discover();
   const blood = engine.command("BLOODLINE");
   assert.equal(blood.result.invented, 0);
-  assert.equal(blood.result.auditSnapshot.status, "CONFLICTING");
+  assert.equal(blood.result.auditSnapshot.status, "RESOLVED");
+  assert.equal(blood.result.auditSnapshot.relation, "son");
+  assert.equal(blood.result.auditSnapshot.personRemoved, false);
   assert.ok(blood.result.conflicts.length >= 1);
 
   const evolveApply = context.CHIROMBE_ENGINE_ADAPTERS.create({

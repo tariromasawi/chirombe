@@ -25,10 +25,17 @@ test("kernel projection parses and keeps the preserved splice text", () => {
   vm.createContext(context);
   vm.runInContext(fs.readFileSync("js/engine/kernel-bridge.js", "utf8"), context, { filename: "kernel-bridge.js" });
   const raw = fs.readFileSync("chirombe engine", "utf8");
-  const prepared = context.CHIROMBE_KERNEL_BRIDGE.sanitize(raw);
+  const part03 = fs.readFileSync("engine/chep-03-worker-swarm.js", "utf8");
+  const prepared = context.CHIROMBE_KERNEL_BRIDGE.sanitize(raw, part03);
   assert.ok(prepared.notes.includes("SPLICE_CONTAINED"));
+  assert.ok(prepared.notes.includes("CHEP03_INJECTED_INTO_PROJECTION"));
   assert.ok(prepared.source.includes("PRESERVED_SPLICE_NOT_DELETED"));
   assert.ok(prepared.source.includes("Expected branch to point to"));
+  assert.ok(prepared.source.includes("CHIROMBE_WORKER_SWARM"));
+  const spliceAt = prepared.source.indexOf("PRESERVED_SPLICE_NOT_DELETED");
+  const swarmAt = prepared.source.indexOf("CHIROMBE_WORKER_SWARM");
+  const nextAt = prepared.source.indexOf("PROTOCOL: CHEP-04");
+  assert.ok(spliceAt < swarmAt && swarmAt < nextAt);
   assert.match(prepared.source, /\/\* PRESERVED_HTML_TAG <script src=/);
   const naked = prepared.source.split("\n").filter((line) => line.includes("<script src=") && !line.includes("PRESERVED_HTML_TAG"));
   assert.equal(naked.length, 0);

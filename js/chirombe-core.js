@@ -17,7 +17,7 @@
     {name:"Sabastian Karumekangu Masawi",role:"PARENT",generation:"father"},
     {name:"Risto Kasirori Masawi",role:"PARENT",generation:"mother"},
     {name:"HRH Saint Tariro Masawi",role:"CORE",generation:"self"},
-    {name:"HRH Tarry Kupakwashe Masawi",role:"CORE",generation:"spouse"},
+    {name:"HRH Tarry Kupakwashe Masawi",role:"CORE",generation:"son",alsoKnownAs:["Tarry"],previousGeneration:"spouse"},
     {name:"Tenderayi",role:"SIBLING",generation:"brother"},
     {name:"Silent",role:"SIBLING",generation:"brother"},
     {name:"Trymore",role:"SIBLING",generation:"brother"},
@@ -32,7 +32,18 @@
   function load(){try{return JSON.parse(localStorage.getItem(KEY)||"{}")}catch(e){return{}}}
   function save(s){try{localStorage.setItem(KEY,JSON.stringify(s))}catch(e){}}
   const C=Object.assign({generation:1,threat:0.18,resilience:0.72,prayerIndex:0,family:[]},load());
+  function correctTarry(person){
+    if(!person||!/tarry kupakwashe/i.test(person.name||""))return person;
+    if(person.generation==="spouse"){
+      person.previousGeneration="spouse";
+      person.generation="son";
+      person.lineageCorrection="owner-stated-son";
+    }
+    if(!person.alsoKnownAs)person.alsoKnownAs=["Tarry"];
+    return person;
+  }
   FALLBACK.forEach(function(m){if(!C.family.some(function(x){return x.name===m.name}))C.family.push(m)});
+  C.family.forEach(correctTarry);
   function note(t,m){if(window.Chirombe&&Chirombe.log)Chirombe.log(t,m)}
   function merge(){
     if(window.CORE){
@@ -75,8 +86,15 @@
   fetch("./data/family.json").then(function(r){return r.ok?r.json():null}).then(function(d){
     if(!d||!d.members)return;
     d.members.forEach(function(m){
-      if(!C.family.some(function(x){return x.name===m.name}))C.family.push(m);
+      var existing=C.family.filter(function(x){return x.name===m.name})[0];
+      if(!existing)C.family.push(m);
+      else correctTarry(existing);
+      if(existing&&m.generation==="son"&&existing.generation!=="son"){
+        existing.previousGeneration=existing.previousGeneration||existing.generation;
+        existing.generation="son";
+      }
     });
+    C.family.forEach(correctTarry);
     merge(); save(C); note("FAMILY",C.family.length+" core nodes loaded");
   }).catch(function(){});
   pray(); evolve();
