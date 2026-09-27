@@ -1,0 +1,762 @@
+/* ============================================================
+   CHIROMBE AUTONOMOUS EVOLUTION ENGINE
+   CORE KERNEL — PART 01 / 10
+   Version: 1.0.0
+   Architecture: Modular / Persistent / Event Driven
+   ============================================================ */
+
+(() => {
+  "use strict";
+
+  const CHIROMBE = {
+    name: "CHIROMBE",
+    engine: "Autonomous Evolution Core",
+    version: "1.0.0",
+    protocol: "CHEP-01",
+    bootTime: Date.now(),
+
+    config: {
+      debug: true,
+      autonomousMode: true,
+      persistentMode: true,
+      safeMode: true,
+      maxQueue: 1000,
+      heartbeat: 15000,
+      memoryPrefix: "CHIROMBE_MEMORY_",
+      statePrefix: "CHIROMBE_STATE_",
+      eventPrefix: "CHIROMBE_EVENT_",
+      maxEventHistory: 500,
+      maxMemoryItems: 5000
+    },
+
+    state: {
+      status: "INITIALISING",
+      cycles: 0,
+      tasksCompleted: 0,
+      tasksFailed: 0,
+      workers: 0,
+      lastHeartbeat: null,
+      lastEvolution: null,
+      integrity: null,
+      started: false
+    },
+
+    workers: new Map(),
+    queue: [],
+    events: [],
+    memory: new Map(),
+    modules: new Map()
+  };
+
+  /* ============================================================
+     INTERNAL UTILITIES
+     ============================================================ */
+
+  const now = () => Date.now();
+
+  const uid = (prefix = "id") =>
+    prefix + "_" +
+    Date.now().toString(36) + "_" +
+    Math.random().toString(36).slice(2, 10);
+
+  const safeJSON = value => {
+    try {
+      return JSON.stringify(value);
+    } catch (error) {
+      return JSON.stringify({
+        error: "SERIALISATION_FAILURE",
+        message: String(error)
+      });
+    }
+  };
+
+  const parseJSON = (value, fallback = null) => {
+    try {
+      return JSON.parse(value);
+    } catch {
+      return fallback;
+    }
+  };
+
+  const log = (...args) => {
+    if (CHIROMBE.config.debug) {
+      console.log("[CHIROMBE]", ...args);
+    }
+  };
+
+  const warn = (...args) => {
+    console.warn("[CHIROMBE]", ...args);
+  };
+
+  const fail = (...args) => {
+    console.error("[CHIROMBE]", ...args);
+  };
+
+  /* ============================================================
+     CRYPTOGRAPHIC INTEGRITY
+     ============================================================ */
+
+  async function hash(data) {
+    const input = safeJSON(data);
+    if (
+      typeof crypto !== "undefined" &&
+      crypto.subtle &&
+      typeof TextEncoder !== "undefined"
+    ) {
+      try {
+        const encoded = new TextEncoder().encode(input);
+        const digest = await crypto.subtle.digest("SHA-256", encoded);
+        return Array.from(new Uint8Array(digest))
+          .map(b => b.toString(16).padStart(2, "0"))
+          .join("");
+      } catch (error) {
+        warn("Cryptographic hash unavailable:", error);
+      }
+    }
+
+    let h = 2166136261;
+    for (let i = 0; i < input.length; i++) {
+      h ^= input.charCodeAt(i);
+      h +=
+        (h << 1) +
+        (h << 4) +
+        (h << 7) +
+        (h << 8) +
+        (h << 24);
+    }
+
+    return ("00000000" + (h >>> 0).toString(16)).slice(-8);
+  }
+
+  /* ============================================================
+     PERSISTENCE LAYER
+     ============================================================ */
+
+  const storageAvailable = () => {
+    try {
+      const test = "__CHIROMBE_TEST__";
+      localStorage.setItem(test, "1");
+      localStorage.removeItem(test);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const storage = {
+    available: storageAvailable(),
+
+    write(key, value) {
+      if (!this.available) return false;
+
+      try {
+        localStorage.setItem(
+          CHIROMBE.config.statePrefix + key,
+          safeJSON(value)
+        );
+        return true;
+      } catch (error) {
+        warn("Persistence write failed:", error);
+        return false;
+      }
+    },
+
+    read(key, fallback = null) {
+      if (!this.available) return fallback;
+
+      try {
+        const raw = localStorage.getItem(
+          CHIROMBE.config.statePrefix + key
+        );
+
+        return raw === null
+          ? fallback
+          : parseJSON(raw, fallback);
+      } catch (error) {
+        warn("Persistence read failed:", error);
+        return fallback;
+      }
+    },
+
+    remove(key) {
+      if (!this.available) return false;
+
+      try {
+        localStorage.removeItem(
+          CHIROMBE.config.statePrefix + key
+        );
+        return true;
+      } catch {
+        return false;
+      }
+    }
+  };
+
+  /* ============================================================
+     EVENT BUS
+     ============================================================ */
+
+  const listeners = new Map();
+
+  function on(event, handler) {
+    if (!listeners.has(event)) {
+      listeners.set(event, new Set());
+    }
+
+    listeners.get(event).add(handler);
+
+    return () => {
+      listeners.get(event)?.delete(handler);
+    };
+  }
+
+  async function emit(event, payload = {}) {
+    const record = {
+      id: uid("event"),
+      event,
+      timestamp: now(),
+      payload
+    };
+
+    CHIROMBE.events.push(record);
+
+    if (
+      CHIROMBE.events.length >
+      CHIROMBE.config.maxEventHistory
+    ) {
+      CHIROMBE.events.shift();
+    }
+
+    storage.write("EVENT_HISTORY", CHIROMBE.events);
+
+    const handlers = listeners.get(event);
+
+    if (handlers) {
+      for (const handler of handlers) {
+        try {
+          await Promise.resolve(handler(record));
+        } catch (error) {
+          fail("Event handler failure:", event, error);
+        }
+      }
+    }
+
+    return record;
+  }
+
+  /* ============================================================
+     MEMORY ENGINE
+     ============================================================ */
+
+  const memory = {
+    set(key, value, metadata = {}) {
+      const record = {
+        key,
+        value,
+        metadata,
+        created: now(),
+        updated: now()
+      };
+
+      CHIROMBE.memory.set(key, record);
+
+      if (
+        CHIROMBE.memory.size >
+        CHIROMBE.config.maxMemoryItems
+      ) {
+        const oldest = CHIROMBE.memory.keys().next().value;
+        CHIROMBE.memory.delete(oldest);
+      }
+
+      storage.write(
+        "MEMORY",
+        Array.from(CHIROMBE.memory.values())
+      );
+
+      emit("memory:set", { key });
+
+      return record;
+    },
+
+    get(key, fallback = null) {
+      const local = CHIROMBE.memory.get(key);
+      if (local) return local;
+
+      const stored = storage.read("MEMORY", []);
+
+      const found = stored.find(item => item.key === key);
+
+      if (found) {
+        CHIROMBE.memory.set(key, found);
+        return found;
+      }
+
+      return fallback;
+    },
+
+    all() {
+      return Array.from(CHIROMBE.memory.values());
+    },
+
+    delete(key) {
+      const result = CHIROMBE.memory.delete(key);
+
+      if (result) {
+        storage.write(
+          "MEMORY",
+          Array.from(CHIROMBE.memory.values())
+        );
+        emit("memory:delete", { key });
+      }
+
+      return result;
+    }
+  };
+
+  /* ============================================================
+     WORKER REGISTRY
+     ============================================================ */
+
+  function registerWorker(name, worker, metadata = {}) {
+    if (!name || typeof worker !== "function") {
+      throw new Error("Invalid worker registration");
+    }
+
+    const record = {
+      id: uid("worker"),
+      name,
+      worker,
+      metadata,
+      registered: now(),
+      executions: 0,
+      failures: 0,
+      lastRun: null,
+      status: "READY"
+    };
+
+    CHIROMBE.workers.set(name, record);
+
+    CHIROMBE.state.workers =
+      CHIROMBE.workers.size;
+
+    emit("worker:registered", {
+      name,
+      id: record.id
+    });
+
+    return record;
+  }
+
+  async function executeWorker(name, payload = {}) {
+    const worker = CHIROMBE.workers.get(name);
+
+    if (!worker) {
+      throw new Error(
+        "Worker not registered: " + name
+      );
+    }
+
+    worker.status = "RUNNING";
+    worker.executions++;
+    worker.lastRun = now();
+
+    try {
+      const result = await Promise.resolve(
+        worker.worker(payload, CHIROMBE)
+      );
+
+      worker.status = "READY";
+
+      await emit("worker:completed", {
+        name,
+        result
+      });
+
+      return result;
+    } catch (error) {
+      worker.failures++;
+      worker.status = "ERROR";
+      CHIROMBE.state.tasksFailed++;
+
+      await emit("worker:error", {
+        name,
+        error: String(error)
+      });
+
+      throw error;
+    }
+  }
+
+  /* ============================================================
+     TASK QUEUE
+     ============================================================ */
+
+  function enqueue(task) {
+    if (!task || typeof task !== "object") {
+      throw new Error("Invalid task");
+    }
+
+    if (
+      CHIROMBE.queue.length >=
+      CHIROMBE.config.maxQueue
+    ) {
+      warn("Task queue capacity reached");
+      return false;
+    }
+
+    const item = {
+      id: uid("task"),
+      created: now(),
+      priority: Number(task.priority || 0),
+      worker: task.worker,
+      payload: task.payload || {},
+      status: "QUEUED"
+    };
+
+    CHIROMBE.queue.push(item);
+
+    CHIROMBE.queue.sort(
+      (a, b) => b.priority - a.priority
+    );
+
+    emit("task:queued", item);
+
+    return item.id;
+  }
+
+  async function processQueue() {
+    if (!CHIROMBE.queue.length) return;
+
+    const task = CHIROMBE.queue.shift();
+
+    if (!task) return;
+
+    task.status = "RUNNING";
+
+    try {
+      task.result = await executeWorker(
+        task.worker,
+        task.payload
+      );
+
+      task.status = "COMPLETED";
+      CHIROMBE.state.tasksCompleted++;
+
+      await emit("task:completed", task);
+    } catch (error) {
+      task.status = "FAILED";
+      task.error = String(error);
+
+      await emit("task:failed", task);
+    }
+  }
+
+  /* ============================================================
+     MODULE REGISTRY
+     ============================================================ */
+
+  function registerModule(name, api, metadata = {}) {
+    if (!name || !api) {
+      throw new Error("Invalid module");
+    }
+
+    CHIROMBE.modules.set(name, {
+      name,
+      api,
+      metadata,
+      registered: now()
+    });
+
+    emit("module:registered", { name });
+
+    return CHIROMBE.modules.get(name);
+  }
+
+  /* ============================================================
+     STATE RECOVERY
+     ============================================================ */
+
+  function restore() {
+    const saved = storage.read(
+      "ENGINE_STATE",
+      null
+    );
+
+    if (saved && typeof saved === "object") {
+      Object.assign(
+        CHIROMBE.state,
+        saved
+      );
+    }
+
+    const memories = storage.read(
+      "MEMORY",
+      []
+    );
+
+    if (Array.isArray(memories)) {
+      memories.forEach(item => {
+        if (item && item.key) {
+          CHIROMBE.memory.set(
+            item.key,
+            item
+          );
+        }
+      });
+    }
+
+    const events = storage.read(
+      "EVENT_HISTORY",
+      []
+    );
+
+    if (Array.isArray(events)) {
+      CHIROMBE.events = events;
+    }
+
+    CHIROMBE.state.status = "RECOVERED";
+  }
+
+  /* ============================================================
+     HEARTBEAT
+     ============================================================ */
+
+  let heartbeatTimer = null;
+
+  async function heartbeat() {
+    CHIROMBE.state.cycles++;
+    CHIROMBE.state.lastHeartbeat = now();
+
+    storage.write(
+      "ENGINE_STATE",
+      CHIROMBE.state
+    );
+
+    await emit("engine:heartbeat", {
+      cycle: CHIROMBE.state.cycles,
+      timestamp: now(),
+      workers: CHIROMBE.workers.size,
+      queue: CHIROMBE.queue.length,
+      memory: CHIROMBE.memory.size
+    });
+
+    await processQueue();
+  }
+
+  function startHeartbeat() {
+    if (heartbeatTimer) {
+      clearInterval(heartbeatTimer);
+    }
+
+    heartbeatTimer = setInterval(
+      heartbeat,
+      CHIROMBE.config.heartbeat
+    );
+  }
+
+  /* ============================================================
+     INTEGRITY SNAPSHOT
+     ============================================================ */
+
+  async function integritySnapshot() {
+    const snapshot = {
+      version: CHIROMBE.version,
+      state: CHIROMBE.state,
+      workers: Array.from(
+        CHIROMBE.workers.keys()
+      ),
+      modules: Array.from(
+        CHIROMBE.modules.keys()
+      ),
+      memoryCount: CHIROMBE.memory.size,
+      queueCount: CHIROMBE.queue.length,
+      timestamp: now()
+    };
+
+    const digest = await hash(snapshot);
+
+    CHIROMBE.state.integrity = digest;
+
+    storage.write(
+      "INTEGRITY",
+      {
+        digest,
+        snapshot
+      }
+    );
+
+    return digest;
+  }
+
+  /* ============================================================
+     PUBLIC COMMAND INTERFACE
+     ============================================================ */
+
+  const API = {
+
+    version: CHIROMBE.version,
+
+    getState() {
+      return JSON.parse(
+        JSON.stringify(CHIROMBE.state)
+      );
+    },
+
+    getMemory(key) {
+      return memory.get(key);
+    },
+
+    setMemory(key, value, metadata) {
+      return memory.set(
+        key,
+        value,
+        metadata
+      );
+    },
+
+    getAllMemory() {
+      return memory.all();
+    },
+
+    on,
+
+    emit,
+
+    registerWorker,
+
+    executeWorker,
+
+    enqueue,
+
+    registerModule,
+
+    integritySnapshot,
+
+    heartbeat,
+
+    getWorkers() {
+      return Array.from(
+        CHIROMBE.workers.values()
+      ).map(worker => ({
+        id: worker.id,
+        name: worker.name,
+        status: worker.status,
+        executions: worker.executions,
+        failures: worker.failures,
+        lastRun: worker.lastRun
+      }));
+    },
+
+    getModules() {
+      return Array.from(
+        CHIROMBE.modules.values()
+      ).map(module => ({
+        name: module.name,
+        metadata: module.metadata,
+        registered: module.registered
+      }));
+    },
+
+    getQueue() {
+      return CHIROMBE.queue.map(
+        task => ({ ...task })
+      );
+    },
+
+    exportSnapshot() {
+      return {
+        engine: CHIROMBE.name,
+        version: CHIROMBE.version,
+        state: CHIROMBE.state,
+        memory: memory.all(),
+        workers: this.getWorkers(),
+        modules: this.getModules(),
+        queue: this.getQueue(),
+        events: CHIROMBE.events
+      };
+    }
+  };
+
+  /* ============================================================
+     BOOTSTRAP
+     ============================================================ */
+
+  async function boot() {
+    if (CHIROMBE.state.started) {
+      return API;
+    }
+
+    log("Booting Chirombe Core Kernel...");
+
+    restore();
+
+    CHIROMBE.state.started = true;
+    CHIROMBE.state.status = "ONLINE";
+
+    registerWorker(
+      "CORE_HEALTH",
+      async () => ({
+        status: "HEALTHY",
+        timestamp: now()
+      }),
+      {
+        system: true,
+        description: "Core health verification"
+      }
+    );
+
+    registerWorker(
+      "INTEGRITY_SCAN",
+      async () => ({
+        digest: await integritySnapshot()
+      }),
+      {
+        system: true,
+        description: "Cryptographic integrity snapshot"
+      }
+    );
+
+    startHeartbeat();
+
+    await integritySnapshot();
+
+    await emit(
+      "engine:boot",
+      {
+        version: CHIROMBE.version,
+        timestamp: now()
+      }
+    );
+
+    log(
+      "CHIROMBE CORE ONLINE",
+      CHIROMBE.version
+    );
+
+    return API;
+  }
+
+  /* ============================================================
+     GLOBAL ATTACHMENT
+     ============================================================ */
+
+  if (typeof window !== "undefined") {
+    window.CHIROMBE = API;
+    window.CHIROMBE_CORE = CHIROMBE;
+  }
+
+  if (typeof globalThis !== "undefined") {
+    globalThis.CHIROMBE = API;
+    globalThis.CHIROMBE_CORE = CHIROMBE;
+  }
+
+  /* ============================================================
+     AUTOMATIC START
+     ============================================================ */
+
+  boot().catch(error => {
+    CHIROMBE.state.status = "BOOT_ERROR";
+    fail("CHIROMBE CORE BOOT FAILURE:", error);
+  });
+
+})();
