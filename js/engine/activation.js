@@ -5,7 +5,7 @@
   "use strict";
   if (g.CHIROMBE_ACTIVATION) return;
 
-  var CACHE_NAME = "CHIROMBE_STATIC_v7";
+  var CACHE_NAME = "CHIROMBE_STATIC_v8";
   var MEMORY_KEY = "CHIROMBE_ENGINE_MEMORY_v1";
   var active = false;
   var manifest = [];

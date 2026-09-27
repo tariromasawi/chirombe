@@ -9,5 +9,5 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: node scripts/self-check.mjs
-      - run: node --test tests/engine-integration.test.mjs tests/kernel-bridge.test.mjs tests/activation.test.mjs tests/recovery.test.mjs tests/inspect-link.test.mjs tests/living-liturgy.test.mjs
+      - run: node --test tests/engine-integration.test.mjs tests/kernel-bridge.test.mjs tests/activation.test.mjs tests/recovery.test.mjs tests/inspect-link.test.mjs tests/living-liturgy.test.mjs tests/audio-install.test.mjs
       - run: node engine/headless-runner.mjs

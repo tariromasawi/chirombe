@@ -618,6 +618,9 @@
   }
 
   AUDIO.createAudioContext = createAudioContext;
+  AUDIO.getAudioContext = function () { return audioContext; };
+  AUDIO.getAnalyser = function () { return analyser; };
+  AUDIO.getBuses = function () { return buses; };
 
   /* ------------------------------------------------------------------------
      12. AUDIO BUS ARCHITECTURE
@@ -721,6 +724,7 @@
     state.lifecycle = STATES.SAFE_STOP;
     state.broadcastEnabled = false;
     state.livingWatch = false;
+    state.masterGain = 0;
 
     if (audioContext) {
       try {
@@ -769,6 +773,35 @@
   }
 
   AUDIO.emergencyStop = emergencyStop;
+
+  AUDIO.recoverFromSafeStop = function (reason) {
+    if (state.lifecycle === STATES.SAFE_STOP) {
+      state.lifecycle = STATES.READY;
+    }
+    state.masterGain = CONFIG.defaultMasterGain;
+    if (audioContext && masterGain) {
+      try {
+        masterGain.gain.cancelScheduledValues(audioContext.currentTime);
+        masterGain.gain.setTargetAtTime(
+          CONFIG.defaultMasterGain,
+          audioContext.currentTime,
+          0.05
+        );
+        Object.values(buses).forEach(function (bus) {
+          if (!bus.gain) return;
+          bus.gain.gain.cancelScheduledValues(audioContext.currentTime);
+          bus.gain.gain.setTargetAtTime(
+            bus.name === "MASTER" ? 1 : 0.7,
+            audioContext.currentTime,
+            0.05
+          );
+        });
+      } catch (_) {}
+    }
+    internalLog("INFO", "AUDIO_RECOVERED_FROM_SAFE_STOP", { reason: reason || "USER" });
+    emit("AUDIO_RECOVERED", { reason: reason || "USER" });
+    return true;
+  };
 
   /* ------------------------------------------------------------------------
      14. FREQUENCY CAPABILITY GOVERNOR
@@ -12472,7 +12505,14 @@
       root.AudioContext ||
       root.webkitAudioContext;
 
+    const kernelAudio = root.CHIROMBE_AUDIO;
+    let sharedContext = null;
+    if (kernelAudio && typeof kernelAudio.createAudioContext === "function") {
+      try { sharedContext = kernelAudio.createAudioContext(); } catch (error) { sharedContext = null; }
+    }
+
     if (
+      !sharedContext &&
       !AudioContextClass
     ) {
 
@@ -12500,7 +12540,11 @@
     try {
 
       state.context =
+        sharedContext ||
         new AudioContextClass();
+
+      state.usesKernelContext =
+        Boolean(sharedContext);
 
       const context =
         state.context;
@@ -12604,6 +12648,16 @@
         state.compressor
       );
 
+      const toneBus =
+        kernelAudio &&
+        kernelAudio.buses &&
+        kernelAudio.buses.TONE &&
+        kernelAudio.buses.TONE.gain;
+
+      const sink =
+        toneBus ||
+        context.destination;
+
       if (
         state.analyser
       ) {
@@ -12613,13 +12667,13 @@
         );
 
         state.analyser.connect(
-          context.destination
+          sink
         );
 
       } else {
 
         state.compressor.connect(
-          context.destination
+          sink
         );
       }
 
@@ -15234,6 +15288,9 @@
       safeStopped:
         state.safeStopped,
 
+      usesKernelContext:
+        state.usesKernelContext === true,
+
       currentScene:
         state.currentScene,
 
@@ -15947,6 +16004,18 @@
         AUDIO.context
       ) {
         return AUDIO.context;
+      }
+    } catch (_) {}
+
+    try {
+      if (
+        AUDIO &&
+        typeof AUDIO.getAudioContext ===
+          "function"
+      ) {
+        const shared =
+          AUDIO.getAudioContext();
+        if (shared) return shared;
       }
     } catch (_) {}
 
@@ -17405,7 +17474,7 @@
       false;
 
     if (
-      options.microphone !== false
+      options.microphone === true
     ) {
       microphoneStarted =
         await requestMicrophone();
@@ -18192,6 +18261,10 @@
 
 (() => {
   "use strict";
+
+  /* Later Part 7 in this file is the performance engine that stays installed.
+     This earlier copy is kept in the source and does not register a second engine. */
+  return;
 
   const VERSION = "7.0.0";
 
@@ -25154,38 +25227,7 @@
 
   initialise();
 
-})();(function (window) {
-    "use strict";
-
-    window.CHIROMBE_AUDIO = window.CHIROMBE_AUDIO || {};
-
-    const API = {
-        VERSION: "9.0.1",
-        NAME: "CHIROMBE_AUDIO_EVOLUTION",
-
-        status: "READY",
-
-        getStatus: function () {
-            return {
-                name: "CHIROMBE_AUDIO_EVOLUTION",
-                version: "9.0.1",
-                status: "READY",
-                loaded: true,
-                timestamp: Date.now()
-            };
-        }
-    };
-
-    window.CHIROMBE_AUDIO_EVOLUTION = API;
-    window.CHIROMBE_AUDIO_EVOLUTION_ENGINE = API;
-    window.CHIROMBE_AUDIO.Evolution = API;
-
-    console.log(
-        "[CHIROMBE] Audio Evolution 9A loaded",
-        API.getStatus()
-    );
-
-})(window);
+})();
 /* ============================================================================
    CHIROMBE AUDIO LIVING LITURGY
    PART 9 — ADAPTIVE EVOLUTION / SESSION MEMORY
@@ -25194,6 +25236,7 @@
    Extends the Part 1 kernel and Part 2 liturgy engine.
    Does not replace CHIROMBE_AUDIO, does not start playback on load,
    and does not rewrite application source.
+   One Evolution API only. The old 9.0.1 status stub is not installed.
  ============================================================================ */
 
 (() => {
