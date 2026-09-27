@@ -15513,3 +15513,2659 @@
   );
 
 })();
+/* ============================================================
+   CHIROMBE AUDIO LIVING LITURGY
+   PART 6 — ENVIRONMENT / ACOUSTIC / MOTION / ADAPTIVE ENGINE
+   Version: 6.0.0
+   ------------------------------------------------------------
+   Purpose:
+   • Observe measurable environmental conditions locally
+   • Analyse microphone acoustics
+   • Analyse motion/orientation when permitted
+   • Optionally analyse ambient light when supported
+   • Maintain environmental history
+   • Adapt CHIROMBE audio scenes
+   • Feed observations into Living Watch / Liturgy / Tonal systems
+   • Keep sensor observations separate from spiritual interpretation
+   • Never upload microphone data by default
+   • Never treat sensor anomalies as proof of supernatural activity
+   ============================================================ */
+
+(() => {
+  "use strict";
+
+  const ROOT =
+    window.CHIROMBE_AUDIO_ENVIRONMENT_ENGINE ||
+    {};
+
+  const AUDIO =
+    window.CHIROMBE_AUDIO ||
+    {};
+
+  const TONAL =
+    window.CHIROMBE_AUDIO_TONAL_ENGINE ||
+    window.CHIROMBE_AUDIO?.Tonal ||
+    null;
+
+  const LITURGY =
+    window.CHIROMBE_AUDIO_LITURGY_ENGINE ||
+    window.CHIROMBE_AUDIO?.Liturgy ||
+    null;
+
+  const VERSION = "6.0.0";
+
+  /* ------------------------------------------------------------
+     CONSTANTS
+     ------------------------------------------------------------ */
+
+  const STATES = Object.freeze({
+    DORMANT: "DORMANT",
+    READY: "READY",
+    REQUESTING_PERMISSION: "REQUESTING_PERMISSION",
+    LISTENING: "LISTENING",
+    ANALYSING: "ANALYSING",
+    ADAPTING: "ADAPTING",
+    PAUSED: "PAUSED",
+    SAFE_STOP: "SAFE_STOP",
+    UNSUPPORTED: "UNSUPPORTED",
+    ERROR: "ERROR"
+  });
+
+  const ENVIRONMENTS = Object.freeze({
+    SILENT: "SILENT",
+    QUIET: "QUIET",
+    NORMAL: "NORMAL",
+    BUSY: "BUSY",
+    LOUD: "LOUD",
+    UNKNOWN: "UNKNOWN"
+  });
+
+  const MOTION = Object.freeze({
+    STILL: "STILL",
+    GENTLE: "GENTLE",
+    MOVING: "MOVING",
+    ACTIVE: "ACTIVE",
+    UNKNOWN: "UNKNOWN"
+  });
+
+  const LIGHT = Object.freeze({
+    DARK: "DARK",
+    DIM: "DIM",
+    NORMAL: "NORMAL",
+    BRIGHT: "BRIGHT",
+    UNKNOWN: "UNKNOWN"
+  });
+
+  const MODES = Object.freeze({
+    OBSERVE: "OBSERVE",
+    SANCTUARY: "SANCTUARY",
+    NIGHT_WATCH: "NIGHT_WATCH",
+    FAMILY_CIRCLE: "FAMILY_CIRCLE",
+    REFLECTION: "REFLECTION",
+    PROTECTION: "PROTECTION",
+    GRATITUDE: "GRATITUDE",
+    REMEMBRANCE: "REMEMBRANCE",
+    UNITY: "UNITY",
+    RECOVERY: "RECOVERY",
+    SILENT_WATCH: "SILENT_WATCH"
+  });
+
+  const CONFIG = {
+    version: VERSION,
+
+    localOnly: true,
+
+    microphone: {
+      enabled: false,
+      fftSize: 2048,
+      smoothing: 0.82,
+      intervalMs: 500,
+      maxSessionMs: 24 * 60 * 60 * 1000
+    },
+
+    motion: {
+      enabled: false,
+      intervalMs: 500
+    },
+
+    light: {
+      enabled: false,
+      intervalMs: 1000
+    },
+
+    network: {
+      enabled: false,
+      timeoutMs: 3000
+    },
+
+    history: {
+      maxSnapshots: 600,
+      maxEvents: 1000
+    },
+
+    adaptation: {
+      enabled: true,
+      minimumChangeMs: 15000,
+      quietThreshold: 0.018,
+      normalThreshold: 0.055,
+      busyThreshold: 0.11,
+      loudThreshold: 0.20,
+      stillThreshold: 0.035,
+      movingThreshold: 0.18,
+      activeThreshold: 0.50
+    },
+
+    privacy: {
+      uploadEnabled: false,
+      retainRawAudio: false,
+      retainAudioBuffers: false,
+      externalAIEnabled: false
+    },
+
+    safety: {
+      maxCpuLoopMs: 100,
+      maxSnapshotsPerMinute: 120,
+      automaticAdaptation: true
+    }
+  };
+
+  /* ------------------------------------------------------------
+     STATE
+     ------------------------------------------------------------ */
+
+  const STATE = {
+    state: STATES.DORMANT,
+
+    mode: MODES.OBSERVE,
+
+    startedAt: null,
+    lastAnalysisAt: null,
+    lastAdaptationAt: 0,
+
+    sampleCount: 0,
+
+    microphone: {
+      supported: false,
+      permission: "unknown",
+      active: false,
+      stream: null,
+      source: null,
+      analyser: null,
+      dataTime: null,
+      dataFreq: null,
+      context: null
+    },
+
+    motion: {
+      supported: false,
+      permission: "unknown",
+      active: false,
+      acceleration: {
+        x: 0,
+        y: 0,
+        z: 0
+      },
+      rotation: {
+        alpha: 0,
+        beta: 0,
+        gamma: 0
+      },
+      magnitude: 0,
+      lastEventAt: null
+    },
+
+    light: {
+      supported: false,
+      permission: "unknown",
+      active: false,
+      lux: null,
+      sensor: null
+    },
+
+    network: {
+      enabled: false,
+      lastRTT: null,
+      lastCheckedAt: null
+    },
+
+    acoustic: {
+      rms: 0,
+      peak: 0,
+      decibels: -Infinity,
+      noiseFloor: 0,
+      dynamicRange: 0,
+
+      spectralCentroid: 0,
+      spectralRolloff: 0,
+      zeroCrossingRate: 0,
+
+      dominantFrequency: 0,
+
+      bands: {
+        sub: 0,
+        low: 0,
+        lowMid: 0,
+        mid: 0,
+        highMid: 0,
+        high: 0
+      },
+
+      environment: ENVIRONMENTS.UNKNOWN
+    },
+
+    environment: {
+      motion: MOTION.UNKNOWN,
+      light: LIGHT.UNKNOWN,
+      acoustic: ENVIRONMENTS.UNKNOWN,
+
+      confidence: 0,
+
+      classification: "UNKNOWN",
+
+      interpretationBoundary:
+        "MEASUREMENT_ONLY"
+    },
+
+    adaptation: {
+      enabled: true,
+      currentScene: null,
+      reason: null,
+      lastDecision: null
+    },
+
+    history: [],
+    events: [],
+
+    errors: []
+  };
+
+  /* ------------------------------------------------------------
+     UTILITIES
+     ------------------------------------------------------------ */
+
+  function now() {
+    return Date.now();
+  }
+
+  function uid(prefix = "env") {
+    return (
+      prefix +
+      "_" +
+      Date.now().toString(36) +
+      "_" +
+      Math.random().toString(36).slice(2, 10)
+    );
+  }
+
+  function num(value, fallback = 0) {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : fallback;
+  }
+
+  function clamp(value, min, max) {
+    return Math.min(max, Math.max(min, value));
+  }
+
+  function average(values) {
+    if (!values.length) return 0;
+    return values.reduce((a, b) => a + b, 0) / values.length;
+  }
+
+  function rms(values) {
+    if (!values.length) return 0;
+
+    let total = 0;
+
+    for (let i = 0; i < values.length; i++) {
+      total += values[i] * values[i];
+    }
+
+    return Math.sqrt(total / values.length);
+  }
+
+  function emit(type, detail = {}) {
+    const event = {
+      id: uid("env-event"),
+      type,
+      timestamp: now(),
+      version: VERSION,
+      detail
+    };
+
+    STATE.events.push(event);
+
+    if (
+      STATE.events.length >
+      CONFIG.history.maxEvents
+    ) {
+      STATE.events.splice(
+        0,
+        STATE.events.length -
+          CONFIG.history.maxEvents
+      );
+    }
+
+    try {
+      window.dispatchEvent(
+        new CustomEvent(
+          "CHIROMBE_AUDIO_ENVIRONMENT_EVENT",
+          {
+            detail: event
+          }
+        )
+      );
+    } catch (_) {}
+
+    try {
+      if (
+        window.ChirombeBus &&
+        typeof window.ChirombeBus.emit ===
+          "function"
+      ) {
+        window.ChirombeBus.emit(
+          type,
+          detail
+        );
+      }
+    } catch (_) {}
+
+    return event;
+  }
+
+  function recordError(error, context) {
+    const entry = {
+      id: uid("env-error"),
+      timestamp: now(),
+      context,
+      message:
+        error?.message ||
+        String(error)
+    };
+
+    STATE.errors.push(entry);
+
+    if (STATE.errors.length > 100) {
+      STATE.errors.shift();
+    }
+
+    emit("ENVIRONMENT_ENGINE_ERROR", entry);
+  }
+
+  /* ------------------------------------------------------------
+     CAPABILITY DETECTION
+     ------------------------------------------------------------ */
+
+  function detectCapabilities() {
+    const nav = navigator || {};
+
+    STATE.microphone.supported =
+      !!(
+        nav.mediaDevices &&
+        typeof nav.mediaDevices.getUserMedia ===
+          "function"
+      );
+
+    STATE.motion.supported =
+      "DeviceMotionEvent" in window;
+
+    STATE.light.supported =
+      "AmbientLightSensor" in window;
+
+    STATE.network.enabled =
+      typeof performance !== "undefined" &&
+      typeof performance.now === "function";
+
+    if (
+      !STATE.microphone.supported &&
+      !STATE.motion.supported &&
+      !STATE.light.supported
+    ) {
+      STATE.state = STATES.UNSUPPORTED;
+    } else {
+      STATE.state = STATES.READY;
+    }
+
+    return getCapabilities();
+  }
+
+  /* ------------------------------------------------------------
+     AUDIO CONTEXT DISCOVERY
+     ------------------------------------------------------------ */
+
+  function findAudioContext() {
+    try {
+      if (
+        TONAL &&
+        TONAL.context
+      ) {
+        return TONAL.context;
+      }
+    } catch (_) {}
+
+    try {
+      if (
+        AUDIO &&
+        AUDIO.context
+      ) {
+        return AUDIO.context;
+      }
+    } catch (_) {}
+
+    return (
+      window.audioContext ||
+      window.AudioContextInstance ||
+      null
+    );
+  }
+
+  /* ------------------------------------------------------------
+     MICROPHONE PERMISSION
+     ------------------------------------------------------------ */
+
+  async function requestMicrophone() {
+    if (
+      !STATE.microphone.supported
+    ) {
+      STATE.microphone.permission =
+        "unsupported";
+
+      emit(
+        "ENVIRONMENT_MIC_UNSUPPORTED"
+      );
+
+      return false;
+    }
+
+    STATE.state =
+      STATES.REQUESTING_PERMISSION;
+
+    emit(
+      "ENVIRONMENT_MIC_PERMISSION_REQUESTED"
+    );
+
+    try {
+      const stream =
+        await navigator.mediaDevices
+          .getUserMedia({
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: false,
+              autoGainControl: false,
+              channelCount: 1
+            },
+            video: false
+          });
+
+      STATE.microphone.stream =
+        stream;
+
+      STATE.microphone.permission =
+        "granted";
+
+      STATE.microphone.active =
+        true;
+
+      initialiseMicrophoneGraph();
+
+      emit(
+        "ENVIRONMENT_MIC_GRANTED"
+      );
+
+      return true;
+    } catch (error) {
+      STATE.microphone.permission =
+        "denied_or_unavailable";
+
+      STATE.microphone.active =
+        false;
+
+      recordError(
+        error,
+        "requestMicrophone"
+      );
+
+      emit(
+        "ENVIRONMENT_MIC_DENIED",
+        {
+          message:
+            error?.message ||
+            String(error)
+        }
+      );
+
+      STATE.state =
+        STATES.READY;
+
+      return false;
+    }
+  }
+
+  /* ------------------------------------------------------------
+     MICROPHONE GRAPH
+     ------------------------------------------------------------ */
+
+  function initialiseMicrophoneGraph() {
+    try {
+      const context =
+        findAudioContext();
+
+      if (!context) {
+        throw new Error(
+          "No compatible AudioContext available."
+        );
+      }
+
+      STATE.microphone.context =
+        context;
+
+      const stream =
+        STATE.microphone.stream;
+
+      if (!stream) {
+        throw new Error(
+          "Microphone stream missing."
+        );
+      }
+
+      STATE.microphone.source =
+        context.createMediaStreamSource(
+          stream
+        );
+
+      STATE.microphone.analyser =
+        context.createAnalyser();
+
+      STATE.microphone.analyser.fftSize =
+        CONFIG.microphone.fftSize;
+
+      STATE.microphone.analyser.smoothingTimeConstant =
+        CONFIG.microphone.smoothing;
+
+      STATE.microphone.dataTime =
+        new Float32Array(
+          STATE.microphone.analyser.fftSize
+        );
+
+      STATE.microphone.dataFreq =
+        new Float32Array(
+          STATE.microphone.analyser.frequencyBinCount
+        );
+
+      /*
+       * IMPORTANT:
+       * The microphone graph terminates at the analyser.
+       *
+       * We intentionally do NOT connect the microphone
+       * analyser back to the audible output.
+       *
+       * This prevents microphone feedback loops.
+       */
+
+      STATE.microphone.source.connect(
+        STATE.microphone.analyser
+      );
+
+      if (
+        context.state === "suspended"
+      ) {
+        context.resume().catch(
+          () => {}
+        );
+      }
+
+      emit(
+        "ENVIRONMENT_MIC_GRAPH_READY"
+      );
+
+      return true;
+    } catch (error) {
+      recordError(
+        error,
+        "initialiseMicrophoneGraph"
+      );
+
+      return false;
+    }
+  }
+
+  /* ------------------------------------------------------------
+     ACOUSTIC ANALYSIS
+     ------------------------------------------------------------ */
+
+  function analyseMicrophone() {
+    const analyser =
+      STATE.microphone.analyser;
+
+    if (!analyser) {
+      return null;
+    }
+
+    const time =
+      STATE.microphone.dataTime;
+
+    const freq =
+      STATE.microphone.dataFreq;
+
+    analyser.getFloatTimeDomainData(
+      time
+    );
+
+    analyser.getFloatFrequencyData(
+      freq
+    );
+
+    /* RMS / PEAK */
+
+    let peak = 0;
+
+    for (
+      let i = 0;
+      i < time.length;
+      i++
+    ) {
+      const absolute =
+        Math.abs(time[i]);
+
+      if (absolute > peak) {
+        peak = absolute;
+      }
+    }
+
+    const rmsValue =
+      rms(time);
+
+    /* dBFS */
+
+    const db =
+      rmsValue > 0
+        ? 20 *
+          Math.log10(rmsValue)
+        : -Infinity;
+
+    /* ZERO CROSSING RATE */
+
+    let crossings = 0;
+
+    for (
+      let i = 1;
+      i < time.length;
+      i++
+    ) {
+      if (
+        (time[i - 1] < 0 &&
+          time[i] >= 0) ||
+        (time[i - 1] >= 0 &&
+          time[i] < 0)
+      ) {
+        crossings++;
+      }
+    }
+
+    const zcr =
+      crossings /
+      Math.max(1, time.length - 1);
+
+    /* SPECTRAL ANALYSIS */
+
+    const context =
+      STATE.microphone.context;
+
+    const sampleRate =
+      context?.sampleRate ||
+      44100;
+
+    const binWidth =
+      sampleRate /
+      analyser.fftSize;
+
+    let totalMagnitude = 0;
+    let weightedFrequency = 0;
+
+    let maxMagnitude = -Infinity;
+    let dominantBin = 0;
+
+    const magnitudes = [];
+
+    for (
+      let i = 0;
+      i < freq.length;
+      i++
+    ) {
+      const dbValue =
+        freq[i];
+
+      const magnitude =
+        Number.isFinite(dbValue)
+          ? Math.pow(
+              10,
+              dbValue / 20
+            )
+          : 0;
+
+      magnitudes.push(
+        magnitude
+      );
+
+      totalMagnitude +=
+        magnitude;
+
+      weightedFrequency +=
+        magnitude *
+        (i * binWidth);
+
+      if (
+        dbValue >
+        maxMagnitude
+      ) {
+        maxMagnitude =
+          dbValue;
+
+        dominantBin =
+          i;
+      }
+    }
+
+    const centroid =
+      totalMagnitude > 0
+        ? weightedFrequency /
+          totalMagnitude
+        : 0;
+
+    /* SPECTRAL ROLLOFF */
+
+    const targetEnergy =
+      totalMagnitude * 0.85;
+
+    let accumulated = 0;
+    let rolloffBin = 0;
+
+    for (
+      let i = 0;
+      i < magnitudes.length;
+      i++
+    ) {
+      accumulated +=
+        magnitudes[i];
+
+      if (
+        accumulated >=
+        targetEnergy
+      ) {
+        rolloffBin = i;
+        break;
+      }
+    }
+
+    const rolloff =
+      rolloffBin *
+      binWidth;
+
+    /* FREQUENCY BANDS */
+
+    function bandEnergy(
+      minHz,
+      maxHz
+    ) {
+      let total = 0;
+      let count = 0;
+
+      for (
+        let i = 0;
+        i < freq.length;
+        i++
+      ) {
+        const hz =
+          i * binWidth;
+
+        if (
+          hz >= minHz &&
+          hz < maxHz
+        ) {
+          total +=
+            magnitudes[i];
+          count++;
+        }
+      }
+
+      return count
+        ? total / count
+        : 0;
+    }
+
+    const bands = {
+      sub: bandEnergy(20, 60),
+      low: bandEnergy(60, 250),
+      lowMid: bandEnergy(250, 500),
+      mid: bandEnergy(500, 2000),
+      highMid: bandEnergy(2000, 6000),
+      high: bandEnergy(6000, 12000)
+    };
+
+    const previousFloor =
+      STATE.acoustic.noiseFloor;
+
+    const newFloor =
+      previousFloor === 0
+        ? rmsValue
+        : previousFloor * 0.95 +
+          rmsValue * 0.05;
+
+    const dynamicRange =
+      Math.max(
+        0,
+        peak -
+          newFloor
+      );
+
+    STATE.acoustic.rms =
+      rmsValue;
+
+    STATE.acoustic.peak =
+      peak;
+
+    STATE.acoustic.decibels =
+      db;
+
+    STATE.acoustic.noiseFloor =
+      newFloor;
+
+    STATE.acoustic.dynamicRange =
+      dynamicRange;
+
+    STATE.acoustic.spectralCentroid =
+      centroid;
+
+    STATE.acoustic.spectralRolloff =
+      rolloff;
+
+    STATE.acoustic.zeroCrossingRate =
+      zcr;
+
+    STATE.acoustic.dominantFrequency =
+      dominantBin *
+      binWidth;
+
+    STATE.acoustic.bands =
+      bands;
+
+    STATE.acoustic.environment =
+      classifyAcousticEnvironment(
+        rmsValue,
+        peak
+      );
+
+    return {
+      rms: rmsValue,
+      peak,
+      decibels: db,
+      noiseFloor: newFloor,
+      dynamicRange,
+      spectralCentroid: centroid,
+      spectralRolloff: rolloff,
+      zeroCrossingRate: zcr,
+      dominantFrequency:
+        dominantBin *
+        binWidth,
+      bands,
+      environment:
+        STATE.acoustic.environment,
+      sampleRate,
+      fftSize:
+        analyser.fftSize,
+      timestamp: now()
+    };
+  }
+
+  /* ------------------------------------------------------------
+     ACOUSTIC CLASSIFICATION
+     ------------------------------------------------------------ */
+
+  function classifyAcousticEnvironment(
+    rmsValue,
+    peak
+  ) {
+    const value =
+      Math.max(
+        rmsValue,
+        peak * 0.35
+      );
+
+    if (
+      value <
+      CONFIG.adaptation.quietThreshold
+    ) {
+      return ENVIRONMENTS.SILENT;
+    }
+
+    if (
+      value <
+      CONFIG.adaptation.normalThreshold
+    ) {
+      return ENVIRONMENTS.QUIET;
+    }
+
+    if (
+      value <
+      CONFIG.adaptation.busyThreshold
+    ) {
+      return ENVIRONMENTS.NORMAL;
+    }
+
+    if (
+      value <
+      CONFIG.adaptation.loudThreshold
+    ) {
+      return ENVIRONMENTS.BUSY;
+    }
+
+    return ENVIRONMENTS.LOUD;
+  }
+
+  /* ------------------------------------------------------------
+     MOTION / ORIENTATION
+     ------------------------------------------------------------ */
+
+  function requestMotionPermission() {
+    return new Promise(
+      resolve => {
+        try {
+          if (
+            typeof DeviceMotionEvent ===
+              "undefined"
+          ) {
+            STATE.motion.permission =
+              "unsupported";
+
+            resolve(false);
+            return;
+          }
+
+          if (
+            typeof DeviceMotionEvent
+              .requestPermission ===
+              "function"
+          ) {
+            DeviceMotionEvent
+              .requestPermission()
+              .then(result => {
+                STATE.motion.permission =
+                  result;
+
+                if (
+                  result === "granted"
+                ) {
+                  attachMotion();
+                  resolve(true);
+                } else {
+                  resolve(false);
+                }
+              })
+              .catch(error => {
+                recordError(
+                  error,
+                  "motionPermission"
+                );
+
+                resolve(false);
+              });
+          } else {
+            STATE.motion.permission =
+              "granted";
+
+            attachMotion();
+
+            resolve(true);
+          }
+        } catch (error) {
+          recordError(
+            error,
+            "requestMotionPermission"
+          );
+
+          resolve(false);
+        }
+      }
+    );
+  }
+
+  function attachMotion() {
+    if (
+      STATE.motion.active
+    ) {
+      return true;
+    }
+
+    try {
+      window.addEventListener(
+        "devicemotion",
+        handleMotion,
+        {
+          passive: true
+        }
+      );
+
+      window.addEventListener(
+        "deviceorientation",
+        handleOrientation,
+        {
+          passive: true
+        }
+      );
+
+      STATE.motion.active =
+        true;
+
+      emit(
+        "ENVIRONMENT_MOTION_ACTIVE"
+      );
+
+      return true;
+    } catch (error) {
+      recordError(
+        error,
+        "attachMotion"
+      );
+
+      return false;
+    }
+  }
+
+  function handleMotion(event) {
+    const acc =
+      event.accelerationIncludingGravity ||
+      event.acceleration ||
+      {};
+
+    const x =
+      num(acc.x);
+
+    const y =
+      num(acc.y);
+
+    const z =
+      num(acc.z);
+
+    const magnitude =
+      Math.sqrt(
+        x * x +
+        y * y +
+        z * z
+      );
+
+    STATE.motion.acceleration = {
+      x,
+      y,
+      z
+    };
+
+    STATE.motion.magnitude =
+      magnitude;
+
+    STATE.motion.lastEventAt =
+      now();
+
+    STATE.environment.motion =
+      classifyMotion(
+        magnitude
+      );
+  }
+
+  function handleOrientation(
+    event
+  ) {
+    STATE.motion.rotation = {
+      alpha: num(event.alpha),
+      beta: num(event.beta),
+      gamma: num(event.gamma)
+    };
+  }
+
+  function classifyMotion(
+    magnitude
+  ) {
+    /*
+     * Gravity is approximately 9.81 m/s².
+     * We use change from gravity rather than
+     * claiming that raw acceleration proves
+     * anything beyond physical movement.
+     */
+
+    const delta =
+      Math.abs(
+        magnitude - 9.81
+      );
+
+    if (
+      delta <
+      CONFIG.adaptation.stillThreshold
+    ) {
+      return MOTION.STILL;
+    }
+
+    if (
+      delta <
+      CONFIG.adaptation.movingThreshold
+    ) {
+      return MOTION.GENTLE;
+    }
+
+    if (
+      delta <
+      CONFIG.adaptation.activeThreshold
+    ) {
+      return MOTION.MOVING;
+    }
+
+    return MOTION.ACTIVE;
+  }
+
+  /* ------------------------------------------------------------
+     AMBIENT LIGHT
+     ------------------------------------------------------------ */
+
+  async function startAmbientLight() {
+    if (
+      !STATE.light.supported
+    ) {
+      STATE.light.permission =
+        "unsupported";
+
+      return false;
+    }
+
+    try {
+      const sensor =
+        new AmbientLightSensor();
+
+      STATE.light.sensor =
+        sensor;
+
+      sensor.addEventListener(
+        "reading",
+        () => {
+          STATE.light.lux =
+            num(sensor.illuminance, null);
+
+          STATE.environment.light =
+            classifyLight(
+              STATE.light.lux
+            );
+        }
+      );
+
+      sensor.addEventListener(
+        "error",
+        event => {
+          recordError(
+            event.error ||
+              new Error(
+                "Ambient light sensor error."
+              ),
+            "ambientLight"
+          );
+        }
+      );
+
+      sensor.start();
+
+      STATE.light.active =
+        true;
+
+      STATE.light.permission =
+        "granted";
+
+      emit(
+        "ENVIRONMENT_LIGHT_ACTIVE"
+      );
+
+      return true;
+    } catch (error) {
+      STATE.light.permission =
+        "unavailable";
+
+      recordError(
+        error,
+        "startAmbientLight"
+      );
+
+      return false;
+    }
+  }
+
+  function classifyLight(
+    lux
+  ) {
+    if (!Number.isFinite(lux)) {
+      return LIGHT.UNKNOWN;
+    }
+
+    if (lux < 1) {
+      return LIGHT.DARK;
+    }
+
+    if (lux < 30) {
+      return LIGHT.DIM;
+    }
+
+    if (lux < 1000) {
+      return LIGHT.NORMAL;
+    }
+
+    return LIGHT.BRIGHT;
+  }
+
+  /* ------------------------------------------------------------
+     ENVIRONMENTAL CLASSIFICATION
+     ------------------------------------------------------------ */
+
+  function classifyEnvironment() {
+    const acoustic =
+      STATE.acoustic.environment;
+
+    const motion =
+      STATE.environment.motion;
+
+    let classification =
+      "STABLE";
+
+    if (
+      acoustic ===
+        ENVIRONMENTS.LOUD ||
+      motion === MOTION.ACTIVE
+    ) {
+      classification =
+        "ACTIVE_ENVIRONMENT";
+    } else if (
+      acoustic ===
+        ENVIRONMENTS.BUSY ||
+      motion === MOTION.MOVING
+    ) {
+      classification =
+        "MOBILE_ENVIRONMENT";
+    } else if (
+      acoustic ===
+        ENVIRONMENTS.SILENT &&
+      motion === MOTION.STILL
+    ) {
+      classification =
+        "STILL_ENVIRONMENT";
+    } else if (
+      acoustic ===
+        ENVIRONMENTS.QUIET
+    ) {
+      classification =
+        "QUIET_ENVIRONMENT";
+    }
+
+    STATE.environment.classification =
+      classification;
+
+    STATE.environment.confidence =
+      calculateConfidence();
+
+    return classification;
+  }
+
+  function calculateConfidence() {
+    let score = 0;
+    let count = 0;
+
+    if (
+      STATE.microphone.active
+    ) {
+      score += 0.45;
+      count++;
+    }
+
+    if (
+      STATE.motion.active
+    ) {
+      score += 0.35;
+      count++;
+    }
+
+    if (
+      STATE.light.active
+    ) {
+      score += 0.20;
+      count++;
+    }
+
+    return count
+      ? clamp(score, 0, 1)
+      : 0;
+  }
+
+  /* ------------------------------------------------------------
+     SNAPSHOT
+     ------------------------------------------------------------ */
+
+  function snapshot() {
+    const snap = {
+      id: uid("environment"),
+      timestamp: now(),
+
+      acoustic: {
+        ...STATE.acoustic,
+        bands: {
+          ...STATE.acoustic.bands
+        }
+      },
+
+      motion: {
+        ...STATE.motion.acceleration,
+        magnitude:
+          STATE.motion.magnitude,
+        rotation: {
+          ...STATE.motion.rotation
+        }
+      },
+
+      light: {
+        lux:
+          STATE.light.lux,
+        classification:
+          STATE.environment.light
+      },
+
+      classification:
+        STATE.environment.classification,
+
+      confidence:
+        STATE.environment.confidence,
+
+      mode:
+        STATE.mode,
+
+      interpretationBoundary:
+        "MEASURED_ENVIRONMENT_ONLY"
+    };
+
+    STATE.history.push(snap);
+
+    if (
+      STATE.history.length >
+      CONFIG.history.maxSnapshots
+    ) {
+      STATE.history.splice(
+        0,
+        STATE.history.length -
+          CONFIG.history.maxSnapshots
+      );
+    }
+
+    STATE.sampleCount++;
+
+    return snap;
+  }
+
+  /* ------------------------------------------------------------
+     ADAPTIVE AUDIO DECISION ENGINE
+     ------------------------------------------------------------ */
+
+  function chooseAdaptiveScene() {
+    if (
+      !CONFIG.adaptation.enabled ||
+      !STATE.adaptation.enabled
+    ) {
+      return null;
+    }
+
+    const mode =
+      STATE.mode;
+
+    const acoustic =
+      STATE.acoustic.environment;
+
+    const motion =
+      STATE.environment.motion;
+
+    /*
+     * The environment determines an audio strategy,
+     * not a supernatural interpretation.
+     */
+
+    if (
+      mode === MODES.NIGHT_WATCH
+    ) {
+      if (
+        acoustic ===
+          ENVIRONMENTS.SILENT &&
+        motion === MOTION.STILL
+      ) {
+        return {
+          scene: "SILENT_WATCH",
+          reason:
+            "Measured quiet and still environment."
+        };
+      }
+
+      return {
+        scene: "NIGHT_WATCH",
+        reason:
+          "Night-watch mode selected."
+      };
+    }
+
+    if (
+      mode === MODES.RECOVERY
+    ) {
+      return {
+        scene: "RECOVERY",
+        reason:
+          "Recovery mode selected."
+      };
+    }
+
+    if (
+      acoustic ===
+        ENVIRONMENTS.LOUD
+    ) {
+      return {
+        scene: "GROUNDING",
+        reason:
+          "Environment measured as loud; selecting a restrained grounding scene."
+      };
+    }
+
+    if (
+      acoustic ===
+        ENVIRONMENTS.BUSY ||
+      motion === MOTION.ACTIVE
+    ) {
+      return {
+        scene: "GROUNDING",
+        reason:
+          "Active environment detected; selecting a stable grounding scene."
+      };
+    }
+
+    if (
+      acoustic ===
+        ENVIRONMENTS.SILENT &&
+      motion === MOTION.STILL
+    ) {
+      if (
+        mode === MODES.PROTECTION
+      ) {
+        return {
+          scene: "PROTECTION",
+          reason:
+            "Quiet/still environment with protection mode active."
+        };
+      }
+
+      return {
+        scene: "REFLECTION",
+        reason:
+          "Quiet/still environment detected."
+      };
+    }
+
+    if (
+      mode === MODES.FAMILY_CIRCLE
+    ) {
+      return {
+        scene: "UNITY",
+        reason:
+          "Family-circle mode active."
+      };
+    }
+
+    if (
+      mode === MODES.GRATITUDE
+    ) {
+      return {
+        scene: "GRATITUDE",
+        reason:
+          "Gratitude mode active."
+      };
+    }
+
+    if (
+      mode === MODES.REMEMBRANCE
+    ) {
+      return {
+        scene: "REMEMBRANCE",
+        reason:
+          "Remembrance mode active."
+      };
+    }
+
+    if (
+      mode === MODES.UNITY
+    ) {
+      return {
+        scene: "UNITY",
+        reason:
+          "Unity mode active."
+      };
+    }
+
+    return {
+      scene: "REFLECTION",
+      reason:
+        "Default adaptive reflection scene."
+    };
+  }
+
+  async function adaptAudio() {
+    if (
+      !STATE.adaptation.enabled ||
+      !CONFIG.safety.automaticAdaptation
+    ) {
+      return null;
+    }
+
+    const current =
+      now();
+
+    if (
+      current -
+        STATE.adaptation.lastDecision <
+      CONFIG.adaptation.minimumChangeMs
+    ) {
+      return null;
+    }
+
+    const decision =
+      chooseAdaptiveScene();
+
+    if (!decision) {
+      return null;
+    }
+
+    STATE.adaptation.lastDecision =
+      current;
+
+    if (
+      STATE.adaptation.currentScene ===
+      decision.scene
+    ) {
+      return decision;
+    }
+
+    STATE.state =
+      STATES.ADAPTING;
+
+    const previous =
+      STATE.adaptation.currentScene;
+
+    STATE.adaptation.currentScene =
+      decision.scene;
+
+    STATE.adaptation.reason =
+      decision.reason;
+
+    STATE.adaptation.lastAdaptationAt =
+      current;
+
+    emit(
+      "ENVIRONMENT_AUDIO_ADAPTATION",
+      {
+        previous,
+        current:
+          decision.scene,
+        reason:
+          decision.reason,
+        classification:
+          STATE.environment.classification,
+        acoustic:
+          STATE.acoustic.environment,
+        motion:
+          STATE.environment.motion
+      }
+    );
+
+    /*
+     * Only use the existing tonal engine.
+     * Never construct uncontrolled oscillators here.
+     */
+
+    try {
+      if (
+        TONAL &&
+        typeof TONAL.playScene ===
+          "function"
+      ) {
+        await TONAL.playScene(
+          decision.scene
+        );
+      }
+    } catch (error) {
+      recordError(
+        error,
+        "adaptiveAudio.playScene"
+      );
+    }
+
+    STATE.state =
+      STATES.LISTENING;
+
+    return decision;
+  }
+
+  /* ------------------------------------------------------------
+     OPERATING MODE
+     ------------------------------------------------------------ */
+
+  function setMode(mode) {
+    const values =
+      Object.values(MODES);
+
+    if (
+      !values.includes(mode)
+    ) {
+      throw new Error(
+        "Unknown CHIROMBE environment mode: " +
+          mode
+      );
+    }
+
+    STATE.mode = mode;
+
+    emit(
+      "ENVIRONMENT_MODE_CHANGED",
+      {
+        mode
+      }
+    );
+
+    return mode;
+  }
+
+  /* ------------------------------------------------------------
+     ANALYSIS LOOP
+     ------------------------------------------------------------ */
+
+  let analysisTimer =
+    null;
+
+  function analysisCycle() {
+    if (
+      STATE.state ===
+        STATES.SAFE_STOP ||
+      STATE.state ===
+        STATES.PAUSED
+    ) {
+      return;
+    }
+
+    const started =
+      performance.now();
+
+    try {
+      STATE.state =
+        STATES.ANALYSING;
+
+      if (
+        STATE.microphone.active
+      ) {
+        analyseMicrophone();
+      }
+
+      classifyEnvironment();
+
+      snapshot();
+
+      STATE.lastAnalysisAt =
+        now();
+
+      if (
+        STATE.adaptation.enabled
+      ) {
+        adaptAudio().catch(
+          error =>
+            recordError(
+              error,
+              "analysisCycle.adaptAudio"
+            )
+        );
+      }
+
+      if (
+        performance.now() -
+          started >
+        CONFIG.safety.maxCpuLoopMs
+      ) {
+        emit(
+          "ENVIRONMENT_CPU_GUARD",
+          {
+            durationMs:
+              performance.now() -
+              started
+          }
+        );
+      }
+
+      if (
+        STATE.state ===
+        STATES.ANALYSING
+      ) {
+        STATE.state =
+          STATES.LISTENING;
+      }
+    } catch (error) {
+      recordError(
+        error,
+        "analysisCycle"
+      );
+
+      STATE.state =
+        STATES.ERROR;
+    }
+  }
+
+  function startAnalysisLoop() {
+    stopAnalysisLoop();
+
+    analysisTimer =
+      window.setInterval(
+        analysisCycle,
+        CONFIG.microphone.intervalMs
+      );
+
+    emit(
+      "ENVIRONMENT_ANALYSIS_STARTED"
+    );
+  }
+
+  function stopAnalysisLoop() {
+    if (
+      analysisTimer !== null
+    ) {
+      clearInterval(
+        analysisTimer
+      );
+
+      analysisTimer =
+        null;
+    }
+  }
+
+  /* ------------------------------------------------------------
+     NETWORK TIMING — OPTIONAL / LOCAL CONTROL
+     ------------------------------------------------------------ */
+
+  async function measureNetworkTiming(
+    url = location.href
+  ) {
+    if (
+      !CONFIG.network.enabled
+    ) {
+      return null;
+    }
+
+    const started =
+      performance.now();
+
+    try {
+      /*
+       * Same-origin only by default.
+       * This prevents the environmental engine
+       * from becoming an arbitrary network scanner.
+       */
+
+      const target =
+        new URL(
+          url,
+          location.href
+        );
+
+      if (
+        target.origin !==
+        location.origin
+      ) {
+        throw new Error(
+          "Cross-origin network timing blocked."
+        );
+      }
+
+      const controller =
+        new AbortController();
+
+      const timeout =
+        setTimeout(
+          () =>
+            controller.abort(),
+          CONFIG.network.timeoutMs
+        );
+
+      await fetch(
+        target.href,
+        {
+          method: "HEAD",
+          cache: "no-store",
+          credentials: "same-origin",
+          signal:
+            controller.signal
+        }
+      );
+
+      clearTimeout(timeout);
+
+      const rtt =
+        performance.now() -
+        started;
+
+      STATE.network.lastRTT =
+        rtt;
+
+      STATE.network.lastCheckedAt =
+        now();
+
+      emit(
+        "ENVIRONMENT_NETWORK_TIMING",
+        {
+          rtt
+        }
+      );
+
+      return rtt;
+    } catch (error) {
+      recordError(
+        error,
+        "measureNetworkTiming"
+      );
+
+      return null;
+    }
+  }
+
+  /* ------------------------------------------------------------
+     START
+     ------------------------------------------------------------ */
+
+  async function start(options = {}) {
+    if (
+      STATE.state ===
+        STATES.LISTENING ||
+      STATE.state ===
+        STATES.ANALYSING
+    ) {
+      return getStatus();
+    }
+
+    if (
+      options.mode
+    ) {
+      setMode(
+        options.mode
+      );
+    }
+
+    STATE.state =
+      STATES.REQUESTING_PERMISSION;
+
+    STATE.startedAt =
+      now();
+
+    detectCapabilities();
+
+    let microphoneStarted =
+      false;
+
+    if (
+      options.microphone !== false
+    ) {
+      microphoneStarted =
+        await requestMicrophone();
+    }
+
+    if (
+      options.motion !== false &&
+      STATE.motion.supported
+    ) {
+      await requestMotionPermission();
+    }
+
+    if (
+      options.light !== false &&
+      STATE.light.supported
+    ) {
+      await startAmbientLight();
+    }
+
+    startAnalysisLoop();
+
+    STATE.state =
+      STATES.LISTENING;
+
+    emit(
+      "ENVIRONMENT_ENGINE_STARTED",
+      {
+        microphone:
+          microphoneStarted,
+        motion:
+          STATE.motion.active,
+        light:
+          STATE.light.active,
+        localOnly:
+          CONFIG.localOnly,
+        mode:
+          STATE.mode
+      }
+    );
+
+    return getStatus();
+  }
+
+  /* ------------------------------------------------------------
+     PAUSE / RESUME
+     ------------------------------------------------------------ */
+
+  function pause() {
+    STATE.state =
+      STATES.PAUSED;
+
+    emit(
+      "ENVIRONMENT_ENGINE_PAUSED"
+    );
+
+    return true;
+  }
+
+  function resume() {
+    if (
+      STATE.state !==
+      STATES.PAUSED
+    ) {
+      return false;
+    }
+
+    STATE.state =
+      STATES.LISTENING;
+
+    emit(
+      "ENVIRONMENT_ENGINE_RESUMED"
+    );
+
+    return true;
+  }
+
+  /* ------------------------------------------------------------
+     MICROPHONE STOP
+     ------------------------------------------------------------ */
+
+  function stopMicrophone() {
+    try {
+      if (
+        STATE.microphone.source
+      ) {
+        try {
+          STATE.microphone.source.disconnect();
+        } catch (_) {}
+      }
+
+      if (
+        STATE.microphone.analyser
+      ) {
+        try {
+          STATE.microphone.analyser.disconnect();
+        } catch (_) {}
+      }
+
+      if (
+        STATE.microphone.stream
+      ) {
+        STATE.microphone.stream
+          .getTracks()
+          .forEach(track => {
+            try {
+              track.stop();
+            } catch (_) {}
+          });
+      }
+    } catch (error) {
+      recordError(
+        error,
+        "stopMicrophone"
+      );
+    }
+
+    STATE.microphone.source =
+      null;
+
+    STATE.microphone.analyser =
+      null;
+
+    STATE.microphone.stream =
+      null;
+
+    STATE.microphone.active =
+      false;
+
+    emit(
+      "ENVIRONMENT_MIC_STOPPED"
+    );
+  }
+
+  /* ------------------------------------------------------------
+     MOTION STOP
+     ------------------------------------------------------------ */
+
+  function stopMotion() {
+    try {
+      window.removeEventListener(
+        "devicemotion",
+        handleMotion
+      );
+
+      window.removeEventListener(
+        "deviceorientation",
+        handleOrientation
+      );
+    } catch (_) {}
+
+    STATE.motion.active =
+      false;
+
+    emit(
+      "ENVIRONMENT_MOTION_STOPPED"
+    );
+  }
+
+  /* ------------------------------------------------------------
+     LIGHT STOP
+     ------------------------------------------------------------ */
+
+  function stopLight() {
+    try {
+      if (
+        STATE.light.sensor &&
+        typeof STATE.light.sensor.stop ===
+          "function"
+      ) {
+        STATE.light.sensor.stop();
+      }
+    } catch (_) {}
+
+    STATE.light.sensor =
+      null;
+
+    STATE.light.active =
+      false;
+
+    emit(
+      "ENVIRONMENT_LIGHT_STOPPED"
+    );
+  }
+
+  /* ------------------------------------------------------------
+     SAFE STOP
+     ------------------------------------------------------------ */
+
+  function safeStop(
+    reason =
+      "User requested safe stop."
+  ) {
+    stopAnalysisLoop();
+    stopMicrophone();
+    stopMotion();
+    stopLight();
+
+    STATE.state =
+      STATES.SAFE_STOP;
+
+    STATE.adaptation.enabled =
+      false;
+
+    emit(
+      "ENVIRONMENT_SAFE_STOP",
+      {
+        reason
+      }
+    );
+
+    return true;
+  }
+
+  /* ------------------------------------------------------------
+     PRIVACY
+     ------------------------------------------------------------ */
+
+  function getPrivacyStatus() {
+    return {
+      localOnly:
+        CONFIG.localOnly,
+
+      uploadEnabled:
+        CONFIG.privacy.uploadEnabled,
+
+      rawAudioRetained:
+        CONFIG.privacy.retainRawAudio,
+
+      audioBuffersRetained:
+        CONFIG.privacy.retainAudioBuffers,
+
+      externalAIEnabled:
+        CONFIG.privacy.externalAIEnabled,
+
+      microphoneActive:
+        STATE.microphone.active,
+
+      microphonePermission:
+        STATE.microphone.permission
+    };
+  }
+
+  function setPrivacy(options = {}) {
+    /*
+     * This engine defaults to local-only operation.
+     * Remote transmission cannot be enabled merely by
+     * an environmental observation.
+     */
+
+    if (
+      options.uploadEnabled === true
+    ) {
+      throw new Error(
+        "Remote environmental upload is disabled by default. Implement an explicit, separately audited consent/backend layer before enabling it."
+      );
+    }
+
+    if (
+      options.externalAIEnabled === true
+    ) {
+      throw new Error(
+        "External AI environmental transmission is disabled in Part 6. Use a separate consented backend integration."
+      );
+    }
+
+    return getPrivacyStatus();
+  }
+
+  /* ------------------------------------------------------------
+     HISTORY
+     ------------------------------------------------------------ */
+
+  function getHistory(limit = 50) {
+    const n =
+      clamp(
+        Math.floor(num(limit, 50)),
+        1,
+        CONFIG.history.maxSnapshots
+      );
+
+    return STATE.history
+      .slice(-n)
+      .map(item => ({
+        ...item,
+        acoustic: {
+          ...item.acoustic,
+          bands: {
+            ...item.acoustic.bands
+          }
+        }
+      }));
+  }
+
+  function clearHistory() {
+    STATE.history.length = 0;
+
+    emit(
+      "ENVIRONMENT_HISTORY_CLEARED"
+    );
+
+    return true;
+  }
+
+  /* ------------------------------------------------------------
+     STATUS
+     ------------------------------------------------------------ */
+
+  function getCapabilities() {
+    return {
+      version: VERSION,
+
+      microphone:
+        STATE.microphone.supported,
+
+      motion:
+        STATE.motion.supported,
+
+      ambientLight:
+        STATE.light.supported,
+
+      networkTiming:
+        STATE.network.enabled,
+
+      localOnly:
+        CONFIG.localOnly,
+
+      rawAudioRetention:
+        CONFIG.privacy.retainRawAudio,
+
+      externalAI:
+        CONFIG.privacy.externalAIEnabled
+    };
+  }
+
+  function getStatus() {
+    return {
+      version: VERSION,
+
+      state:
+        STATE.state,
+
+      mode:
+        STATE.mode,
+
+      startedAt:
+        STATE.startedAt,
+
+      lastAnalysisAt:
+        STATE.lastAnalysisAt,
+
+      sampleCount:
+        STATE.sampleCount,
+
+      capabilities:
+        getCapabilities(),
+
+      microphone: {
+        supported:
+          STATE.microphone.supported,
+        permission:
+          STATE.microphone.permission,
+        active:
+          STATE.microphone.active,
+        sampleRate:
+          STATE.microphone.context?.sampleRate ||
+          null
+      },
+
+      motion: {
+        supported:
+          STATE.motion.supported,
+        permission:
+          STATE.motion.permission,
+        active:
+          STATE.motion.active,
+        magnitude:
+          STATE.motion.magnitude,
+        classification:
+          STATE.environment.motion
+      },
+
+      light: {
+        supported:
+          STATE.light.supported,
+        permission:
+          STATE.light.permission,
+        active:
+          STATE.light.active,
+        lux:
+          STATE.light.lux,
+        classification:
+          STATE.environment.light
+      },
+
+      acoustic:
+        JSON.parse(
+          JSON.stringify(
+            STATE.acoustic
+          )
+        ),
+
+      environment:
+        JSON.parse(
+          JSON.stringify(
+            STATE.environment
+          )
+        ),
+
+      adaptation:
+        JSON.parse(
+          JSON.stringify(
+            STATE.adaptation
+          )
+        ),
+
+      privacy:
+        getPrivacyStatus(),
+
+      errors:
+        STATE.errors.slice(-10)
+    };
+  }
+
+  /* ------------------------------------------------------------
+     PUBLIC OBSERVATION API
+     ------------------------------------------------------------ */
+
+  function observe() {
+    classifyEnvironment();
+
+    const result =
+      snapshot();
+
+    emit(
+      "ENVIRONMENT_OBSERVATION",
+      result
+    );
+
+    return result;
+  }
+
+  /* ------------------------------------------------------------
+     COMMAND BUS / LITURGY INTEGRATION
+     ------------------------------------------------------------ */
+
+  function registerCommands() {
+    const commands = {
+      "audio.environment.capabilities":
+        async () =>
+          getCapabilities(),
+
+      "audio.environment.start":
+        async args =>
+          start(args || {}),
+
+      "audio.environment.stop":
+        async args =>
+          safeStop(
+            args?.reason ||
+              "Commanded stop."
+          ),
+
+      "audio.environment.pause":
+        async () =>
+          pause(),
+
+      "audio.environment.resume":
+        async () =>
+          resume(),
+
+      "audio.environment.observe":
+        async () =>
+          observe(),
+
+      "audio.environment.status":
+        async () =>
+          getStatus(),
+
+      "audio.environment.mode":
+        async args =>
+          setMode(
+            args?.mode
+          ),
+
+      "audio.environment.network":
+        async args =>
+          measureNetworkTiming(
+            args?.url ||
+              location.href
+          ),
+
+      "audio.environment.history":
+        async args =>
+          getHistory(
+            args?.limit || 50
+          ),
+
+      "audio.environment.clearHistory":
+        async () =>
+          clearHistory(),
+
+      "audio.environment.safeStop":
+        async args =>
+          safeStop(
+            args?.reason ||
+              "Safe stop command."
+          )
+    };
+
+    /*
+     * Liturgy command registry
+     */
+
+    try {
+      if (
+        LITURGY &&
+        typeof LITURGY.registerCommand ===
+          "function"
+      ) {
+        Object.entries(
+          commands
+        ).forEach(
+          ([name, handler]) => {
+            try {
+              LITURGY.registerCommand(
+                name,
+                handler
+              );
+            } catch (_) {}
+          }
+        );
+      }
+    } catch (error) {
+      recordError(
+        error,
+        "registerCommands.liturgy"
+      );
+    }
+
+    /*
+     * Existing command bus
+     */
+
+    try {
+      if (
+        window.ChirombeBus &&
+        typeof window.ChirombeBus.registerCommand ===
+          "function"
+      ) {
+        Object.entries(
+          commands
+        ).forEach(
+          ([name, handler]) => {
+            try {
+              window.ChirombeBus.registerCommand(
+                name,
+                handler
+              );
+            } catch (_) {}
+          }
+        );
+      }
+    } catch (error) {
+      recordError(
+        error,
+        "registerCommands.bus"
+      );
+    }
+
+    return Object.keys(
+      commands
+    );
+  }
+
+  /* ------------------------------------------------------------
+     SYSTEM EVENT BRIDGE
+     ------------------------------------------------------------ */
+
+  function registerSystemEvents() {
+    const events = [
+      "LIVING_WATCH_STARTED",
+      "RITUAL_SESSION_CREATED",
+      "BLOODLINE_LITURGY_READY",
+      "FAMILY_UNITY",
+      "SECURITY_ALERT",
+      "WATCHDOG_ALERT",
+      "RECOVERY",
+      "AUDIO_SAFE_STOP",
+      "ENGINE_INTEGRITY_FAILURE"
+    ];
+
+    events.forEach(
+      eventName => {
+        try {
+          window.addEventListener(
+            eventName,
+            event => {
+              emit(
+                "ENVIRONMENT_SYSTEM_EVENT",
+                {
+                  source:
+                    eventName,
+                  detail:
+                    event?.detail ||
+                    null
+                }
+              );
+
+              /*
+               * A security/integrity event may influence
+               * the computational audio response, but it
+               * is NOT interpreted as evidence of a
+               * supernatural event.
+               */
+
+              if (
+                eventName ===
+                  "SECURITY_ALERT" ||
+                eventName ===
+                  "WATCHDOG_ALERT"
+              ) {
+                setMode(
+                  MODES.PROTECTION
+                );
+
+                if (
+                  STATE.adaptation.enabled
+                ) {
+                  adaptAudio().catch(
+                    () => {}
+                  );
+                }
+              }
+
+              if (
+                eventName ===
+                "RECOVERY"
+              ) {
+                setMode(
+                  MODES.RECOVERY
+                );
+              }
+            }
+          );
+        } catch (_) {}
+      }
+    );
+  }
+
+  /* ------------------------------------------------------------
+     INITIALISE
+     ------------------------------------------------------------ */
+
+  function initialise() {
+    detectCapabilities();
+
+    registerCommands();
+    registerSystemEvents();
+
+    emit(
+      "ENVIRONMENT_ENGINE_READY",
+      {
+        version: VERSION,
+        capabilities:
+          getCapabilities()
+      }
+    );
+
+    return getStatus();
+  }
+
+  /* ------------------------------------------------------------
+     EXPORT
+     ------------------------------------------------------------ */
+
+  const API = {
+    VERSION,
+
+    STATES,
+    ENVIRONMENTS,
+    MOTION,
+    LIGHT,
+    MODES,
+
+    CONFIG,
+
+    initialise,
+
+    start,
+    pause,
+    resume,
+    safeStop,
+
+    requestMicrophone,
+    stopMicrophone,
+
+    requestMotionPermission,
+    stopMotion,
+
+    startAmbientLight,
+    stopLight,
+
+    analyseMicrophone,
+    classifyAcousticEnvironment,
+    classifyMotion,
+    classifyLight,
+    classifyEnvironment,
+
+    observe,
+    snapshot,
+
+    setMode,
+
+    chooseAdaptiveScene,
+    adaptAudio,
+
+    measureNetworkTiming,
+
+    getHistory,
+    clearHistory,
+
+    getCapabilities,
+    getPrivacyStatus,
+    setPrivacy,
+    getStatus
+  };
+
+  window.CHIROMBE_AUDIO_ENVIRONMENT_ENGINE =
+    API;
+
+  /*
+   * Unified namespace.
+   */
+
+  window.CHIROMBE_AUDIO =
+    window.CHIROMBE_AUDIO ||
+    {};
+
+  window.CHIROMBE_AUDIO.Environment =
+    API;
+
+  window.CHIROMBE_AUDIO_ENVIRONMENT =
+    API;
+
+  /*
+   * Initial boot.
+   *
+   * IMPORTANT:
+   * We initialise capability detection only.
+   * We do NOT request microphone permission automatically.
+   * The user must explicitly activate environmental listening.
+   */
+
+  initialise();
+
+  console.log(
+    "[CHIROMBE AUDIO] Part 6 Environment Engine " +
+      VERSION +
+      " ready."
+  );
+
+})();
