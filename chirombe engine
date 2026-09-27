@@ -7550,4 +7550,2325 @@
 
 /* ==========================================================================
    END OF PART 05
-   ========================================================================== */
+   ========================================================================== */<script src="./chirombe-core.js"></script>
+<script src="./chirombe-memory.js"></script>
+<script src="./chirombe-workers.js"></script>
+<script src="./chirombe-evolution.js"></script>
+<script src="./chirombe-pathways.js"></script>
+<script src="./chirombe-watchdog.js"></script>/* ================================================================
+   CHIROMBE WATCHDOG / INTEGRITY & RECOVERY ENGINE
+   ================================================================
+   Protocol: CHEP-06
+   Version: 1.0.0
+
+   PURPOSE
+   -------
+   The Watchdog is the sixth major intelligence layer of CHIROMBE.
+
+   It continuously observes:
+
+      CORE
+        ↓
+      MEMORY
+        ↓
+      WORKERS
+        ↓
+      EVOLUTION
+        ↓
+      PATHWAYS
+        ↓
+      WATCHDOG
+        ↓
+      RECOVERY / FUTURE BUILD SYSTEM
+
+   FUNCTIONS
+   ---------
+   1. Health monitoring
+   2. Heartbeat supervision
+   3. Module discovery
+   4. Integrity snapshots
+   5. Anomaly detection
+   6. Incident recording
+   7. Recovery planning
+   8. Safe worker restart
+   9. Retry management
+   10. Module isolation
+   11. Recovery journalling
+   12. Persistent integrity records
+   13. Event monitoring
+   14. Failure pattern analysis
+   15. System status reporting
+
+   IMPORTANT
+   ----------
+   Browser-side Watchdog operation can monitor the running browser
+   application while the page is active.
+
+   It cannot independently guarantee 24/7 server execution or modify
+   GitHub production files without a backend/deployment service.
+
+   Those capabilities belong to later backend/build/orchestrator layers.
+
+   ================================================================ */
+
+(function (global) {
+    "use strict";
+
+    if (!global.CHIROMBE) {
+        console.error(
+            "[CHIROMBE WATCHDOG] CHIROMBE CORE is not loaded."
+        );
+        return;
+    }
+
+    const CORE = global.CHIROMBE;
+    const MEMORY = global.CHIROMBE_MEMORY || null;
+    const WORKERS = global.CHIROMBE_WORKERS || null;
+    const EVOLUTION =
+        global.CHIROMBE_EVOLUTION ||
+        global.CHIROMBE_EVOLUTION_ENGINE ||
+        null;
+
+    const PATHWAYS =
+        global.CHIROMBE_PATHWAYS ||
+        global.CHIROMBE_PATHWAY_ENGINE ||
+        null;
+
+    /* ============================================================
+       CONFIGURATION
+       ============================================================ */
+
+    const CONFIG = {
+        protocol: "CHEP-06",
+        version: "1.0.0",
+
+        heartbeatInterval: 15000,
+        healthInterval: 30000,
+        integrityInterval: 60000,
+        recoveryInterval: 45000,
+
+        staleAfter: 90000,
+        criticalAfter: 180000,
+
+        maximumIncidents: 500,
+        maximumSnapshots: 250,
+        maximumRecoveryPlans: 250,
+
+        maximumRetries: 3,
+
+        automaticRecovery: true,
+        automaticWorkerRestart: true,
+        automaticIsolation: true,
+
+        persistenceNamespace: "INTEGRITY",
+        recoveryNamespace: "RECOVERY",
+
+        protectedModules: [
+            "CHIROMBE",
+            "CHIROMBE_CORE",
+            "CHIROMBE_MEMORY",
+            "CHIROMBE_WORKERS",
+            "CHIROMBE_EVOLUTION",
+            "CHIROMBE_EVOLUTION_ENGINE",
+            "CHIROMBE_PATHWAYS",
+            "CHIROMBE_PATHWAY_ENGINE",
+            "CHIROMBE_WATCHDOG",
+            "CHIROMBE_WATCHDOG_ENGINE"
+        ],
+
+        protectedWorkerTypes: [
+            "WATCHDOG_HEALTH",
+            "WATCHDOG_SCAN",
+            "WATCHDOG_RECOVERY"
+        ]
+    };
+
+    /* ============================================================
+       INTERNAL STATE
+       ============================================================ */
+
+    const STATE = {
+        booted: false,
+        running: false,
+
+        startedAt: Date.now(),
+
+        lastHeartbeat: 0,
+        lastHealthScan: 0,
+        lastIntegrityScan: 0,
+        lastRecoveryScan: 0,
+
+        cycle: 0,
+
+        health: {
+            status: "BOOTING",
+            score: 0,
+            checks: 0,
+            passed: 0,
+            failed: 0,
+            warnings: 0
+        },
+
+        modules: {},
+        workers: {},
+
+        incidents: [],
+        snapshots: [],
+        recoveryPlans: [],
+
+        anomalyHistory: [],
+
+        metrics: {
+            scans: 0,
+            incidents: 0,
+            recoveries: 0,
+            failedRecoveries: 0,
+            workerRestarts: 0,
+            isolatedWorkers: 0,
+            integrityChecks: 0,
+            heartbeatCount: 0
+        },
+
+        timers: [],
+
+        eventHandlersInstalled: false
+    };
+
+    /* ============================================================
+       UTILITIES
+       ============================================================ */
+
+    function uid(prefix) {
+        prefix = prefix || "WD";
+
+        return (
+            prefix +
+            "_" +
+            Date.now().toString(36) +
+            "_" +
+            Math.random()
+                .toString(36)
+                .slice(2, 10)
+        ).toUpperCase();
+    }
+
+    function now() {
+        return Date.now();
+    }
+
+    function safeClone(value) {
+        try {
+            return JSON.parse(JSON.stringify(value));
+        } catch (error) {
+            return {
+                error: "CLONE_FAILED",
+                message: error.message
+            };
+        }
+    }
+
+    function safeString(value) {
+        try {
+            return JSON.stringify(value);
+        } catch (error) {
+            return String(value);
+        }
+    }
+
+    async function hash(value) {
+        const text = typeof value === "string"
+            ? value
+            : safeString(value);
+
+        try {
+            if (
+                global.crypto &&
+                global.crypto.subtle &&
+                typeof TextEncoder !== "undefined"
+            ) {
+                const bytes =
+                    new TextEncoder().encode(text);
+
+                const buffer =
+                    await global.crypto.subtle.digest(
+                        "SHA-256",
+                        bytes
+                    );
+
+                return Array.from(
+                    new Uint8Array(buffer)
+                )
+                    .map(function (b) {
+                        return b
+                            .toString(16)
+                            .padStart(2, "0");
+                    })
+                    .join("");
+            }
+        } catch (error) {
+            /* Continue to deterministic fallback. */
+        }
+
+        let h1 = 0x811c9dc5;
+        let h2 = 0x01000193;
+
+        for (let i = 0; i < text.length; i++) {
+            h1 ^= text.charCodeAt(i);
+            h1 =
+                Math.imul(
+                    h1,
+                    16777619
+                );
+
+            h2 ^=
+                text.charCodeAt(i) +
+                i;
+
+            h2 =
+                Math.imul(
+                    h2,
+                    2246822519
+                );
+        }
+
+        return (
+            (
+                h1 >>> 0
+            ).toString(16).padStart(8, "0") +
+            (
+                h2 >>> 0
+            ).toString(16).padStart(8, "0")
+        );
+    }
+
+    function log() {
+        const args =
+            Array.prototype.slice.call(arguments);
+
+        console.log(
+            "[CHIROMBE WATCHDOG]",
+            ...args
+        );
+    }
+
+    function warn() {
+        const args =
+            Array.prototype.slice.call(arguments);
+
+        console.warn(
+            "[CHIROMBE WATCHDOG]",
+            ...args
+        );
+    }
+
+    function error() {
+        const args =
+            Array.prototype.slice.call(arguments);
+
+        console.error(
+            "[CHIROMBE WATCHDOG]",
+            ...args
+        );
+    }
+
+    /* ============================================================
+       MEMORY PERSISTENCE
+       ============================================================ */
+
+    async function persist(
+        namespace,
+        key,
+        value
+    ) {
+        if (
+            !MEMORY ||
+            typeof MEMORY.write !== "function"
+        ) {
+            return false;
+        }
+
+        try {
+            await MEMORY.write(
+                namespace,
+                key,
+                value,
+                {
+                    source: "CHIROMBE_WATCHDOG",
+                    protocol: CONFIG.protocol,
+                    timestamp: now()
+                }
+            );
+
+            return true;
+        } catch (e) {
+            warn(
+                "Memory persistence failed:",
+                e
+            );
+
+            return false;
+        }
+    }
+
+    /* ============================================================
+       INCIDENT ENGINE
+       ============================================================ */
+
+    async function createIncident(
+        type,
+        severity,
+        component,
+        message,
+        details
+    ) {
+        const incident = {
+            id: uid("INC"),
+            type: type,
+            severity: severity || "WARNING",
+            component: component || "UNKNOWN",
+
+            message:
+                message ||
+                "Unknown watchdog incident.",
+
+            details:
+                safeClone(details || {}),
+
+            timestamp: now(),
+
+            resolved: false,
+
+            recoveryAttempted: false,
+            recoverySuccessful: false,
+
+            cycle: STATE.cycle
+        };
+
+        STATE.incidents.unshift(
+            incident
+        );
+
+        if (
+            STATE.incidents.length >
+            CONFIG.maximumIncidents
+        ) {
+            STATE.incidents =
+                STATE.incidents.slice(
+                    0,
+                    CONFIG.maximumIncidents
+                );
+        }
+
+        STATE.metrics.incidents++;
+
+        await persist(
+            CONFIG.persistenceNamespace,
+            incident.id,
+            incident
+        );
+
+        try {
+            if (
+                typeof CORE.emit === "function"
+            ) {
+                CORE.emit(
+                    "WATCHDOG_INCIDENT",
+                    incident
+                );
+            }
+        } catch (e) {}
+
+        if (
+            severity === "CRITICAL" ||
+            severity === "EMERGENCY"
+        ) {
+            error(
+                severity,
+                component,
+                message
+            );
+        } else {
+            warn(
+                severity,
+                component,
+                message
+            );
+        }
+
+        return incident;
+    }
+
+    /* ============================================================
+       MODULE REGISTRY
+       ============================================================ */
+
+    function inspectModule(
+        name,
+        reference
+    ) {
+        const exists =
+            reference !== null &&
+            reference !== undefined;
+
+        const type =
+            typeof reference;
+
+        const moduleState = {
+            name: name,
+            exists: exists,
+            type: type,
+            checkedAt: now(),
+
+            healthy:
+                exists,
+
+            protected:
+                CONFIG.protectedModules
+                    .indexOf(name) !== -1,
+
+            referenceAvailable:
+                exists
+        };
+
+        STATE.modules[name] =
+            moduleState;
+
+        return moduleState;
+    }
+
+    function scanModules() {
+        const modules = [];
+
+        modules.push(
+            inspectModule(
+                "CHIROMBE",
+                global.CHIROMBE
+            )
+        );
+
+        modules.push(
+            inspectModule(
+                "CHIROMBE_CORE",
+                global.CHIROMBE_CORE ||
+                global.CHIROMBE
+            )
+        );
+
+        modules.push(
+            inspectModule(
+                "CHIROMBE_MEMORY",
+                global.CHIROMBE_MEMORY
+            )
+        );
+
+        modules.push(
+            inspectModule(
+                "CHIROMBE_WORKERS",
+                global.CHIROMBE_WORKERS
+            )
+        );
+
+        modules.push(
+            inspectModule(
+                "CHIROMBE_EVOLUTION",
+                global.CHIROMBE_EVOLUTION ||
+                global.CHIROMBE_EVOLUTION_ENGINE
+            )
+        );
+
+        modules.push(
+            inspectModule(
+                "CHIROMBE_PATHWAYS",
+                global.CHIROMBE_PATHWAYS ||
+                global.CHIROMBE_PATHWAY_ENGINE
+            )
+        );
+
+        modules.push(
+            inspectModule(
+                "CHIROMBE_WATCHDOG",
+                global.CHIROMBE_WATCHDOG
+            )
+        );
+
+        return modules;
+    }
+
+    /* ============================================================
+       WORKER INSPECTION
+       ============================================================ */
+
+    function scanWorkers() {
+        const workers = [];
+
+        if (
+            WORKERS &&
+            typeof WORKERS.status === "function"
+        ) {
+            try {
+                const status =
+                    WORKERS.status();
+
+                if (
+                    status &&
+                    status.workers
+                ) {
+                    Object.keys(
+                        status.workers
+                    ).forEach(function (name) {
+                        const worker =
+                            status.workers[name];
+
+                        const record = {
+                            name: name,
+                            healthy: true,
+                            checkedAt: now(),
+                            worker:
+                                safeClone(worker)
+                        };
+
+                        workers.push(record);
+
+                        STATE.workers[name] =
+                            record;
+                    });
+                }
+            } catch (e) {
+                createIncident(
+                    "WORKER_INSPECTION_ERROR",
+                    "WARNING",
+                    "WORKERS",
+                    "Worker status inspection failed.",
+                    {
+                        error: e.message
+                    }
+                );
+            }
+        }
+
+        return workers;
+    }
+
+    /* ============================================================
+       CORE HEALTH TEST
+       ============================================================ */
+
+    function checkCore() {
+        const result = {
+            name: "CORE",
+            passed: false,
+            score: 0,
+            details: {}
+        };
+
+        try {
+            const exists =
+                !!global.CHIROMBE;
+
+            result.details.exists =
+                exists;
+
+            if (!exists) {
+                return result;
+            }
+
+            result.score += 30;
+
+            const api =
+                global.CHIROMBE;
+
+            const expectedFunctions = [
+                "getState",
+                "setState",
+                "emit",
+                "on"
+            ];
+
+            expectedFunctions.forEach(
+                function (name) {
+                    if (
+                        typeof api[name] ===
+                        "function"
+                    ) {
+                        result.score += 15;
+                    } else {
+                        result.details[
+                            "missing_" + name
+                        ] = true;
+                    }
+                }
+            );
+
+            result.passed =
+                result.score >= 75;
+
+        } catch (e) {
+            result.details.error =
+                e.message;
+        }
+
+        return result;
+    }
+
+    /* ============================================================
+       MEMORY HEALTH TEST
+       ============================================================ */
+
+    function checkMemory() {
+        const result = {
+            name: "MEMORY",
+            passed: false,
+            score: 0,
+            details: {}
+        };
+
+        if (!MEMORY) {
+            result.details.available =
+                false;
+
+            return result;
+        }
+
+        result.details.available =
+            true;
+
+        result.score += 30;
+
+        [
+            "write",
+            "read",
+            "search",
+            "snapshot"
+        ].forEach(
+            function (name) {
+                if (
+                    typeof MEMORY[name] ===
+                    "function"
+                ) {
+                    result.score += 17.5;
+                } else {
+                    result.details[
+                        "missing_" + name
+                    ] = true;
+                }
+            }
+        );
+
+        result.passed =
+            result.score >= 75;
+
+        return result;
+    }
+
+    /* ============================================================
+       WORKER HEALTH TEST
+       ============================================================ */
+
+    function checkWorkers() {
+        const result = {
+            name: "WORKERS",
+            passed: false,
+            score: 0,
+            details: {}
+        };
+
+        if (!WORKERS) {
+            result.details.available =
+                false;
+
+            return result;
+        }
+
+        result.details.available =
+            true;
+
+        result.score += 35;
+
+        [
+            "register",
+            "submit",
+            "status"
+        ].forEach(
+            function (name) {
+                if (
+                    typeof WORKERS[name] ===
+                    "function"
+                ) {
+                    result.score += 20;
+                } else {
+                    result.details[
+                        "missing_" + name
+                    ] = true;
+                }
+            }
+        );
+
+        result.passed =
+            result.score >= 70;
+
+        return result;
+    }
+
+    /* ============================================================
+       EVOLUTION HEALTH
+       ============================================================ */
+
+    function checkEvolution() {
+        const result = {
+            name: "EVOLUTION",
+            passed: false,
+            score: 0,
+            details: {}
+        };
+
+        if (!EVOLUTION) {
+            result.details.available =
+                false;
+
+            return result;
+        }
+
+        result.details.available =
+            true;
+
+        result.score += 40;
+
+        if (
+            typeof EVOLUTION.status ===
+            "function"
+        ) {
+            result.score += 30;
+        }
+
+        if (
+            typeof EVOLUTION.proposals ===
+            "function"
+        ) {
+            result.score += 30;
+        }
+
+        result.passed =
+            result.score >= 70;
+
+        return result;
+    }
+
+    /* ============================================================
+       PATHWAY HEALTH
+       ============================================================ */
+
+    function checkPathways() {
+        const result = {
+            name: "PATHWAYS",
+            passed: false,
+            score: 0,
+            details: {}
+        };
+
+        if (!PATHWAYS) {
+            result.details.available =
+                false;
+
+            return result;
+        }
+
+        result.details.available =
+            true;
+
+        result.score += 40;
+
+        [
+            "status",
+            "nodes",
+            "edges",
+            "findPath"
+        ].forEach(
+            function (name) {
+                if (
+                    typeof PATHWAYS[name] ===
+                    "function"
+                ) {
+                    result.score += 15;
+                }
+            }
+        );
+
+        result.passed =
+            result.score >= 70;
+
+        return result;
+    }
+
+    /* ============================================================
+       FULL HEALTH SCAN
+       ============================================================ */
+
+    async function healthScan() {
+        STATE.cycle++;
+        STATE.metrics.scans++;
+
+        const checks = [
+            checkCore(),
+            checkMemory(),
+            checkWorkers(),
+            checkEvolution(),
+            checkPathways()
+        ];
+
+        let score = 0;
+        let passed = 0;
+        let failed = 0;
+        let warnings = 0;
+
+        checks.forEach(
+            function (check) {
+                score +=
+                    Number(check.score) || 0;
+
+                if (check.passed) {
+                    passed++;
+                } else {
+                    failed++;
+
+                    if (
+                        check.name !==
+                        "CORE"
+                    ) {
+                        warnings++;
+                    }
+                }
+            }
+        );
+
+        const finalScore =
+            checks.length > 0
+                ? Math.round(
+                    score / checks.length
+                )
+                : 0;
+
+        let status =
+            "HEALTHY";
+
+        if (finalScore < 80) {
+            status =
+                finalScore >= 50
+                    ? "DEGRADED"
+                    : "CRITICAL";
+        }
+
+        STATE.health = {
+            status: status,
+            score: finalScore,
+            checks: checks.length,
+            passed: passed,
+            failed: failed,
+            warnings: warnings,
+            checkedAt: now(),
+            cycle: STATE.cycle,
+            details: checks
+        };
+
+        STATE.lastHealthScan =
+            now();
+
+        for (
+            let i = 0;
+            i < checks.length;
+            i++
+        ) {
+            const check =
+                checks[i];
+
+            if (!check.passed) {
+                await createIncident(
+                    "HEALTH_CHECK_FAILED",
+                    check.name === "CORE"
+                        ? "CRITICAL"
+                        : "WARNING",
+                    check.name,
+                    "Health check failed for " +
+                    check.name,
+                    check.details
+                );
+            }
+        }
+
+        return STATE.health;
+    }
+
+    /* ============================================================
+       INTEGRITY SNAPSHOT
+       ============================================================ */
+
+    async function integritySnapshot() {
+        const modules =
+            scanModules();
+
+        const workers =
+            scanWorkers();
+
+        const payload = {
+            protocol:
+                CONFIG.protocol,
+
+            version:
+                CONFIG.version,
+
+            timestamp:
+                now(),
+
+            cycle:
+                STATE.cycle,
+
+            health:
+                safeClone(
+                    STATE.health
+                ),
+
+            modules:
+                safeClone(
+                    modules
+                ),
+
+            workers:
+                safeClone(
+                    workers
+                )
+        };
+
+        const fingerprint =
+            await hash(payload);
+
+        const snapshot = {
+            id: uid("SNAP"),
+            timestamp: now(),
+            fingerprint: fingerprint,
+            payload: payload
+        };
+
+        STATE.snapshots.unshift(
+            snapshot
+        );
+
+        if (
+            STATE.snapshots.length >
+            CONFIG.maximumSnapshots
+        ) {
+            STATE.snapshots =
+                STATE.snapshots.slice(
+                    0,
+                    CONFIG.maximumSnapshots
+                );
+        }
+
+        STATE.metrics.integrityChecks++;
+        STATE.lastIntegrityScan =
+            now();
+
+        await persist(
+            CONFIG.persistenceNamespace,
+            snapshot.id,
+            snapshot
+        );
+
+        return snapshot;
+    }
+
+    /* ============================================================
+       ANOMALY ENGINE
+       ============================================================ */
+
+    function detectAnomalies() {
+        const anomalies = [];
+
+        const health =
+            STATE.health;
+
+        if (
+            health.status ===
+            "CRITICAL"
+        ) {
+            anomalies.push({
+                type: "SYSTEM_CRITICAL",
+                severity: "CRITICAL",
+                score: 1
+            });
+        }
+
+        Object.keys(
+            STATE.modules
+        ).forEach(
+            function (name) {
+                const module =
+                    STATE.modules[name];
+
+                if (!module.exists) {
+                    anomalies.push({
+                        type:
+                            "MODULE_MISSING",
+                        severity:
+                            CONFIG
+                                .protectedModules
+                                .indexOf(name) >=
+                            0
+                                ? "CRITICAL"
+                                : "WARNING",
+                        component: name,
+                        score: 0.9
+                    });
+                }
+            }
+        );
+
+        Object.keys(
+            STATE.workers
+        ).forEach(
+            function (name) {
+                const worker =
+                    STATE.workers[name];
+
+                if (
+                    worker &&
+                    worker.healthy === false
+                ) {
+                    anomalies.push({
+                        type:
+                            "WORKER_UNHEALTHY",
+                        severity:
+                            "WARNING",
+                        component:
+                            name,
+                        score:
+                            0.7
+                    });
+                }
+            }
+        );
+
+        STATE.anomalyHistory.push({
+            timestamp: now(),
+            anomalies:
+                safeClone(anomalies)
+        });
+
+        if (
+            STATE.anomalyHistory.length >
+            200
+        ) {
+            STATE.anomalyHistory =
+                STATE.anomalyHistory.slice(
+                    -200
+                );
+        }
+
+        return anomalies;
+    }
+
+    /* ============================================================
+       RECOVERY PLAN ENGINE
+       ============================================================ */
+
+    async function createRecoveryPlan(
+        incident,
+        action,
+        target,
+        priority
+    ) {
+        const plan = {
+            id: uid("REC"),
+            incidentId:
+                incident
+                    ? incident.id
+                    : null,
+
+            action:
+                action ||
+                "INSPECT",
+
+            target:
+                target ||
+                "SYSTEM",
+
+            priority:
+                priority ||
+                "NORMAL",
+
+            status:
+                "PROPOSED",
+
+            createdAt:
+                now(),
+
+            attempts: 0,
+
+            maximumAttempts:
+                CONFIG.maximumRetries,
+
+            reversible:
+                true,
+
+            destructive:
+                false,
+
+            automatic:
+                CONFIG.automaticRecovery
+        };
+
+        STATE.recoveryPlans.unshift(
+            plan
+        );
+
+        if (
+            STATE.recoveryPlans.length >
+            CONFIG.maximumRecoveryPlans
+        ) {
+            STATE.recoveryPlans =
+                STATE.recoveryPlans.slice(
+                    0,
+                    CONFIG.maximumRecoveryPlans
+                );
+        }
+
+        await persist(
+            CONFIG.recoveryNamespace,
+            plan.id,
+            plan
+        );
+
+        return plan;
+    }
+
+    /* ============================================================
+       SAFE WORKER RESTART
+       ============================================================ */
+
+    async function restartWorker(
+        workerName
+    ) {
+        if (!WORKERS) {
+            return {
+                success: false,
+                reason:
+                    "WORKERS_UNAVAILABLE"
+            };
+        }
+
+        const protectedWorker =
+            CONFIG
+                .protectedWorkerTypes
+                .indexOf(workerName) !== -1;
+
+        try {
+            if (
+                typeof WORKERS.cancel ===
+                "function"
+            ) {
+                /*
+                 * Cancel is intentionally used only as a
+                 * non-destructive recovery action.
+                 */
+                WORKERS.cancel(
+                    workerName
+                );
+            }
+
+            STATE.metrics.workerRestarts++;
+
+            return {
+                success: true,
+                worker:
+                    workerName,
+                protected:
+                    protectedWorker,
+                timestamp:
+                    now()
+            };
+        } catch (e) {
+            return {
+                success: false,
+                worker:
+                    workerName,
+                error:
+                    e.message
+            };
+        }
+    }
+
+    /* ============================================================
+       WORKER ISOLATION
+       ============================================================ */
+
+    async function isolateWorker(
+        workerName
+    ) {
+        const protectedWorker =
+            CONFIG
+                .protectedWorkerTypes
+                .indexOf(workerName) !== -1;
+
+        if (protectedWorker) {
+            return {
+                success: false,
+                reason:
+                    "PROTECTED_WORKER"
+            };
+        }
+
+        /*
+         * Browser implementation records the isolation
+         * intention rather than deleting or destroying
+         * worker definitions.
+         */
+
+        STATE.workers[
+            workerName
+        ] = Object.assign(
+            {},
+            STATE.workers[
+                workerName
+            ] || {},
+            {
+                isolated: true,
+                isolatedAt: now()
+            }
+        );
+
+        STATE.metrics.isolatedWorkers++;
+
+        await persist(
+            CONFIG.recoveryNamespace,
+            "ISOLATION_" +
+                workerName,
+            {
+                worker:
+                    workerName,
+                isolatedAt:
+                    now()
+            }
+        );
+
+        return {
+            success: true,
+            worker:
+                workerName,
+            action:
+                "ISOLATED"
+        };
+    }
+
+    /* ============================================================
+       RECOVERY EXECUTION
+       ============================================================ */
+
+    async function executeRecovery(
+        plan
+    ) {
+        if (!plan) {
+            return {
+                success: false,
+                reason:
+                    "NO_PLAN"
+            };
+        }
+
+        plan.attempts++;
+
+        plan.status =
+            "EXECUTING";
+
+        let result = {
+            success: false,
+            reason:
+                "UNKNOWN_ACTION"
+        };
+
+        try {
+            switch (
+                plan.action
+            ) {
+                case "RESTART_WORKER":
+                    result =
+                        await restartWorker(
+                            plan.target
+                        );
+                    break;
+
+                case "ISOLATE_WORKER":
+                    result =
+                        await isolateWorker(
+                            plan.target
+                        );
+                    break;
+
+                case "RESCAN":
+                    result =
+                        {
+                            success: true,
+                            scan:
+                                await healthScan()
+                        };
+                    break;
+
+                case "INTEGRITY_SNAPSHOT":
+                    result =
+                        {
+                            success: true,
+                            snapshot:
+                                await integritySnapshot()
+                        };
+                    break;
+
+                case "INSPECT":
+                    result = {
+                        success: true,
+                        health:
+                            safeClone(
+                                STATE.health
+                            )
+                    };
+                    break;
+
+                default:
+                    result = {
+                        success: false,
+                        reason:
+                            "UNSUPPORTED_ACTION"
+                    };
+            }
+
+            if (result.success) {
+                plan.status =
+                    "COMPLETED";
+
+                STATE.metrics.recoveries++;
+
+            } else {
+                plan.status =
+                    plan.attempts >=
+                    plan.maximumAttempts
+                        ? "FAILED"
+                        : "RETRY_PENDING";
+
+                STATE.metrics.failedRecoveries++;
+            }
+        } catch (e) {
+            plan.status =
+                plan.attempts >=
+                plan.maximumAttempts
+                    ? "FAILED"
+                    : "RETRY_PENDING";
+
+            result = {
+                success: false,
+                error:
+                    e.message
+            };
+
+            STATE.metrics.failedRecoveries++;
+        }
+
+        plan.completedAt =
+            now();
+
+        plan.result =
+            safeClone(result);
+
+        await persist(
+            CONFIG.recoveryNamespace,
+            plan.id,
+            plan
+        );
+
+        return result;
+    }
+
+    /* ============================================================
+       ANOMALY → RECOVERY TRANSLATOR
+       ============================================================ */
+
+    async function processAnomalies(
+        anomalies
+    ) {
+        const plans = [];
+
+        for (
+            let i = 0;
+            i < anomalies.length;
+            i++
+        ) {
+            const anomaly =
+                anomalies[i];
+
+            let action =
+                "INSPECT";
+
+            let target =
+                anomaly.component ||
+                "SYSTEM";
+
+            if (
+                anomaly.type ===
+                "WORKER_UNHEALTHY"
+            ) {
+                action =
+                    CONFIG
+                        .automaticWorkerRestart
+                        ? "RESTART_WORKER"
+                        : "INSPECT";
+            }
+
+            if (
+                anomaly.type ===
+                "MODULE_MISSING"
+            ) {
+                action =
+                    "INTEGRITY_SNAPSHOT";
+            }
+
+            if (
+                anomaly.type ===
+                "SYSTEM_CRITICAL"
+            ) {
+                action =
+                    "RESCAN";
+            }
+
+            const incident =
+                await createIncident(
+                    anomaly.type,
+                    anomaly.severity,
+                    target,
+                    "Anomaly detected: " +
+                    anomaly.type,
+                    anomaly
+                );
+
+            const plan =
+                await createRecoveryPlan(
+                    incident,
+                    action,
+                    target,
+                    anomaly.severity
+                );
+
+            plans.push(plan);
+
+            if (
+                CONFIG.automaticRecovery &&
+                plan.automatic
+            ) {
+                await executeRecovery(
+                    plan
+                );
+            }
+        }
+
+        return plans;
+    }
+
+    /* ============================================================
+       RECOVERY SCAN
+       ============================================================ */
+
+    async function recoveryScan() {
+        STATE.lastRecoveryScan =
+            now();
+
+        const anomalies =
+            detectAnomalies();
+
+        const plans =
+            await processAnomalies(
+                anomalies
+            );
+
+        return {
+            timestamp: now(),
+            anomalies:
+                anomalies,
+            plans:
+                plans
+        };
+    }
+
+    /* ============================================================
+       INTEGRITY CHAIN
+       ============================================================ */
+
+    async function verifyRecentIntegrity() {
+        if (
+            STATE.snapshots.length <
+            2
+        ) {
+            return {
+                valid: true,
+                reason:
+                    "INSUFFICIENT_HISTORY"
+            };
+        }
+
+        const latest =
+            STATE.snapshots[0];
+
+        const previous =
+            STATE.snapshots[1];
+
+        const latestHash =
+            await hash(
+                latest.payload
+            );
+
+        const previousHash =
+            await hash(
+                previous.payload
+            );
+
+        const valid =
+            latestHash ===
+            latest.fingerprint ||
+            previousHash ===
+            previous.fingerprint;
+
+        return {
+            valid:
+                !!valid,
+
+            latest:
+                latest.id,
+
+            previous:
+                previous.id,
+
+            timestamp:
+                now()
+        };
+    }
+
+    /* ============================================================
+       EVENT MONITORING
+       ============================================================ */
+
+    function installEventMonitoring() {
+        if (
+            STATE.eventHandlersInstalled
+        ) {
+            return;
+        }
+
+        if (
+            CORE &&
+            typeof CORE.on ===
+            "function"
+        ) {
+            const watchedEvents = [
+                "ERROR",
+                "WORKER_ERROR",
+                "TASK_FAILED",
+                "EVOLUTION_DECISION",
+                "PATHWAY_ANALYSIS_COMPLETE",
+                "MEMORY_ERROR"
+            ];
+
+            watchedEvents.forEach(
+                function (eventName) {
+                    try {
+                        CORE.on(
+                            eventName,
+                            function (payload) {
+                                createIncident(
+                                    "SYSTEM_EVENT",
+                                    eventName.indexOf(
+                                        "ERROR"
+                                    ) !== -1
+                                        ? "WARNING"
+                                        : "INFO",
+                                    eventName,
+                                    "Observed system event.",
+                                    payload
+                                );
+                            }
+                        );
+                    } catch (e) {
+                        /* Event channel may not exist. */
+                    }
+                }
+            );
+        }
+
+        STATE.eventHandlersInstalled =
+            true;
+    }
+
+    /* ============================================================
+       WATCHDOG HEARTBEAT
+       ============================================================ */
+
+    async function heartbeat() {
+        STATE.lastHeartbeat =
+            now();
+
+        STATE.metrics.heartbeatCount++;
+
+        try {
+            if (
+                CORE &&
+                typeof CORE.emit ===
+                "function"
+            ) {
+                CORE.emit(
+                    "WATCHDOG_HEARTBEAT",
+                    {
+                        timestamp:
+                            now(),
+
+                        cycle:
+                            STATE.cycle,
+
+                        health:
+                            STATE.health.status,
+
+                        score:
+                            STATE.health.score
+                    }
+                );
+            }
+        } catch (e) {}
+
+        return {
+            timestamp:
+                STATE.lastHeartbeat,
+
+            cycle:
+                STATE.cycle,
+
+            status:
+                STATE.health.status,
+
+            score:
+                STATE.health.score
+        };
+    }
+
+    /* ============================================================
+       AUTOMATIC CYCLE
+       ============================================================ */
+
+    async function cycle() {
+        try {
+            await heartbeat();
+
+            await healthScan();
+
+            const anomalies =
+                detectAnomalies();
+
+            if (
+                anomalies.length
+            ) {
+                await processAnomalies(
+                    anomalies
+                );
+            }
+
+            if (
+                now() -
+                STATE.lastIntegrityScan >=
+                CONFIG.integrityInterval
+            ) {
+                await integritySnapshot();
+            }
+
+        } catch (e) {
+            await createIncident(
+                "WATCHDOG_CYCLE_ERROR",
+                "CRITICAL",
+                "WATCHDOG",
+                "Watchdog cycle failed.",
+                {
+                    error:
+                        e.message,
+                    stack:
+                        e.stack
+                }
+            );
+        }
+
+        return getStatus();
+    }
+
+    /* ============================================================
+       SCHEDULER
+       ============================================================ */
+
+    function startScheduler() {
+        if (
+            STATE.running
+        ) {
+            return;
+        }
+
+        STATE.running =
+            true;
+
+        const heartbeatTimer =
+            setInterval(
+                function () {
+                    heartbeat();
+                },
+                CONFIG.heartbeatInterval
+            );
+
+        const healthTimer =
+            setInterval(
+                function () {
+                    healthScan();
+                },
+                CONFIG.healthInterval
+            );
+
+        const integrityTimer =
+            setInterval(
+                function () {
+                    integritySnapshot();
+                },
+                CONFIG.integrityInterval
+            );
+
+        const recoveryTimer =
+            setInterval(
+                function () {
+                    recoveryScan();
+                },
+                CONFIG.recoveryInterval
+            );
+
+        STATE.timers.push(
+            heartbeatTimer,
+            healthTimer,
+            integrityTimer,
+            recoveryTimer
+        );
+
+        log(
+            "Watchdog scheduler started."
+        );
+    }
+
+    function stopScheduler() {
+        STATE.timers.forEach(
+            function (timer) {
+                clearInterval(timer);
+            }
+        );
+
+        STATE.timers = [];
+
+        STATE.running =
+            false;
+
+        log(
+            "Watchdog scheduler stopped."
+        );
+    }
+
+    /* ============================================================
+       STATUS
+       ============================================================ */
+
+    function getStatus() {
+        return {
+            protocol:
+                CONFIG.protocol,
+
+            version:
+                CONFIG.version,
+
+            booted:
+                STATE.booted,
+
+            running:
+                STATE.running,
+
+            uptime:
+                now() -
+                STATE.startedAt,
+
+            cycle:
+                STATE.cycle,
+
+            health:
+                safeClone(
+                    STATE.health
+                ),
+
+            metrics:
+                safeClone(
+                    STATE.metrics
+                ),
+
+            modules:
+                safeClone(
+                    STATE.modules
+                ),
+
+            workers:
+                safeClone(
+                    STATE.workers
+                ),
+
+            incidents:
+                STATE.incidents.length,
+
+            snapshots:
+                STATE.snapshots.length,
+
+            recoveryPlans:
+                STATE.recoveryPlans.length,
+
+            lastHeartbeat:
+                STATE.lastHeartbeat,
+
+            lastHealthScan:
+                STATE.lastHealthScan,
+
+            lastIntegrityScan:
+                STATE.lastIntegrityScan,
+
+            lastRecoveryScan:
+                STATE.lastRecoveryScan
+        };
+    }
+
+    /* ============================================================
+       QUERY APIs
+       ============================================================ */
+
+    function getIncidents(
+        limit
+    ) {
+        limit =
+            Number(limit) || 50;
+
+        return STATE.incidents
+            .slice(
+                0,
+                limit
+            )
+            .map(
+                safeClone
+            );
+    }
+
+    function getSnapshots(
+        limit
+    ) {
+        limit =
+            Number(limit) || 25;
+
+        return STATE.snapshots
+            .slice(
+                0,
+                limit
+            )
+            .map(
+                safeClone
+            );
+    }
+
+    function getRecoveryPlans(
+        limit
+    ) {
+        limit =
+            Number(limit) || 50;
+
+        return STATE.recoveryPlans
+            .slice(
+                0,
+                limit
+            )
+            .map(
+                safeClone
+            );
+    }
+
+    function clearResolvedIncidents() {
+        STATE.incidents =
+            STATE.incidents.filter(
+                function (incident) {
+                    return !incident.resolved;
+                }
+            );
+
+        return true;
+    }
+
+    async function resolveIncident(
+        incidentId,
+        resolution
+    ) {
+        const incident =
+            STATE.incidents.find(
+                function (item) {
+                    return (
+                        item.id ===
+                        incidentId
+                    );
+                }
+            );
+
+        if (!incident) {
+            return false;
+        }
+
+        incident.resolved =
+            true;
+
+        incident.resolvedAt =
+            now();
+
+        incident.resolution =
+            resolution ||
+            "Resolved by Watchdog.";
+
+        await persist(
+            CONFIG.persistenceNamespace,
+            incident.id,
+            incident
+        );
+
+        return true;
+    }
+
+    /* ============================================================
+       SAFE MANUAL COMMAND INTERFACE
+       ============================================================ */
+
+    async function command(
+        action,
+        payload
+    ) {
+        payload =
+            payload || {};
+
+        switch (
+            String(action)
+                .toUpperCase()
+        ) {
+            case "HEALTH":
+                return healthScan();
+
+            case "SNAPSHOT":
+                return integritySnapshot();
+
+            case "RECOVERY":
+                return recoveryScan();
+
+            case "HEARTBEAT":
+                return heartbeat();
+
+            case "STATUS":
+                return getStatus();
+
+            case "VERIFY":
+                return verifyRecentIntegrity();
+
+            case "INCIDENTS":
+                return getIncidents(
+                    payload.limit
+                );
+
+            case "PLANS":
+                return getRecoveryPlans(
+                    payload.limit
+                );
+
+            case "STOP":
+                stopScheduler();
+
+                return {
+                    success: true,
+                    status:
+                        "STOPPED"
+                };
+
+            case "START":
+                startScheduler();
+
+                return {
+                    success: true,
+                    status:
+                        "STARTED"
+                };
+
+            default:
+                return {
+                    success: false,
+                    error:
+                        "UNKNOWN_WATCHDOG_COMMAND"
+                };
+        }
+    }
+
+    /* ============================================================
+       PUBLIC API
+       ============================================================ */
+
+    const API = {
+        protocol:
+            CONFIG.protocol,
+
+        version:
+            CONFIG.version,
+
+        config:
+            CONFIG,
+
+        state:
+            STATE,
+
+        status:
+            getStatus,
+
+        heartbeat:
+            heartbeat,
+
+        health:
+            healthScan,
+
+        scan:
+            healthScan,
+
+        integrity:
+            integritySnapshot,
+
+        verify:
+            verifyRecentIntegrity,
+
+        anomalies:
+            detectAnomalies,
+
+        recovery:
+            recoveryScan,
+
+        createIncident:
+            createIncident,
+
+        incidents:
+            getIncidents,
+
+        resolveIncident:
+            resolveIncident,
+
+        plans:
+            getRecoveryPlans,
+
+        createRecoveryPlan:
+            createRecoveryPlan,
+
+        executeRecovery:
+            executeRecovery,
+
+        restartWorker:
+            restartWorker,
+
+        isolateWorker:
+            isolateWorker,
+
+        command:
+            command,
+
+        cycle:
+            cycle,
+
+        start:
+            startScheduler,
+
+        stop:
+            stopScheduler,
+
+        inspectModules:
+            scanModules,
+
+        inspectWorkers:
+            scanWorkers
+    };
+
+    /* ============================================================
+       GLOBAL REGISTRATION
+       ============================================================ */
+
+    global.CHIROMBE_WATCHDOG =
+        API;
+
+    global.CHIROMBE_WATCHDOG_ENGINE =
+        API;
+
+    /* ============================================================
+       BOOT
+       ============================================================ */
+
+    async function boot() {
+        if (STATE.booted) {
+            return API;
+        }
+
+        STATE.booted =
+            true;
+
+        log(
+            "=============================================="
+        );
+
+        log(
+            "CHIROMBE WATCHDOG ENGINE"
+        );
+
+        log(
+            "Protocol:",
+            CONFIG.protocol
+        );
+
+        log(
+            "Version:",
+            CONFIG.version
+        );
+
+        log(
+            "Booting integrity and recovery layer..."
+        );
+
+        installEventMonitoring();
+
+        scanModules();
+
+        scanWorkers();
+
+        await heartbeat();
+
+        await healthScan();
+
+        await integritySnapshot();
+
+        /*
+         * Register watchdog workers with the existing
+         * worker swarm when available.
+         */
+        if (
+            WORKERS &&
+            typeof WORKERS.register ===
+            "function"
+        ) {
+            try {
+                WORKERS.register(
+                    "WATCHDOG_HEALTH",
+                    async function () {
+                        return healthScan();
+                    },
+                    {
+                        priority: 100,
+                        protected: true
+                    }
+                );
+
+                WORKERS.register(
+                    "WATCHDOG_SCAN",
+                    async function () {
+                        return cycle();
+                    },
+                    {
+                        priority: 95,
+                        protected: true
+                    }
+                );
+
+                WORKERS.register(
+                    "WATCHDOG_RECOVERY",
+                    async function (payload) {
+                        if (
+                            payload &&
+                            payload.plan
+                        ) {
+                            return executeRecovery(
+                                payload.plan
+                            );
+                        }
+
+                        return recoveryScan();
+                    },
+                    {
+                        priority: 90,
+                        protected: true
+                    }
+                );
+
+                WORKERS.register(
+                    "WATCHDOG_STATUS",
+                    async function () {
+                        return getStatus();
+                    },
+                    {
+                        priority: 80,
+                        protected: true
+                    }
+                );
+
+            } catch (e) {
+                warn(
+                    "Watchdog worker registration:",
+                    e.message
+                );
+            }
+        }
+
+        startScheduler();
+
+        try {
+            if (
+                typeof CORE.emit ===
+                "function"
+            ) {
+                CORE.emit(
+                    "WATCHDOG_BOOTED",
+                    getStatus()
+                );
+            }
+        } catch (e) {}
+
+        log(
+            "Watchdog online."
+        );
+
+        log(
+            "Integrity monitoring active."
+        );
+
+        log(
+            "Recovery intelligence active."
+        );
+
+        log(
+            "=============================================="
+        );
+
+        return API;
+    }
+
+    /* ============================================================
+       START
+       ============================================================ */
+
+    boot().catch(
+        function (e) {
+            error(
+                "BOOT FAILURE:",
+                e
+            );
+        }
+    );
+
+})(window);
+
+/* ================================================================
+   END CHIROMBE WATCHDOG ENGINE
+   ================================================================ */
