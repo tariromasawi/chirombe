@@ -18169,3 +18169,3174 @@
   );
 
 })();
+/* ============================================================
+   CHIROMBE AUDIO LIVING LITURGY
+   PART 7 — VOICE / CHANT / PERFORMANCE ENGINE
+   Version: 7.0.0
+   ------------------------------------------------------------
+   PURPOSE
+   • Speech synthesis orchestration
+   • Prayer / declaration performance
+   • Call-and-response
+   • Chant sequencing
+   • Multilingual delivery
+   • Dynamic pauses and pacing
+   • Person-specific devotional sessions
+   • Environmental adaptation
+   • Question / response interface
+   • Voice ducking for tonal engine
+   • Performance memory
+   • Anti-repetition / novelty control
+   • Full integration with Parts 1–6
+   • No claim that generated audio proves supernatural events
+   ============================================================ */
+
+(() => {
+  "use strict";
+
+  const VERSION = "7.0.0";
+
+  /* ------------------------------------------------------------
+     DISCOVER EXISTING CHIROMBE AUDIO LAYERS
+     ------------------------------------------------------------ */
+
+  const AUDIO =
+    window.CHIROMBE_AUDIO ||
+    {};
+
+  const ENV =
+    window.CHIROMBE_AUDIO_ENVIRONMENT_ENGINE ||
+    AUDIO.Environment ||
+    null;
+
+  const TONAL =
+    window.CHIROMBE_AUDIO_TONAL_ENGINE ||
+    AUDIO.Tonal ||
+    null;
+
+  const LITURGY =
+    window.CHIROMBE_AUDIO_LITURGY_ENGINE ||
+    AUDIO.Liturgy ||
+    null;
+
+  /* ------------------------------------------------------------
+     STATES
+     ------------------------------------------------------------ */
+
+  const STATES = Object.freeze({
+    DORMANT: "DORMANT",
+    READY: "READY",
+    PREPARING: "PREPARING",
+    SPEAKING: "SPEAKING",
+    CHANTING: "CHANTING",
+    CALL_RESPONSE: "CALL_RESPONSE",
+    READING: "READING",
+    MEDITATION: "MEDITATION",
+    PAUSED: "PAUSED",
+    WAITING_RESPONSE: "WAITING_RESPONSE",
+    SAFE_STOP: "SAFE_STOP",
+    ERROR: "ERROR"
+  });
+
+  const MODES = Object.freeze({
+    DECLARATION: "DECLARATION",
+    SUPPLICATION: "SUPPLICATION",
+    CHANT: "CHANT",
+    CALL_RESPONSE: "CALL_RESPONSE",
+    READING: "READING",
+    MEDITATION: "MEDITATION",
+    FAMILY_BLESSING: "FAMILY_BLESSING",
+    PROTECTION: "PROTECTION",
+    GRATITUDE: "GRATITUDE",
+    REMEMBRANCE: "REMEMBRANCE",
+    UNITY: "UNITY",
+    NIGHT_WATCH: "NIGHT_WATCH",
+    CLOSING: "CLOSING"
+  });
+
+  const LANGUAGES = Object.freeze({
+    ENGLISH: "en-GB",
+    SHONA: "sn-ZW",
+    ZULU: "zu-ZA",
+    XHOSA: "xh-ZA",
+    FRENCH: "fr-FR",
+    PORTUGUESE: "pt-PT",
+    SPANISH: "es-ES"
+  });
+
+  const CONFIG = {
+
+    version: VERSION,
+
+    defaultLanguage:
+      LANGUAGES.ENGLISH,
+
+    defaultRate: 0.88,
+
+    minRate: 0.55,
+
+    maxRate: 1.25,
+
+    defaultPitch: 0,
+
+    minPitch: -2,
+
+    maxPitch: 2,
+
+    defaultVolume: 0.86,
+
+    maxVolume: 0.92,
+
+    pauseBetweenSentencesMs: 700,
+
+    pauseBetweenSectionsMs: 1600,
+
+    responseTimeoutMs: 15000,
+
+    maximumTextLength: 12000,
+
+    maximumSessionItems: 200,
+
+    noveltyWindow: 100,
+
+    maxHistory: 500,
+
+    privacy: {
+      retainTranscript: true,
+      retainSpeechAudio: false,
+      uploadTranscript: false,
+      externalAI: false
+    },
+
+    safety: {
+      maximumContinuousSpeechMs:
+        15 * 60 * 1000,
+
+      maximumSessionMs:
+        60 * 60 * 1000,
+
+      maximumQueue:
+        200
+    }
+  };
+
+  /* ------------------------------------------------------------
+     STATE
+     ------------------------------------------------------------ */
+
+  const STATE = {
+
+    state:
+      STATES.DORMANT,
+
+    mode:
+      MODES.DECLARATION,
+
+    language:
+      CONFIG.defaultLanguage,
+
+    voice:
+      null,
+
+    voices:
+      [],
+
+    speaking:
+      false,
+
+    paused:
+      false,
+
+    startedAt:
+      null,
+
+    speechStartedAt:
+      null,
+
+    currentItem:
+      null,
+
+    queue:
+      [],
+
+    session:
+      null,
+
+    history:
+      [],
+
+    spokenHashes:
+      [],
+
+    response:
+      null,
+
+    metrics: {
+
+      sessions:
+        0,
+
+      utterances:
+        0,
+
+      words:
+        0,
+
+      characters:
+        0,
+
+      calls:
+        0,
+
+      responses:
+        0,
+
+      interruptions:
+        0,
+
+      completed:
+        0,
+
+      errors:
+        0
+    },
+
+    settings: {
+
+      rate:
+        CONFIG.defaultRate,
+
+      pitch:
+        CONFIG.defaultPitch,
+
+      volume:
+        CONFIG.defaultVolume,
+
+      autoPunctuation:
+        true,
+
+      automaticAdaptation:
+        true,
+
+      privacyMode:
+        false
+    },
+
+    errors: []
+  };
+
+  /* ------------------------------------------------------------
+     UTILITY FUNCTIONS
+     ------------------------------------------------------------ */
+
+  function now() {
+    return Date.now();
+  }
+
+  function uid(
+    prefix = "voice"
+  ) {
+    return (
+      prefix +
+      "_" +
+      Date.now().toString(36) +
+      "_" +
+      Math.random()
+        .toString(36)
+        .slice(2, 9)
+    );
+  }
+
+  function clamp(
+    value,
+    min,
+    max
+  ) {
+    return Math.min(
+      max,
+      Math.max(
+        min,
+        Number(value)
+      )
+    );
+  }
+
+  function cleanText(
+    text
+  ) {
+    return String(
+      text ?? ""
+    )
+      .replace(
+        /<script[\s\S]*?<\/script>/gi,
+        ""
+      )
+      .replace(
+        /<[^>]+>/g,
+        " "
+      )
+      .replace(
+        /\s+/g,
+        " "
+      )
+      .trim()
+      .slice(
+        0,
+        CONFIG.maximumTextLength
+      );
+  }
+
+  function hashText(
+    text
+  ) {
+    let hash =
+      2166136261;
+
+    const value =
+      String(text);
+
+    for (
+      let i = 0;
+      i < value.length;
+      i++
+    ) {
+      hash ^=
+        value.charCodeAt(i);
+
+      hash +=
+        (hash << 1) +
+        (hash << 4) +
+        (hash << 7) +
+        (hash << 8) +
+        (hash << 24);
+    }
+
+    return (
+      hash >>> 0
+    ).toString(16);
+  }
+
+  function emit(
+    type,
+    detail = {}
+  ) {
+
+    const event = {
+      id:
+        uid("performance-event"),
+
+      type,
+
+      timestamp:
+        now(),
+
+      version:
+        VERSION,
+
+      detail
+    };
+
+    try {
+      window.dispatchEvent(
+        new CustomEvent(
+          "CHIROMBE_AUDIO_PERFORMANCE_EVENT",
+          {
+            detail: event
+          }
+        )
+      );
+    } catch (_) {}
+
+    try {
+
+      if (
+        window.ChirombeBus &&
+        typeof
+          window.ChirombeBus.emit ===
+          "function"
+      ) {
+        window.ChirombeBus.emit(
+          type,
+          detail
+        );
+      }
+
+    } catch (_) {}
+
+    return event;
+  }
+
+  function error(
+    err,
+    context
+  ) {
+
+    const item = {
+
+      id:
+        uid("voice-error"),
+
+      timestamp:
+        now(),
+
+      context,
+
+      message:
+        err?.message ||
+        String(err)
+    };
+
+    STATE.errors.push(
+      item
+    );
+
+    STATE.metrics.errors++;
+
+    if (
+      STATE.errors.length >
+      100
+    ) {
+      STATE.errors.shift();
+    }
+
+    emit(
+      "AUDIO_PERFORMANCE_ERROR",
+      item
+    );
+
+    return item;
+  }
+
+  /* ------------------------------------------------------------
+     SPEECH SYNTHESIS CAPABILITY
+     ------------------------------------------------------------ */
+
+  function supported() {
+
+    return (
+      typeof window !==
+        "undefined" &&
+      "speechSynthesis" in
+        window &&
+      typeof SpeechSynthesisUtterance !==
+        "undefined"
+    );
+  }
+
+  function refreshVoices() {
+
+    if (
+      !supported()
+    ) {
+      STATE.voices = [];
+      return [];
+    }
+
+    try {
+
+      STATE.voices =
+        window
+          .speechSynthesis
+          .getVoices()
+          .slice();
+
+      return STATE.voices;
+
+    } catch (err) {
+
+      error(
+        err,
+        "refreshVoices"
+      );
+
+      return [];
+    }
+  }
+
+  function findVoice(
+    language =
+      STATE.language
+  ) {
+
+    const voices =
+      refreshVoices();
+
+    if (
+      !voices.length
+    ) {
+      return null;
+    }
+
+    const requested =
+      String(
+        language ||
+          STATE.language
+      ).toLowerCase();
+
+    const exact =
+      voices.find(
+        voice =>
+          String(
+            voice.lang
+          ).toLowerCase() ===
+          requested
+      );
+
+    if (
+      exact
+    ) {
+      return exact;
+    }
+
+    const base =
+      requested
+        .split("-")[0];
+
+    const compatible =
+      voices.find(
+        voice =>
+          String(
+            voice.lang
+          )
+            .toLowerCase()
+            .startsWith(
+              base
+            )
+      );
+
+    if (
+      compatible
+    ) {
+      return compatible;
+    }
+
+    return (
+      voices.find(
+        voice =>
+          /english/i.test(
+            voice.lang
+          )
+      ) ||
+      voices[0]
+    );
+  }
+
+  /* ------------------------------------------------------------
+     LANGUAGE / VOICE CONTROL
+     ------------------------------------------------------------ */
+
+  function setLanguage(
+    language
+  ) {
+
+    const supportedLanguages =
+      Object.values(
+        LANGUAGES
+      );
+
+    if (
+      !supportedLanguages.includes(
+        language
+      )
+    ) {
+
+      /*
+       * Permit browser language tags
+       * while retaining a known safe default.
+       */
+
+      if (
+        !/^[a-z]{2,3}(-[A-Z]{2})?$/i.test(
+          String(language)
+        )
+      ) {
+        throw new Error(
+          "Unsupported language identifier."
+        );
+      }
+    }
+
+    STATE.language =
+      language;
+
+    STATE.voice =
+      findVoice(
+        language
+      );
+
+    emit(
+      "AUDIO_LANGUAGE_CHANGED",
+      {
+        language,
+        voice:
+          STATE.voice?.name ||
+          null
+      }
+    );
+
+    return {
+      language,
+      voice:
+        STATE.voice?.name ||
+        null
+    };
+  }
+
+  function setVoice(
+    voiceName
+  ) {
+
+    refreshVoices();
+
+    const voice =
+      STATE.voices.find(
+        item =>
+          item.name ===
+          voiceName
+      );
+
+    if (
+      !voice
+    ) {
+      throw new Error(
+        "Requested speech voice was not found."
+      );
+    }
+
+    STATE.voice =
+      voice;
+
+    STATE.language =
+      voice.lang;
+
+    emit(
+      "AUDIO_VOICE_CHANGED",
+      {
+        voice:
+          voice.name,
+        language:
+          voice.lang
+      }
+    );
+
+    return voice;
+  }
+
+  /* ------------------------------------------------------------
+     SPEECH SETTINGS
+     ------------------------------------------------------------ */
+
+  function setSpeechSettings(
+    settings = {}
+  ) {
+
+    if (
+      settings.rate !==
+      undefined
+    ) {
+      STATE.settings.rate =
+        clamp(
+          settings.rate,
+          CONFIG.minRate,
+          CONFIG.maxRate
+        );
+    }
+
+    if (
+      settings.pitch !==
+      undefined
+    ) {
+      STATE.settings.pitch =
+        clamp(
+          settings.pitch,
+          CONFIG.minPitch,
+          CONFIG.maxPitch
+        );
+    }
+
+    if (
+      settings.volume !==
+      undefined
+    ) {
+      STATE.settings.volume =
+        clamp(
+          settings.volume,
+          0,
+          CONFIG.maxVolume
+        );
+    }
+
+    if (
+      settings.automaticAdaptation !==
+      undefined
+    ) {
+      STATE.settings.automaticAdaptation =
+        !!settings.automaticAdaptation;
+    }
+
+    return {
+      ...STATE.settings
+    };
+  }
+
+  /* ------------------------------------------------------------
+     VOICE DUCKING
+     ------------------------------------------------------------ */
+
+  function voiceDuck(
+    enabled
+  ) {
+
+    try {
+
+      if (
+        TONAL &&
+        typeof
+          TONAL.setVoiceDuck ===
+          "function"
+      ) {
+
+        TONAL.setVoiceDuck(
+          enabled
+            ? 0.20
+            : 1
+        );
+
+        return true;
+      }
+
+    } catch (err) {
+
+      error(
+        err,
+        "voiceDuck"
+      );
+    }
+
+    return false;
+  }
+
+  /* ------------------------------------------------------------
+     SPEECH PROMISE
+     ------------------------------------------------------------ */
+
+  function speakText(
+    text,
+    options = {}
+  ) {
+
+    return new Promise(
+      resolve => {
+
+        if (
+          !supported()
+        ) {
+
+          error(
+            new Error(
+              "Speech synthesis is not available."
+            ),
+            "speakText"
+          );
+
+          resolve({
+            ok: false,
+            reason:
+              "unsupported"
+          });
+
+          return;
+        }
+
+        const clean =
+          cleanText(
+            text
+          );
+
+        if (
+          !clean
+        ) {
+
+          resolve({
+            ok: false,
+            reason:
+              "empty_text"
+          });
+
+          return;
+        }
+
+        if (
+          window.speechSynthesis.speaking
+        ) {
+
+          /*
+           * The performance engine owns speech.
+           * Stop previous utterance before a new
+           * controlled utterance.
+           */
+
+          window.speechSynthesis.cancel();
+        }
+
+        const utterance =
+          new SpeechSynthesisUtterance(
+            clean
+          );
+
+        const language =
+          options.language ||
+          STATE.language;
+
+        const voice =
+          options.voice ||
+          findVoice(
+            language
+          );
+
+        utterance.lang =
+          language;
+
+        if (
+          voice
+        ) {
+          utterance.voice =
+            voice;
+        }
+
+        utterance.rate =
+          clamp(
+            options.rate ??
+              STATE.settings.rate,
+            CONFIG.minRate,
+            CONFIG.maxRate
+          );
+
+        utterance.pitch =
+          clamp(
+            options.pitch ??
+              STATE.settings.pitch,
+            CONFIG.minPitch,
+            CONFIG.maxPitch
+          );
+
+        utterance.volume =
+          clamp(
+            options.volume ??
+              STATE.settings.volume,
+            0,
+            CONFIG.maxVolume
+          );
+
+        const started =
+          now();
+
+        STATE.state =
+          STATES.SPEAKING;
+
+        STATE.speaking =
+          true;
+
+        STATE.speechStartedAt =
+          started;
+
+        voiceDuck(
+          true
+        );
+
+        emit(
+          "AUDIO_SPEECH_STARTED",
+          {
+            text:
+              STATE.settings.privacyMode
+                ? "[PRIVATE]"
+                : clean,
+
+            language,
+
+            voice:
+              voice?.name ||
+              null,
+
+            mode:
+              STATE.mode
+          }
+        );
+
+        utterance.onend =
+          () => {
+
+            STATE.speaking =
+              false;
+
+            STATE.metrics.utterances++;
+
+            STATE.metrics.words +=
+              clean.split(/\s+/).length;
+
+            STATE.metrics.characters +=
+              clean.length;
+
+            voiceDuck(
+              false
+            );
+
+            emit(
+              "AUDIO_SPEECH_COMPLETED",
+              {
+                durationMs:
+                  now() -
+                  started,
+
+                characters:
+                  clean.length
+              }
+            );
+
+            resolve({
+              ok: true,
+              text:
+                clean,
+              durationMs:
+                now() -
+                started
+            });
+          };
+
+        utterance.onerror =
+          event => {
+
+            STATE.speaking =
+              false;
+
+            voiceDuck(
+              false
+            );
+
+            error(
+              new Error(
+                event?.error ||
+                "Speech synthesis error."
+              ),
+              "speech.onerror"
+            );
+
+            resolve({
+              ok: false,
+              reason:
+                event?.error ||
+                "speech_error"
+            });
+          };
+
+        try {
+
+          window
+            .speechSynthesis
+            .speak(
+              utterance
+            );
+
+        } catch (err) {
+
+          STATE.speaking =
+            false;
+
+          voiceDuck(
+            false
+          );
+
+          error(
+            err,
+            "speechSynthesis.speak"
+          );
+
+          resolve({
+            ok: false,
+            reason:
+              "speak_exception"
+          });
+        }
+      }
+    );
+  }
+
+  /* ------------------------------------------------------------
+     STOP / PAUSE / RESUME
+     ------------------------------------------------------------ */
+
+  function stop() {
+
+    try {
+
+      if (
+        supported()
+      ) {
+        window
+          .speechSynthesis
+          .cancel();
+      }
+
+    } catch (_) {}
+
+    STATE.queue =
+      [];
+
+    STATE.speaking =
+      false;
+
+    STATE.paused =
+      false;
+
+    voiceDuck(
+      false
+    );
+
+    STATE.state =
+      STATES.READY;
+
+    STATE.metrics.interruptions++;
+
+    emit(
+      "AUDIO_PERFORMANCE_STOPPED"
+    );
+
+    return true;
+  }
+
+  function pause() {
+
+    try {
+
+      if (
+        supported() &&
+        window
+          .speechSynthesis
+          .speaking
+      ) {
+
+        window
+          .speechSynthesis
+          .pause();
+
+        STATE.paused =
+          true;
+
+        STATE.state =
+          STATES.PAUSED;
+
+        emit(
+          "AUDIO_PERFORMANCE_PAUSED"
+        );
+
+        return true;
+      }
+
+    } catch (err) {
+
+      error(
+        err,
+        "pause"
+      );
+    }
+
+    return false;
+  }
+
+  function resume() {
+
+    try {
+
+      if (
+        supported() &&
+        window
+          .speechSynthesis
+          .paused
+      ) {
+
+        window
+          .speechSynthesis
+          .resume();
+
+        STATE.paused =
+          false;
+
+        STATE.state =
+          STATES.SPEAKING;
+
+        emit(
+          "AUDIO_PERFORMANCE_RESUMED"
+        );
+
+        return true;
+      }
+
+    } catch (err) {
+
+      error(
+        err,
+        "resume"
+      );
+    }
+
+    return false;
+  }
+
+  /* ------------------------------------------------------------
+     NOVELTY ENGINE
+     ------------------------------------------------------------ */
+
+  function isNovel(
+    text
+  ) {
+
+    const hash =
+      hashText(
+        cleanText(text)
+      );
+
+    return !STATE.spokenHashes.includes(
+      hash
+    );
+  }
+
+  function rememberSpeech(
+    text
+  ) {
+
+    const hash =
+      hashText(
+        cleanText(text)
+      );
+
+    STATE.spokenHashes.push(
+      hash
+    );
+
+    if (
+      STATE.spokenHashes.length >
+      CONFIG.noveltyWindow
+    ) {
+      STATE.spokenHashes.shift();
+    }
+
+    return hash;
+  }
+
+  /* ------------------------------------------------------------
+     DEVOTIONAL CONTENT LIBRARY
+     ------------------------------------------------------------ */
+
+  const LITURGY_LIBRARY = {
+
+    openings: [
+
+      "Mwari Ndi Mwari. Let truth, peace and wisdom guide this moment.",
+
+      "Mudzimu Unoyera, let this house and this family be held in peace, courage and unity.",
+
+      "We enter this moment with gratitude, humility, courage and a clear intention for peace.",
+
+      "Let this moment become a place of stillness, reflection, protection and wise action."
+    ],
+
+    protection: [
+
+      "May this family walk in peace, truth, wisdom and courage.",
+
+      "May every member of this family be strengthened to choose what is good, truthful and life-giving.",
+
+      "May fear give way to courage, confusion give way to wisdom, and division give way to unity.",
+
+      "May this household be surrounded by peace, disciplined thought, compassion and resilience.",
+
+      "May every person connected to this family find strength, safety, wisdom and a clear path forward."
+    ],
+
+    gratitude: [
+
+      "We give thanks for life, for family, for memory, for learning and for another opportunity to do what is right.",
+
+      "We remember the good that has carried this family through difficult seasons.",
+
+      "We give thanks for those who taught us, those who protected us, and those who continue the work of love and truth."
+    ],
+
+    courage: [
+
+      "Let courage rise where fear has been present.",
+
+      "Let wisdom govern every decision.",
+
+      "Let truth remain stronger than confusion.",
+
+      "Let patience become strength.",
+
+      "Let compassion remain present even in difficult circumstances."
+    ],
+
+    unity: [
+
+      "May this family remain united without erasing the dignity of any individual.",
+
+      "May differences be met with patience, truth and understanding.",
+
+      "May every generation contribute something valuable to the generations that follow.",
+
+      "May remembrance become wisdom and wisdom become constructive action."
+    ],
+
+    closing: [
+
+      "We close this moment with gratitude, peace, wisdom and courage.",
+
+      "May the peace of this moment continue into the next hour, the next decision and the next day.",
+
+      "Mwari Ndi Mwari. We proceed with truth, courage, humility and peace.",
+
+      "The session is complete. The intention remains: truth, protection, unity, resilience and peace."
+    ],
+
+    reflection: [
+
+      "Be still for a moment and notice the breath.",
+
+      "Notice the environment without judging it.",
+
+      "Notice sound as sound, movement as movement, and thought as thought.",
+
+      "Allow the mind to settle before choosing the next action.",
+
+      "Return attention gently to peace and clarity."
+    ]
+  };
+
+  /* ------------------------------------------------------------
+     SHONA DEVOTIONAL LIBRARY
+     ------------------------------------------------------------ */
+
+  const SHONA_LIBRARY = {
+
+    opening: [
+
+      "Mwari Ndi Mwari. Ngatipindei munguva ino nerunyararo, chokwadi, njere uye ushingi.",
+
+      "Mudzimu Unoyera, tungamirirai mhuri iyi murunyararo, rudo, chokwadi uye kubatana.",
+
+      "Ngatimirirei murunyararo, tichitenda upenyu, mhuri uye mukana wekuita zvakanaka."
+    ],
+
+    protection: [
+
+      "Dai mhuri iyi ifambe murunyararo, muchokwadi, munjere uye muushingi.",
+
+      "Dai kutya kutsiviwa neushingi, kuvhiringidzika kutsiviwa nenjere, uye kupatsanuka kutsiviwa nekubatana.",
+
+      "Dai vanhu vemhuri iyi vawana simba, runyararo, njere uye nzira yakajeka yekuenderera mberi."
+    ],
+
+    gratitude: [
+
+      "Tinotenda Mwari neupenyu, mhuri, vadzidzisi, ndangariro uye mikana mitsva.",
+
+      "Tinorangarira zvakanaka zvakapfuura uye zvatakadzidza kubva mazviri."
+    ],
+
+    unity: [
+
+      "Dai mhuri iyi irambe yakabatana ichichengeta chiremerera chemunhu wese.",
+
+      "Dai kusiyana kwedu kusanganiswe nemoyo murefu, chokwadi uye kunzwisisana."
+    ],
+
+    closing: [
+
+      "Tinopedzisa nguva iyi nekutenda, rugare, njere uye ushingi.",
+
+      "Mwari Ndi Mwari. Ngatiendererei muchokwadi, murugare uye nemoyo wakasimba."
+    ]
+  };
+
+  /* ------------------------------------------------------------
+     CONTENT SELECTION
+     ------------------------------------------------------------ */
+
+  function randomItem(
+    list
+  ) {
+
+    if (
+      !Array.isArray(list) ||
+      !list.length
+    ) {
+      return "";
+    }
+
+    const candidates =
+      list.filter(
+        item =>
+          isNovel(item)
+      );
+
+    const source =
+      candidates.length
+        ? candidates
+        : list;
+
+    return source[
+      Math.floor(
+        Math.random() *
+          source.length
+      )
+    ];
+  }
+
+  function languageLibrary(
+    language
+  ) {
+
+    if (
+      String(language)
+        .toLowerCase()
+        .startsWith("sn")
+    ) {
+      return SHONA_LIBRARY;
+    }
+
+    return LITURGY_LIBRARY;
+  }
+
+  /* ------------------------------------------------------------
+     PERSON-SPECIFIC DEVOTIONAL GENERATION
+     ------------------------------------------------------------ */
+
+  function personPrayer(
+    person = {},
+    options = {}
+  ) {
+
+    const name =
+      cleanText(
+        person.displayName ||
+        person.name ||
+        "this person"
+      );
+
+    const language =
+      options.language ||
+      STATE.language;
+
+    const library =
+      languageLibrary(
+        language
+      );
+
+    const useShona =
+      String(language)
+        .toLowerCase()
+        .startsWith("sn");
+
+    let lines = [];
+
+    if (
+      useShona
+    ) {
+
+      lines.push(
+        "Tinonyengeterera " +
+          name +
+          " nhasi."
+      );
+
+      lines.push(
+        randomItem(
+          library.protection
+        )
+      );
+
+      lines.push(
+        "Dai awana rugare, njere, ushingi uye hutungamiri hwakanaka."
+      );
+
+      lines.push(
+        "Dai nzira yake izadzwa nechokwadi, rudo uye kuchenjera."
+      );
+
+    } else {
+
+      lines.push(
+        "We hold " +
+          name +
+          " in this moment of prayer."
+      );
+
+      lines.push(
+        randomItem(
+          library.protection
+        )
+      );
+
+      lines.push(
+        "May " +
+          name +
+          " have peace, wisdom, courage and good guidance."
+      );
+
+      lines.push(
+        "May every decision ahead be approached with clarity, patience and truth."
+      );
+    }
+
+    return lines
+      .filter(Boolean)
+      .join(" ");
+  }
+
+  /* ------------------------------------------------------------
+     SESSION GENERATOR
+     ------------------------------------------------------------ */
+
+  function createSession(
+    options = {}
+  ) {
+
+    const mode =
+      options.mode ||
+      STATE.mode;
+
+    const language =
+      options.language ||
+      STATE.language;
+
+    const duration =
+      clamp(
+        Number(
+          options.durationMinutes ??
+            10
+        ),
+        1,
+        60
+      );
+
+    const people =
+      Array.isArray(
+        options.people
+      )
+        ? options.people
+        : [];
+
+    const library =
+      languageLibrary(
+        language
+      );
+
+    const items = [];
+
+    function add(
+      type,
+      text,
+      metadata = {}
+    ) {
+
+      const clean =
+        cleanText(text);
+
+      if (
+        !clean
+      ) {
+        return;
+      }
+
+      items.push({
+
+        id:
+          uid("lit-item"),
+
+        type,
+
+        text:
+          clean,
+
+        language,
+
+        mode,
+
+        metadata
+      });
+    }
+
+    /* OPENING */
+
+    add(
+      "OPENING",
+      randomItem(
+        library.opening ||
+          library.openings ||
+          LITURGY_LIBRARY.openings
+      )
+    );
+
+    /* MODE SECTION */
+
+    if (
+      mode ===
+      MODES.PROTECTION
+    ) {
+
+      add(
+        "PROTECTION",
+        randomItem(
+          library.protection
+        )
+      );
+
+      add(
+        "COURAGE",
+        randomItem(
+          LITURGY_LIBRARY.courage
+        )
+      );
+    }
+
+    if (
+      mode ===
+      MODES.GRATITUDE
+    ) {
+
+      add(
+        "GRATITUDE",
+        randomItem(
+          library.gratitude
+        )
+      );
+    }
+
+    if (
+      mode ===
+      MODES.UNITY ||
+      mode ===
+      MODES.FAMILY_BLESSING
+    ) {
+
+      add(
+        "UNITY",
+        randomItem(
+          library.unity
+        )
+      );
+    }
+
+    if (
+      mode ===
+      MODES.REMEMBRANCE
+    ) {
+
+      add(
+        "REMEMBRANCE",
+        "We remember those whose lives, teachings and examples contributed to the family story. May remembrance become wisdom, gratitude and constructive action."
+      );
+    }
+
+    /* PEOPLE */
+
+    people.forEach(
+      person => {
+
+        if (
+          items.length >=
+          CONFIG.maximumSessionItems
+        ) {
+          return;
+        }
+
+        add(
+          "PERSON_PRAYER",
+          personPrayer(
+            person,
+            {
+              language
+            }
+          ),
+          {
+            personKey:
+              person.personKey ||
+              person.id ||
+              null,
+
+            displayName:
+              person.displayName ||
+              person.name ||
+              null
+          }
+        );
+      }
+    );
+
+    /* REFLECTION */
+
+    add(
+      "REFLECTION",
+      randomItem(
+        library.reflection ||
+          LITURGY_LIBRARY.reflection
+      )
+    );
+
+    /* CLOSING */
+
+    add(
+      "CLOSING",
+      randomItem(
+        library.closing ||
+          LITURGY_LIBRARY.closing
+      )
+    );
+
+    const session = {
+
+      id:
+        uid("liturgy-session"),
+
+      createdAt:
+        now(),
+
+      mode,
+
+      language,
+
+      durationMinutes:
+        duration,
+
+      peopleCount:
+        people.length,
+
+      items,
+
+      status:
+        "CREATED",
+
+      provenance:
+        "CHIROMBE_ORIGINAL_GENERATIVE_LITURGY",
+
+      interpretationBoundary:
+        "DEVOTIONAL_CONTENT_NOT_SUPERNATURAL_EVIDENCE"
+    };
+
+    STATE.session =
+      session;
+
+    STATE.metrics.sessions++;
+
+    emit(
+      "AUDIO_LITURGY_SESSION_CREATED",
+      {
+        sessionId:
+          session.id,
+
+        mode,
+
+        language,
+
+        itemCount:
+          items.length,
+
+        peopleCount:
+          people.length
+      }
+    );
+
+    return session;
+  }
+
+  /* ------------------------------------------------------------
+     QUEUE
+     ------------------------------------------------------------ */
+
+  function queueSession(
+    session
+  ) {
+
+    if (
+      !session ||
+      !Array.isArray(
+        session.items
+      )
+    ) {
+      throw new Error(
+        "Invalid liturgy session."
+      );
+    }
+
+    STATE.queue =
+      session.items.slice(
+        0,
+        CONFIG.safety.maximumQueue
+      );
+
+    return STATE.queue.length;
+  }
+
+  /* ------------------------------------------------------------
+     PERFORMANCE ITEM
+     ------------------------------------------------------------ */
+
+  async function performItem(
+    item
+  ) {
+
+    if (
+      !item
+    ) {
+      return false;
+    }
+
+    STATE.currentItem =
+      item;
+
+    if (
+      item.type ===
+      "SILENCE"
+    ) {
+
+      await delay(
+        item.durationMs ||
+          CONFIG.pauseBetweenSectionsMs
+      );
+
+      return true;
+    }
+
+    const hash =
+      rememberSpeech(
+        item.text
+      );
+
+    emit(
+      "AUDIO_LITURGY_ITEM_STARTED",
+      {
+        itemId:
+          item.id,
+
+        type:
+          item.type,
+
+        hash,
+
+        metadata:
+          item.metadata ||
+          {}
+      }
+    );
+
+    const result =
+      await speakText(
+        item.text,
+        {
+          language:
+            item.language ||
+            STATE.language,
+
+          rate:
+            item.rate ||
+            STATE.settings.rate,
+
+          pitch:
+            item.pitch ||
+            STATE.settings.pitch,
+
+          volume:
+            item.volume ||
+            STATE.settings.volume
+        }
+      );
+
+    emit(
+      "AUDIO_LITURGY_ITEM_COMPLETED",
+      {
+        itemId:
+          item.id,
+
+        ok:
+          !!result.ok,
+
+        type:
+          item.type
+      }
+    );
+
+    await delay(
+      item.type ===
+        "CLOSING"
+        ? CONFIG.pauseBetweenSectionsMs
+        : CONFIG.pauseBetweenSentencesMs
+    );
+
+    return !!result.ok;
+  }
+
+  function delay(
+    ms
+  ) {
+
+    return new Promise(
+      resolve =>
+        setTimeout(
+          resolve,
+          Math.max(
+            0,
+            Number(ms) || 0
+          )
+        )
+    );
+  }
+
+  /* ------------------------------------------------------------
+     SESSION PERFORMANCE
+     ------------------------------------------------------------ */
+
+  async function performSession(
+    session =
+      STATE.session
+  ) {
+
+    if (
+      !session
+    ) {
+      throw new Error(
+        "No liturgy session available."
+      );
+    }
+
+    STATE.startedAt =
+      now();
+
+    STATE.state =
+      STATES.PREPARING;
+
+    session.status =
+      "PERFORMING";
+
+    queueSession(
+      session
+    );
+
+    emit(
+      "AUDIO_LITURGY_PERFORMANCE_STARTED",
+      {
+        sessionId:
+          session.id
+      }
+    );
+
+    let completed =
+      0;
+
+    try {
+
+      while (
+        STATE.queue.length
+      ) {
+
+        if (
+          STATE.state ===
+            STATES.SAFE_STOP ||
+          STATE.state ===
+            STATES.PAUSED
+        ) {
+          break;
+        }
+
+        if (
+          now() -
+            STATE.startedAt >
+          CONFIG.safety.maximumSessionMs
+        ) {
+          stop();
+
+          session.status =
+            "TIME_LIMIT";
+
+          break;
+        }
+
+        const item =
+          STATE.queue.shift();
+
+        const ok =
+          await performItem(
+            item
+          );
+
+        if (
+          ok
+        ) {
+          completed++;
+        }
+
+        if (
+          now() -
+            STATE.speechStartedAt >
+          CONFIG.safety.maximumContinuousSpeechMs
+        ) {
+          await delay(
+            1500
+          );
+        }
+      }
+
+      if (
+        completed ===
+        session.items.length
+      ) {
+
+        session.status =
+          "COMPLETED";
+
+        STATE.metrics.completed++;
+
+      } else if (
+        STATE.state ===
+        STATES.PAUSED
+      ) {
+
+        session.status =
+          "PAUSED";
+
+      } else {
+
+        session.status =
+          "STOPPED";
+      }
+
+      STATE.history.push({
+        sessionId:
+          session.id,
+
+        timestamp:
+          now(),
+
+        mode:
+          session.mode,
+
+        language:
+          session.language,
+
+        completed,
+
+        total:
+          session.items.length,
+
+        status:
+          session.status
+      });
+
+      if (
+        STATE.history.length >
+        CONFIG.maxHistory
+      ) {
+        STATE.history.shift();
+      }
+
+      emit(
+        "AUDIO_LITURGY_PERFORMANCE_COMPLETED",
+        {
+          sessionId:
+            session.id,
+
+          completed,
+
+          total:
+            session.items.length,
+
+          status:
+            session.status
+        }
+      );
+
+      STATE.state =
+        STATES.READY;
+
+      return session;
+
+    } catch (err) {
+
+      error(
+        err,
+        "performSession"
+      );
+
+      session.status =
+        "ERROR";
+
+      STATE.state =
+        STATES.ERROR;
+
+      return session;
+    }
+  }
+
+  /* ------------------------------------------------------------
+     CALL AND RESPONSE
+     ------------------------------------------------------------ */
+
+  async function callResponse(
+    call,
+    response,
+    options = {}
+  ) {
+
+    STATE.state =
+      STATES.CALL_RESPONSE;
+
+    STATE.metrics.calls++;
+
+    emit(
+      "AUDIO_CALL_STARTED",
+      {
+        call:
+          STATE.settings.privacyMode
+            ? "[PRIVATE]"
+            : call
+      }
+    );
+
+    await speakText(
+      call,
+      options
+    );
+
+    STATE.state =
+      STATES.WAITING_RESPONSE;
+
+    STATE.response =
+      {
+        expected:
+          response,
+
+        startedAt:
+          now(),
+
+        received:
+          null
+      };
+
+    emit(
+      "AUDIO_WAITING_FOR_RESPONSE",
+      {
+        timeoutMs:
+          CONFIG.responseTimeoutMs
+      }
+    );
+
+    /*
+     * Part 7 does not automatically claim that
+     * an external sound, voice or event is a
+     * spiritual communication.
+     *
+     * A future speech-recognition adapter can
+     * explicitly submit a user response.
+     */
+
+    await delay(
+      options.timeoutMs ||
+        CONFIG.responseTimeoutMs
+    );
+
+    if (
+      STATE.response &&
+      !STATE.response.received
+    ) {
+
+      emit(
+        "AUDIO_RESPONSE_TIMEOUT"
+      );
+    }
+
+    return STATE.response;
+  }
+
+  function submitResponse(
+    response
+  ) {
+
+    if (
+      !STATE.response
+    ) {
+      return false;
+    }
+
+    STATE.response.received =
+      cleanText(
+        response
+      );
+
+    STATE.metrics.responses++;
+
+    emit(
+      "AUDIO_RESPONSE_RECEIVED",
+      {
+        response:
+          STATE.settings.privacyMode
+            ? "[PRIVATE]"
+            : STATE.response.received
+      }
+    );
+
+    return true;
+  }
+
+  /* ------------------------------------------------------------
+     CHANT ENGINE
+     ------------------------------------------------------------ */
+
+  async function chant(
+    lines = [],
+    options = {}
+  ) {
+
+    if (
+      !Array.isArray(lines) ||
+      !lines.length
+    ) {
+      return false;
+    }
+
+    STATE.state =
+      STATES.CHANTING;
+
+    const repetitions =
+      clamp(
+        options.repetitions ??
+          1,
+        1,
+        12
+      );
+
+    for (
+      let cycle = 0;
+      cycle < repetitions;
+      cycle++
+    ) {
+
+      for (
+        let i = 0;
+        i < lines.length;
+        i++
+      ) {
+
+        if (
+          STATE.state ===
+          STATES.SAFE_STOP
+        ) {
+          return false;
+        }
+
+        const line =
+          cleanText(
+            lines[i]
+          );
+
+        if (
+          !line
+        ) {
+          continue;
+        }
+
+        await speakText(
+          line,
+          {
+            language:
+              options.language ||
+              STATE.language,
+
+            rate:
+              options.rate ||
+              0.72,
+
+            pitch:
+              options.pitch ??
+              STATE.settings.pitch,
+
+            volume:
+              options.volume ??
+              STATE.settings.volume
+          }
+        );
+
+        await delay(
+          options.pauseMs ??
+            900
+        );
+      }
+    }
+
+    STATE.state =
+      STATES.READY;
+
+    emit(
+      "AUDIO_CHANT_COMPLETED",
+      {
+        cycles:
+          repetitions,
+
+        lines:
+          lines.length
+      }
+    );
+
+    return true;
+  }
+
+  /* ------------------------------------------------------------
+     DECLARATION ENGINE
+     ------------------------------------------------------------ */
+
+  async function declaration(
+    text,
+    options = {}
+  ) {
+
+    STATE.mode =
+      MODES.DECLARATION;
+
+    const prepared =
+      cleanText(
+        text
+      );
+
+    if (
+      !prepared
+    ) {
+      return false;
+    }
+
+    return speakText(
+      prepared,
+      {
+        language:
+          options.language ||
+          STATE.language,
+
+        rate:
+          options.rate ||
+          0.82,
+
+        pitch:
+          options.pitch ??
+          STATE.settings.pitch,
+
+        volume:
+          options.volume ??
+          STATE.settings.volume
+      }
+    );
+  }
+
+  /* ------------------------------------------------------------
+     MEDITATION / SILENCE
+     ------------------------------------------------------------ */
+
+  async function meditation(
+    durationMs = 60000
+  ) {
+
+    STATE.state =
+      STATES.MEDITATION;
+
+    emit(
+      "AUDIO_MEDITATION_STARTED",
+      {
+        durationMs
+      }
+    );
+
+    await delay(
+      clamp(
+        durationMs,
+        1000,
+        15 * 60 * 1000
+      )
+    );
+
+    STATE.state =
+      STATES.READY;
+
+    emit(
+      "AUDIO_MEDITATION_COMPLETED"
+    );
+
+    return true;
+  }
+
+  /* ------------------------------------------------------------
+     ENVIRONMENT-AWARE PERFORMANCE
+     ------------------------------------------------------------ */
+
+  function getEnvironmentContext() {
+
+    try {
+
+      if (
+        ENV &&
+        typeof ENV.getStatus ===
+          "function"
+      ) {
+
+        const status =
+          ENV.getStatus();
+
+        return {
+
+          classification:
+            status.environment
+              ?.classification ||
+            "UNKNOWN",
+
+          acoustic:
+            status.acoustic
+              ?.environment ||
+            "UNKNOWN",
+
+          motion:
+            status.motion
+              ?.classification ||
+            "UNKNOWN",
+
+          light:
+            status.light
+              ?.classification ||
+            "UNKNOWN",
+
+          confidence:
+            status.environment
+              ?.confidence ||
+            0
+        };
+      }
+
+    } catch (err) {
+
+      error(
+        err,
+        "getEnvironmentContext"
+      );
+    }
+
+    return {
+      classification:
+        "UNKNOWN",
+
+      acoustic:
+        "UNKNOWN",
+
+      motion:
+        "UNKNOWN",
+
+      light:
+        "UNKNOWN",
+
+      confidence:
+        0
+    };
+  }
+
+  async function adaptPerformance() {
+
+    if (
+      !STATE.settings
+        .automaticAdaptation
+    ) {
+      return null;
+    }
+
+    const environment =
+      getEnvironmentContext();
+
+    let rate =
+      STATE.settings.rate;
+
+    let pause =
+      CONFIG.pauseBetweenSentencesMs;
+
+    /*
+     * Quiet + still:
+     * slower, more reflective delivery.
+     */
+
+    if (
+      environment.acoustic ===
+        "SILENT" &&
+      environment.motion ===
+        "STILL"
+    ) {
+
+      rate =
+        clamp(
+          rate - 0.08,
+          CONFIG.minRate,
+          CONFIG.maxRate
+        );
+
+      pause +=
+        500;
+    }
+
+    /*
+     * Busy / moving:
+     * slightly clearer and more concise.
+     */
+
+    if (
+      environment.acoustic ===
+        "LOUD" ||
+      environment.motion ===
+        "ACTIVE"
+    ) {
+
+      rate =
+        clamp(
+          rate + 0.05,
+          CONFIG.minRate,
+          CONFIG.maxRate
+        );
+
+      pause =
+        Math.max(
+          500,
+          pause - 250
+        );
+    }
+
+    return {
+      rate,
+      pause,
+      environment
+    };
+  }
+
+  /* ------------------------------------------------------------
+     QUESTION / INQUIRY RESPONSE
+     ------------------------------------------------------------ */
+
+  async function answerQuestion(
+    question,
+    options = {}
+  ) {
+
+    const q =
+      cleanText(
+        question
+      );
+
+    if (
+      !q
+    ) {
+      return false;
+    }
+
+    /*
+     * Part 7 deliberately gives a bounded
+     * response rather than pretending to know
+     * facts that are not available to it.
+     */
+
+    const environment =
+      getEnvironmentContext();
+
+    let response =
+      "I can help you reflect on that. " +
+      "I will separate what CHIROMBE has actually measured " +
+      "from spiritual or devotional interpretation.";
+
+    if (
+      /environment|sound|noise|microphone/i.test(
+        q
+      )
+    ) {
+
+      response =
+        "The current measurable environment is " +
+        environment.classification +
+        ". The acoustic state is " +
+        environment.acoustic +
+        ", and the motion state is " +
+        environment.motion +
+        ". These are sensor observations, not proof of a supernatural cause.";
+    }
+
+    if (
+      /status|system|chirombe/i.test(
+        q
+      )
+    ) {
+
+      response =
+        "CHIROMBE audio performance is currently in " +
+        STATE.state +
+        " mode, using " +
+        STATE.language +
+        ".";
+    }
+
+    await speakText(
+      response,
+      {
+        language:
+          options.language ||
+          STATE.language,
+
+        rate:
+          0.86
+      }
+    );
+
+    return response;
+  }
+
+  /* ------------------------------------------------------------
+     BLOODLINE SESSION
+     ------------------------------------------------------------ */
+
+  async function bloodlineSession(
+    people = [],
+    options = {}
+  ) {
+
+    const safePeople =
+      Array.isArray(
+        people
+      )
+        ? people
+        : [];
+
+    const session =
+      createSession({
+        mode:
+          options.mode ||
+          MODES.FAMILY_BLESSING,
+
+        language:
+          options.language ||
+          STATE.language,
+
+        durationMinutes:
+          options.durationMinutes ||
+          15,
+
+        people:
+          safePeople
+      });
+
+    return performSession(
+      session
+    );
+  }
+
+  /* ------------------------------------------------------------
+     PRIVACY
+     ------------------------------------------------------------ */
+
+  function getPrivacyStatus() {
+
+    return {
+
+      transcriptRetained:
+        CONFIG.privacy
+          .retainTranscript,
+
+      speechAudioRetained:
+        CONFIG.privacy
+          .retainSpeechAudio,
+
+      uploadTranscript:
+        CONFIG.privacy
+          .uploadTranscript,
+
+      externalAI:
+        CONFIG.privacy
+          .externalAI,
+
+      privacyMode:
+        STATE.settings
+          .privacyMode
+    };
+  }
+
+  function setPrivacyMode(
+    enabled
+  ) {
+
+    STATE.settings.privacyMode =
+      !!enabled;
+
+    emit(
+      "AUDIO_PRIVACY_MODE_CHANGED",
+      {
+        enabled:
+          STATE.settings
+            .privacyMode
+      }
+    );
+
+    return getPrivacyStatus();
+  }
+
+  /* ------------------------------------------------------------
+     STATUS
+     ------------------------------------------------------------ */
+
+  function getStatus() {
+
+    return {
+
+      version:
+        VERSION,
+
+      state:
+        STATE.state,
+
+      mode:
+        STATE.mode,
+
+      language:
+        STATE.language,
+
+      voice:
+        STATE.voice?.name ||
+        null,
+
+      speaking:
+        STATE.speaking,
+
+      paused:
+        STATE.paused,
+
+      queueLength:
+        STATE.queue.length,
+
+      session:
+        STATE.session
+          ? {
+              id:
+                STATE.session.id,
+
+              status:
+                STATE.session.status,
+
+              mode:
+                STATE.session.mode,
+
+              language:
+                STATE.session.language,
+
+              itemCount:
+                STATE.session.items.length
+            }
+          : null,
+
+      settings:
+        {
+          ...STATE.settings
+        },
+
+      metrics:
+        {
+          ...STATE.metrics
+        },
+
+      privacy:
+        getPrivacyStatus(),
+
+      environment:
+        getEnvironmentContext(),
+
+      capabilities:
+        {
+          speechSynthesis:
+            supported(),
+
+          voices:
+            STATE.voices.length,
+
+          tonalEngine:
+            !!TONAL,
+
+          environmentEngine:
+            !!ENV,
+
+          liturgyEngine:
+            !!LITURGY
+        },
+
+      errors:
+        STATE.errors.slice(-10)
+    };
+  }
+
+  /* ------------------------------------------------------------
+     COMMAND REGISTRATION
+     ------------------------------------------------------------ */
+
+  function registerCommands() {
+
+    const commands = {
+
+      "audio.performance.status":
+        async () =>
+          getStatus(),
+
+      "audio.performance.voices":
+        async () =>
+          refreshVoices(),
+
+      "audio.performance.language":
+        async args =>
+          setLanguage(
+            args?.language
+          ),
+
+      "audio.performance.voice":
+        async args =>
+          setVoice(
+            args?.name
+          ),
+
+      "audio.performance.settings":
+        async args =>
+          setSpeechSettings(
+            args || {}
+          ),
+
+      "audio.performance.speak":
+        async args =>
+          speakText(
+            args?.text ||
+              "",
+            args || {}
+          ),
+
+      "audio.performance.declaration":
+        async args =>
+          declaration(
+            args?.text ||
+              "",
+            args || {}
+          ),
+
+      "audio.performance.chant":
+        async args =>
+          chant(
+            args?.lines ||
+              [],
+            args || {}
+          ),
+
+      "audio.performance.callResponse":
+        async args =>
+          callResponse(
+            args?.call ||
+              "",
+            args?.response ||
+              "",
+            args || {}
+          ),
+
+      "audio.performance.response":
+        async args =>
+          submitResponse(
+            args?.response ||
+              ""
+          ),
+
+      "audio.performance.meditation":
+        async args =>
+          meditation(
+            args?.durationMs ||
+              60000
+          ),
+
+      "audio.performance.createSession":
+        async args =>
+          createSession(
+            args || {}
+          ),
+
+      "audio.performance.performSession":
+        async args =>
+          performSession(
+            args?.session ||
+              STATE.session
+          ),
+
+      "audio.performance.bloodline":
+        async args =>
+          bloodlineSession(
+            args?.people ||
+              [],
+            args || {}
+          ),
+
+      "audio.performance.question":
+        async args =>
+          answerQuestion(
+            args?.question ||
+              "",
+            args || {}
+          ),
+
+      "audio.performance.adapt":
+        async () =>
+          adaptPerformance(),
+
+      "audio.performance.pause":
+        async () =>
+          pause(),
+
+      "audio.performance.resume":
+        async () =>
+          resume(),
+
+      "audio.performance.stop":
+        async () =>
+          stop(),
+
+      "audio.performance.privacy":
+        async args =>
+          setPrivacyMode(
+            args?.enabled
+          )
+    };
+
+    try {
+
+      if (
+        LITURGY &&
+        typeof
+          LITURGY.registerCommand ===
+          "function"
+      ) {
+
+        Object.entries(
+          commands
+        ).forEach(
+          ([name, handler]) => {
+
+            try {
+
+              LITURGY.registerCommand(
+                name,
+                handler
+              );
+
+            } catch (_) {}
+          }
+        );
+      }
+
+    } catch (err) {
+
+      error(
+        err,
+        "registerCommands.liturgy"
+      );
+    }
+
+    try {
+
+      if (
+        window.ChirombeBus &&
+        typeof
+          window.ChirombeBus
+            .registerCommand ===
+          "function"
+      ) {
+
+        Object.entries(
+          commands
+        ).forEach(
+          ([name, handler]) => {
+
+            try {
+
+              window.ChirombeBus
+                .registerCommand(
+                  name,
+                  handler
+                );
+
+            } catch (_) {}
+          }
+        );
+      }
+
+    } catch (err) {
+
+      error(
+        err,
+        "registerCommands.bus"
+      );
+    }
+
+    return Object.keys(
+      commands
+    );
+  }
+
+  /* ------------------------------------------------------------
+     SYSTEM EVENT INTEGRATION
+     ------------------------------------------------------------ */
+
+  function registerSystemEvents() {
+
+    const events = [
+
+      "LIVING_WATCH_STARTED",
+
+      "BLOODLINE_LITURGY_READY",
+
+      "RITUAL_SESSION_CREATED",
+
+      "FAMILY_UNITY",
+
+      "SECURITY_ALERT",
+
+      "WATCHDOG_ALERT",
+
+      "RECOVERY",
+
+      "AUDIO_SAFE_STOP",
+
+      "ENGINE_INTEGRITY_FAILURE"
+    ];
+
+    events.forEach(
+      eventName => {
+
+        try {
+
+          window.addEventListener(
+            eventName,
+            event => {
+
+              const detail =
+                event?.detail ||
+                {};
+
+              emit(
+                "AUDIO_PERFORMANCE_SYSTEM_EVENT",
+                {
+                  source:
+                    eventName,
+
+                  detail
+                }
+              );
+
+              /*
+               * Security events alter the
+               * computational performance mode.
+               *
+               * They do not establish a
+               * supernatural interpretation.
+               */
+
+              if (
+                eventName ===
+                  "SECURITY_ALERT" ||
+                eventName ===
+                  "WATCHDOG_ALERT"
+              ) {
+
+                STATE.mode =
+                  MODES.PROTECTION;
+
+                emit(
+                  "AUDIO_PERFORMANCE_PROTECTION_MODE",
+                  {
+                    reason:
+                      eventName
+                  }
+                );
+              }
+
+              if (
+                eventName ===
+                "RECOVERY"
+              ) {
+
+                STATE.mode =
+                  MODES.NIGHT_WATCH;
+              }
+
+              if (
+                eventName ===
+                "AUDIO_SAFE_STOP"
+              ) {
+
+                stop();
+              }
+            }
+          );
+
+        } catch (_) {}
+      }
+    );
+  }
+
+  /* ------------------------------------------------------------
+     INITIALISE
+     ------------------------------------------------------------ */
+
+  function initialise() {
+
+    refreshVoices();
+
+    if (
+      supported()
+    ) {
+
+      try {
+
+        window
+          .speechSynthesis
+          .addEventListener(
+            "voiceschanged",
+            refreshVoices
+          );
+
+      } catch (_) {}
+    }
+
+    registerCommands();
+
+    registerSystemEvents();
+
+    STATE.state =
+      STATES.READY;
+
+    emit(
+      "AUDIO_PERFORMANCE_ENGINE_READY",
+      {
+        version:
+          VERSION,
+
+        speechSynthesis:
+          supported(),
+
+        voiceCount:
+          STATE.voices.length
+      }
+    );
+
+    return getStatus();
+  }
+
+  /* ------------------------------------------------------------
+     PUBLIC API
+     ------------------------------------------------------------ */
+
+  const API = {
+
+    VERSION,
+
+    STATES,
+
+    MODES,
+
+    LANGUAGES,
+
+    CONFIG,
+
+    initialise,
+
+    supported,
+
+    refreshVoices,
+
+    findVoice,
+
+    setLanguage,
+
+    setVoice,
+
+    setSpeechSettings,
+
+    speakText,
+
+    declaration,
+
+    chant,
+
+    callResponse,
+
+    submitResponse,
+
+    meditation,
+
+    createSession,
+
+    queueSession,
+
+    performItem,
+
+    performSession,
+
+    bloodlineSession,
+
+    answerQuestion,
+
+    adaptPerformance,
+
+    getEnvironmentContext,
+
+    pause,
+
+    resume,
+
+    stop,
+
+    isNovel,
+
+    rememberSpeech,
+
+    setPrivacyMode,
+
+    getPrivacyStatus,
+
+    getStatus
+  };
+
+  /* ------------------------------------------------------------
+     EXPORTS
+     ------------------------------------------------------------ */
+
+  window.CHIROMBE_AUDIO_PERFORMANCE_ENGINE =
+    API;
+
+  window.CHIROMBE_AUDIO_PERFORMANCE =
+    API;
+
+  window.CHIROMBE_AUDIO =
+    window.CHIROMBE_AUDIO ||
+    {};
+
+  window.CHIROMBE_AUDIO.Performance =
+    API;
+
+  /*
+   * Do not automatically speak on page load.
+   *
+   * Browser speech engines are user-facing output
+   * and should begin from an explicit CHIROMBE
+   * activation command.
+   */
+
+  initialise();
+
+  console.log(
+    "[CHIROMBE AUDIO] Part 7 Voice / Chant / Performance Engine " +
+      VERSION +
+      " ready."
+  );
+
+})();
