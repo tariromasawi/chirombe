@@ -109,3 +109,21 @@ Not started. Open proposals, unapplied:
 ## Rollback of the integration
 
 Remove `js/engine/`, `engine.html`, the four script tags and the engine link on `app.html`, the `loadOrdered` block in `js/chirombe.js`, and restore `sw.js` `CHIROMBE_STATIC_v2` if a cache rollback is required. Live modules keep working. Journal keys in localStorage can remain; the engine never needs them deleted.
+
+## Kernel load (requested after the first integration)
+
+The preserved file `chirombe engine` is still byte-for-byte the audited artifact. `js/engine/kernel-bridge.js` fetches it and builds an executable projection in memory:
+
+- the git splice at line 1869 is kept inside a comment
+- raw `<script>` tags are kept inside comments
+- a loose `await` fragment is wrapped so the bloodline intention still registers
+- two illegal `??` / `||` mixes are parenthesised
+- CHEP-14 gains the `average` helper it calls
+- CHEP-15 boot is guarded so a canvas failure cannot stop CHEP-17
+- CHEP-17 gets `VERSION = "1.0.0"`, matching its identity block
+
+`index.html` is still not rewritten. `js/chirombe.js`, which the main index already loads, now loads the bridge after the integration engine. `app.html` and `engine.html` load it too.
+
+On load the bridge starts the kernel, keeps any global that already existed (`CHIROMBE_GUARDIAN` stays the matrix; the sentinel entity remains on `CHIROMBE_SENTINEL`), registers `data/family.json` into `CHIROMBE_BLOODLINE` without resolving the Tarry conflict, arms ZCCA, Zion, defence, and the sentinel, and starts the existing `workers/*.js` files. Part 03 is still absent from the artifact. A bridge named `CHIROMBE_WORKERS` forwards registration into the core kernel. It does not delete workers.
+
+Rollback: remove the `kernel-bridge.js` script. The original file does not need to be restored because it was not edited.
