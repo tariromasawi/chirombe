@@ -37573,4 +37573,18 @@ console.log(intention);/* ======================================================
 
 /* ================================================================
    CHEP-15 END
-   ================================================================ */
+   ================================================================ */<script src="./chirombe-core.js"></script>
+<script src="./chirombe-memory.js"></script>
+<script src="./chirombe-workers.js"></script>
+<script src="./chirombe-evolution.js"></script>
+<script src="./chirombe-pathways.js"></script>
+<script src="./chirombe-watchdog.js"></script>
+<script src="./chirombe-knowledge.js"></script>
+<script src="./chirombe-build.js"></script>
+<script src="./chirombe-orchestrator.js"></script>
+<script src="./chirombe-backend.js"></script>
+<script src="./chirombe-defence.js"></script>
+<script src="./chirombe-bloodline.js"></script>
+<script src="./chirombe-legacy.js"></script>
+<script src="./chirombe-intention.js"></script>
+<script src="./chirombe-resonance-chamber.js"></script>
