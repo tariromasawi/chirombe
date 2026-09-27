@@ -8,6 +8,7 @@
   load("./js/health.js");
   load("./js/watchdog.js");
   load("./js/zion-protection-core.js");
+  load("./js/mwarindimwari-covenant.js");
   load("./js/index-hmac-nim-addition.js");
   load("./js/chirombe-permissions.js");
   load("./js/liturgy-attach.js");
@@ -42,7 +43,7 @@
   }
   loadOrdered(["./js/engine/policy.js","./js/engine/ledger.js","./js/engine/adapters.js","./js/engine/chirombe-engine.js","./js/engine/kernel-bridge.js","./js/engine/activation.js","./js/engine/recovery.js"]);
   function note(type,msg){var feed=document.getElementById("feed")||document.getElementById("log")||document.getElementById("liveFeed");if(!feed)return;var row=document.createElement("div");row.textContent=new Date().toLocaleTimeString()+"  "+type+"  "+msg;feed.prepend(row);}
-  window.Chirombe={log:note,version:"2.6.6"};
+  window.Chirombe={log:note,version:"2.6.7"};
   try { if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(function(){}); } catch (e) {}
   try {
     if ("serviceWorker" in navigator) {
