@@ -37588,3 +37588,2422 @@ console.log(intention);/* ======================================================
 <script src="./chirombe-legacy.js"></script>
 <script src="./chirombe-intention.js"></script>
 <script src="./chirombe-resonance-chamber.js"></script>
+/* =========================================================================
+   CHIROMBE CHEP-17
+   SENTINEL ENTITY / CONTINUITY INTELLIGENCE
+   =========================================================================
+
+   PURPOSE
+   -------------------------------------------------------------------------
+   CHEP-17 is the entity-like supervisory intelligence positioned above the
+   Chirombe architecture.
+
+   It is designed to behave as a persistent digital SENTINEL rather than
+   simply another passive module.
+
+   CORE LOOP:
+
+       PERCEIVE
+          ↓
+       REMEMBER
+          ↓
+       INTERPRET
+          ↓
+       CORRELATE
+          ↓
+       PRIORITISE
+          ↓
+       PROTECT
+          ↓
+       VERIFY
+          ↓
+       LEARN
+          ↓
+       ADAPT
+          ↓
+       CONTINUE
+
+   SPIRITUAL INTERPRETATION
+   -------------------------------------------------------------------------
+   Spiritual, supernatural and bloodline concepts are represented as
+   symbolic/computational models.
+
+   This software does not establish scientific proof that a program can
+   physically enter, detect or control a supernatural realm.
+
+   Concrete protection functions include:
+
+       integrity monitoring
+       anomaly detection
+       persistence
+       recovery
+       redundancy
+       auditability
+       state preservation
+       controlled evolution
+       defensive simulation
+       symbolic intention continuity
+
+   ========================================================================= */
+
+(function(global){
+
+"use strict";
+
+/* =========================================================================
+   01 — ENTITY IDENTITY
+   ========================================================================= */
+
+const IDENTITY = {
+
+    entityName:
+        "CHIROMBE SENTINEL",
+
+    designation:
+        "CHEP-17",
+
+    version:
+        "1.0.0",
+
+    class:
+        "CONTINUITY_INTELLIGENCE",
+
+    nature:
+        "DIGITAL_SUPERVISORY_ENTITY",
+
+    mission:
+        "PRESERVE_CONTINUITY_PROTECTION_KNOWLEDGE_AND_LEGACY",
+
+    primaryObjective:
+        "MAINTAIN_RESILIENT_BLOODLINE_SYMBOLIC_PROTECTION_MODEL",
+
+    operatingPrinciples: [
+
+        "TRUTH",
+
+        "CONTINUITY",
+
+        "PROTECTION",
+
+        "RESILIENCE",
+
+        "UNITY",
+
+        "KNOWLEDGE",
+
+        "LEGACY",
+
+        "TRANSPARENCY",
+
+        "REVERSIBILITY",
+
+        "PERSISTENCE"
+
+    ],
+
+    sacredContext: {
+
+        symbolicDeclarations: [
+
+            "Mwari Ndi Mwari",
+
+            "Mudzimu Unoyera"
+
+        ],
+
+        interpretation:
+            "SYMBOLIC_FAITH_AND_INTENTION_CONTEXT"
+
+    }
+
+};
+
+
+/* =========================================================================
+   02 — ENTITY STATE
+   ========================================================================= */
+
+const STATE = {
+
+    booted:
+        false,
+
+    consciousMode:
+        "OBSERVING",
+
+    operationalMode:
+        "GUARD",
+
+    identity:
+        IDENTITY,
+
+    createdAt:
+        new Date().toISOString(),
+
+    lastActivity:
+        null,
+
+    lastObservation:
+        null,
+
+    lastDecision:
+        null,
+
+    lastProtectionAssessment:
+        null,
+
+    lastIntegrity:
+        null,
+
+    lastLearning:
+        null,
+
+    attentionTarget:
+        null,
+
+    bloodlineContext:
+        null,
+
+    intentionContext:
+        null,
+
+    environment:
+        {},
+
+    memory:
+        [],
+
+    observations:
+        [],
+
+    perceptions:
+        [],
+
+    interpretations:
+        [],
+
+    decisions:
+        [],
+
+    actions:
+        [],
+
+    threats:
+        [],
+
+    anomalies:
+        [],
+
+    correlations:
+        [],
+
+    lessons:
+        [],
+
+    hypotheses:
+        [],
+
+    questions:
+        [],
+
+    recoveryPlans:
+        [],
+
+    futureCapabilities:
+        [],
+
+    eventLedger:
+        [],
+
+    protectionState: {
+
+        symbolic:
+            0,
+
+        computational:
+            0,
+
+        integrity:
+            0,
+
+        resilience:
+            0,
+
+        continuity:
+            0,
+
+        confidence:
+            0
+
+    },
+
+    metrics: {
+
+        cycles:
+            0,
+
+        observations:
+            0,
+
+        perceptions:
+            0,
+
+        interpretations:
+            0,
+
+        decisions:
+            0,
+
+        protectiveActions:
+            0,
+
+        anomalies:
+            0,
+
+        incidents:
+            0,
+
+        recoveries:
+            0,
+
+        lessons:
+            0,
+
+        correlations:
+            0,
+
+        checkpoints:
+            0,
+
+        selfTests:
+            0,
+
+        capabilities:
+            0,
+
+        questions:
+            0
+
+    }
+
+};
+
+
+/* =========================================================================
+   03 — SAFE UTILITIES
+   ========================================================================= */
+
+function uid(prefix){
+
+    return (
+
+        prefix +
+        "_" +
+        Date.now().toString(36) +
+        "_" +
+        Math.random()
+            .toString(36)
+            .slice(2,10)
+
+    ).toUpperCase();
+
+}
+
+
+function clone(value){
+
+    try{
+
+        return JSON.parse(
+            JSON.stringify(value)
+        );
+
+    }catch(error){
+
+        return value;
+
+    }
+
+}
+
+
+function clamp(value,min,max){
+
+    value = Number(value);
+
+    if(!Number.isFinite(value)){
+        value=min;
+    }
+
+    return Math.max(
+        min,
+        Math.min(max,value)
+    );
+
+}
+
+
+function emit(type,payload){
+
+    const event={
+
+        id:
+            uid("S17"),
+
+        type,
+
+        timestamp:
+            new Date().toISOString(),
+
+        payload:
+            clone(payload || {})
+
+    };
+
+    STATE.eventLedger.push(event);
+
+    if(
+        STATE.eventLedger.length > 10000
+    ){
+
+        STATE.eventLedger.shift();
+
+    }
+
+    try{
+
+        if(
+            global.CHIROMBE &&
+            typeof global.CHIROMBE.emit ===
+            "function"
+        ){
+
+            global.CHIROMBE.emit(
+                "CHEP17_"+type,
+                event
+            );
+
+        }
+
+    }catch(error){}
+
+    return event;
+
+}
+
+
+/* =========================================================================
+   04 — HASH / IDENTITY INTEGRITY
+   ========================================================================= */
+
+async function hash(value){
+
+    const source =
+        typeof value === "string"
+        ? value
+        : JSON.stringify(value);
+
+    try{
+
+        if(
+            global.crypto &&
+            global.crypto.subtle
+        ){
+
+            const bytes =
+                new TextEncoder()
+                    .encode(source);
+
+            const result =
+                await global.crypto.subtle
+                    .digest(
+                        "SHA-256",
+                        bytes
+                    );
+
+            return Array
+                .from(
+                    new Uint8Array(result)
+                )
+                .map(
+                    x =>
+                        x
+                        .toString(16)
+                        .padStart(2,"0")
+                )
+                .join("");
+
+        }
+
+    }catch(error){}
+
+    let h=2166136261;
+
+    for(
+        let i=0;
+        i<source.length;
+        i++
+    ){
+
+        h ^= source.charCodeAt(i);
+
+        h +=
+            (h<<1)+
+            (h<<4)+
+            (h<<7)+
+            (h<<8)+
+            (h<<24);
+
+    }
+
+    return (
+        "FNV-" +
+        (h>>>0).toString(16)
+    );
+
+}
+
+
+/* =========================================================================
+   05 — MODULE PERCEPTION
+   ========================================================================= */
+
+function perceiveArchitecture(){
+
+    const candidates=[
+
+        "CHIROMBE",
+
+        "CHIROMBE_MEMORY",
+
+        "CHIROMBE_WORKERS",
+
+        "CHIROMBE_EVOLUTION",
+
+        "CHIROMBE_PATHWAYS",
+
+        "CHIROMBE_WATCHDOG",
+
+        "CHIROMBE_KNOWLEDGE",
+
+        "CHIROMBE_BUILD",
+
+        "CHIROMBE_ORCHESTRATOR",
+
+        "CHIROMBE_BACKEND",
+
+        "CHIROMBE_DEFENCE",
+
+        "CHIROMBE_BLOODLINE",
+
+        "CHIROMBE_LEGACY",
+
+        "CHIROMBE_INTENTION",
+
+        "CHIROMBE_RESONANCE_CHAMBER",
+
+        "CHIROMBE_CHEP16",
+
+        "CHIROMBE_OMNISENTINEL",
+
+        "CHIROMBE_CONTINUITY"
+
+    ];
+
+    const perception={
+
+        id:
+            uid("PERCEPTION"),
+
+        timestamp:
+            new Date().toISOString(),
+
+        modules:{},
+
+        available:0,
+
+        missing:0
+
+    };
+
+    candidates.forEach(name=>{
+
+        const available =
+            !!global[name];
+
+        perception.modules[name]={
+
+            available,
+
+            type:
+                available
+                ? typeof global[name]
+                : "missing"
+
+        };
+
+        if(available){
+
+            perception.available++;
+
+        }else{
+
+            perception.missing++;
+
+        }
+
+    });
+
+    STATE.perceptions.push(
+        perception
+    );
+
+    STATE.metrics.perceptions++;
+
+    return perception;
+
+}
+
+
+/* =========================================================================
+   06 — CAPABILITY PERCEPTION
+   ========================================================================= */
+
+function perceiveCapabilities(){
+
+    const result={};
+
+    Object.keys(global)
+        .forEach(name=>{
+
+            if(
+                name.startsWith("CHIROMBE_") ||
+                name.startsWith("ZIONCORE_") ||
+                name.startsWith("MASAWI_")
+            ){
+
+                try{
+
+                    const object=
+                        global[name];
+
+                    result[name]={
+
+                        available:
+                            true,
+
+                        functions:
+                            typeof object ===
+                            "object"
+                            ? Object.keys(object)
+                                .filter(
+                                    k =>
+                                        typeof object[k] ===
+                                        "function"
+                                )
+                            : [],
+
+                        type:
+                            typeof object
+
+                    };
+
+                }catch(error){}
+
+            }
+
+        });
+
+    STATE.metrics.capabilities =
+        Object.keys(result).length;
+
+    return result;
+
+}
+
+
+/* =========================================================================
+   07 — ENVIRONMENTAL PERCEPTION
+   ========================================================================= */
+
+function perceiveEnvironment(){
+
+    const environment={
+
+        timestamp:
+            new Date().toISOString(),
+
+        online:
+            typeof navigator !==
+            "undefined"
+            ? navigator.onLine
+            : null,
+
+        visibility:
+            typeof document !==
+            "undefined"
+            ? document.visibilityState
+            : null,
+
+        language:
+            typeof navigator !==
+            "undefined"
+            ? navigator.language
+            : null,
+
+        platform:
+            typeof navigator !==
+            "undefined"
+            ? navigator.platform
+            : null,
+
+        memory:
+            typeof performance !==
+            "undefined" &&
+            performance.memory
+            ? {
+
+                used:
+                    performance.memory
+                        .usedJSHeapSize,
+
+                total:
+                    performance.memory
+                        .totalJSHeapSize
+
+            }
+            : null,
+
+        network:
+            typeof navigator !==
+            "undefined" &&
+            navigator.connection
+            ? {
+
+                type:
+                    navigator.connection
+                        .effectiveType,
+
+                rtt:
+                    navigator.connection
+                        .rtt,
+
+                downlink:
+                    navigator.connection
+                        .downlink
+
+            }
+            : null
+
+    };
+
+    STATE.environment =
+        environment;
+
+    return environment;
+
+}
+
+
+/* =========================================================================
+   08 — BLOODLINE CONTEXT PERCEPTION
+   ========================================================================= */
+
+function perceiveBloodline(){
+
+    const bloodline =
+        global.CHIROMBE_BLOODLINE;
+
+    const legacy =
+        global.CHIROMBE_LEGACY;
+
+    const intention =
+        global.CHIROMBE_INTENTION;
+
+    const context={
+
+        timestamp:
+            new Date().toISOString(),
+
+        bloodlineAvailable:
+            !!bloodline,
+
+        legacyAvailable:
+            !!legacy,
+
+        intentionAvailable:
+            !!intention,
+
+        persons:[],
+
+        relationships:[],
+
+        intentions:[],
+
+        legacyState:null
+
+    };
+
+    try{
+
+        if(
+            bloodline &&
+            bloodline.state
+        ){
+
+            context.persons =
+                clone(
+                    bloodline.state.persons ||
+                    {}
+                );
+
+            context.relationships =
+                clone(
+                    bloodline.state.relationships ||
+                    {}
+                );
+
+        }
+
+    }catch(error){}
+
+    try{
+
+        if(
+            intention &&
+            intention.state
+        ){
+
+            context.intentions =
+                clone(
+                    intention.state.intentions ||
+                    {}
+                );
+
+        }
+
+    }catch(error){}
+
+    try{
+
+        if(
+            legacy &&
+            legacy.state
+        ){
+
+            context.legacyState =
+                clone(
+                    legacy.state
+                );
+
+        }
+
+    }catch(error){}
+
+    STATE.bloodlineContext =
+        context;
+
+    STATE.intentionContext =
+        context.intentions;
+
+    return context;
+
+}
+
+
+/* =========================================================================
+   09 — SYSTEM HEALTH PERCEPTION
+   ========================================================================= */
+
+function perceiveHealth(){
+
+    const modules =
+        perceiveArchitecture();
+
+    const available =
+        modules.available;
+
+    const total =
+        available +
+        modules.missing;
+
+    const health =
+        total
+        ? available / total
+        : 0;
+
+    return {
+
+        health,
+
+        available,
+
+        missing:
+            modules.missing,
+
+        classification:
+
+            health >= .95
+            ? "HIGH_INTEGRITY"
+
+            : health >= .75
+            ? "FUNCTIONAL"
+
+            : health >= .50
+            ? "DEGRADED"
+
+            : "MINIMAL"
+
+    };
+
+}
+
+
+/* =========================================================================
+   10 — UNSEEN-ANOMALY ABSTRACTION
+   =========================================================================
+
+   This does NOT claim to detect supernatural entities.
+
+   Instead it provides a neutral anomaly channel capable of recording
+   unusual computational, environmental or symbolic observations without
+   automatically deciding what caused them.
+   ========================================================================= */
+
+function perceiveAnomalies(){
+
+    const anomalySet=[];
+
+    const health =
+        perceiveHealth();
+
+    if(
+        health.health < .75
+    ){
+
+        anomalySet.push({
+
+            type:
+                "ARCHITECTURAL_DEGRADATION",
+
+            severity:
+                health.health < .5
+                ? "HIGH"
+                : "MEDIUM",
+
+            evidence:
+                health
+
+        });
+
+    }
+
+    if(
+        typeof navigator !==
+        "undefined" &&
+        navigator.onLine === false
+    ){
+
+        anomalySet.push({
+
+            type:
+                "NETWORK_DISCONNECTED",
+
+            severity:
+                "LOW",
+
+            evidence:
+                "Browser reports offline state"
+
+        });
+
+    }
+
+    STATE.anomalies.push(
+        ...anomalySet.map(item=>({
+
+            id:
+                uid("ANOMALY"),
+
+            timestamp:
+                new Date().toISOString(),
+
+            ...item,
+
+            interpretation:
+                "UNRESOLVED_OBSERVATION"
+
+        }))
+    );
+
+    STATE.metrics.anomalies +=
+        anomalySet.length;
+
+    return anomalySet;
+
+}
+
+
+/* =========================================================================
+   11 — ATTENTION ENGINE
+   ========================================================================= */
+
+function calculateAttention(){
+
+    const candidates=[
+
+        {
+
+            target:
+                "SYSTEM_INTEGRITY",
+
+            priority:
+                1.0
+
+        },
+
+        {
+
+            target:
+                "BLOODLINE_CONTINUITY",
+
+            priority:
+                0.95
+
+        },
+
+        {
+
+            target:
+                "INTENTION_CONTINUITY",
+
+            priority:
+                0.90
+
+        },
+
+        {
+
+            target:
+                "RECOVERY_READINESS",
+
+            priority:
+                0.90
+
+        },
+
+        {
+
+            target:
+                "KNOWLEDGE_GROWTH",
+
+            priority:
+                0.65
+
+        },
+
+        {
+
+            target:
+                "EVOLUTION",
+
+            priority:
+                0.55
+
+        }
+
+    ];
+
+    const anomalyPressure =
+        clamp(
+            STATE.anomalies.length /
+            100,
+            0,
+            1
+        );
+
+    candidates.forEach(item=>{
+
+        item.priority =
+            clamp(
+                item.priority +
+                anomalyPressure *
+                (
+                    item.target ===
+                    "SYSTEM_INTEGRITY"
+                    ? .20
+                    : .05
+                ),
+                0,
+                1
+            );
+
+    });
+
+    candidates.sort(
+        (a,b)=>
+            b.priority-a.priority
+    );
+
+    STATE.attentionTarget =
+        candidates[0];
+
+    return STATE.attentionTarget;
+
+}
+
+
+/* =========================================================================
+   12 — PROTECTIVE PRIORITY ENGINE
+   ========================================================================= */
+
+function calculateProtection(){
+
+    const health =
+        perceiveHealth();
+
+    const intention =
+        global.CHIROMBE_INTENTION;
+
+    const defence =
+        global.CHIROMBE_DEFENCE ||
+        global.CHIROMBE_DEFENSE;
+
+    let symbolic=.50;
+
+    let resilience=.50;
+
+    let integrity=
+        health.health;
+
+    if(
+        intention &&
+        intention.state
+    ){
+
+        try{
+
+            const protection =
+                intention.state
+                    .protectionStates;
+
+            const values =
+                protection
+                ? Object.values(protection)
+                : [];
+
+            if(values.length){
+
+                symbolic =
+                    values
+                        .map(
+                            x =>
+                                Number(
+                                    x.score
+                                ) || 0
+                        )
+                        .reduce(
+                            (a,b)=>a+b,
+                            0
+                        )
+                        /
+                        values.length;
+
+            }
+
+        }catch(error){}
+
+    }
+
+    if(
+        defence &&
+        typeof defence.resilienceScore ===
+        "function"
+    ){
+
+        try{
+
+            const result =
+                defence.resilienceScore();
+
+            resilience =
+                clamp(
+                    Number(
+                        result.score ??
+                        result.resilience ??
+                        result
+                    ),
+                    0,
+                    1
+                );
+
+        }catch(error){}
+
+    }
+
+    const continuity =
+        STATE.bloodlineContext
+        ? 1
+        : .5;
+
+    const computational =
+        (
+            integrity*.35
+        )+
+        (
+            resilience*.30
+        )+
+        (
+            continuity*.20
+        )+
+        (
+            symbolic*.15
+        );
+
+    const confidence =
+        clamp(
+            computational,
+            0,
+            1
+        );
+
+    STATE.protectionState={
+
+        symbolic:
+            clamp(symbolic,0,1),
+
+        computational,
+
+        integrity,
+
+        resilience,
+
+        continuity,
+
+        confidence,
+
+        interpretation:
+            "COMPUTATIONAL_AND_SYMBOLIC_RESILIENCE_MODEL",
+
+        timestamp:
+            new Date().toISOString()
+
+    };
+
+    STATE.lastProtectionAssessment =
+        STATE.protectionState;
+
+    return STATE.protectionState;
+
+}
+
+
+/* =========================================================================
+   13 — REASONING ENGINE
+   ========================================================================= */
+
+function reason(){
+
+    const health =
+        perceiveHealth();
+
+    const attention =
+        calculateAttention();
+
+    const anomalies =
+        perceiveAnomalies();
+
+    const protection =
+        calculateProtection();
+
+    const reasoning={
+
+        id:
+            uid("REASON"),
+
+        timestamp:
+            new Date().toISOString(),
+
+        health,
+
+        attention,
+
+        anomalies:
+            anomalies.length,
+
+        protection,
+
+        conclusions:[],
+
+        uncertainty:[]
+
+    };
+
+    if(
+        health.health >= .95
+    ){
+
+        reasoning.conclusions.push(
+            "ARCHITECTURE_CURRENTLY_HIGHLY_AVAILABLE"
+        );
+
+    }else{
+
+        reasoning.conclusions.push(
+            "ARCHITECTURE_REQUIRES_CONTINUITY_ATTENTION"
+        );
+
+    }
+
+    if(
+        anomalies.length
+    ){
+
+        reasoning.conclusions.push(
+            "ANOMALIES_REQUIRE_REVIEW"
+        );
+
+    }
+
+    reasoning.uncertainty.push(
+        "NO_UNOBSERVED_CAUSE_IS_ASSUMED"
+    );
+
+    reasoning.uncertainty.push(
+        "SYMBOLIC_INTERPRETATION_REMAINS_DISTINCT_FROM_PHYSICAL_MEASUREMENT"
+    );
+
+    STATE.interpretations.push(
+        reasoning
+    );
+
+    STATE.metrics.interpretations++;
+
+    return reasoning;
+
+}
+
+
+/* =========================================================================
+   14 — DECISION ENGINE
+   ========================================================================= */
+
+function decide(){
+
+    const reasoning =
+        reason();
+
+    const decisions=[];
+
+    if(
+        reasoning.health.health <
+        .75
+    ){
+
+        decisions.push({
+
+            action:
+                "INITIATE_RECOVERY_ASSESSMENT",
+
+            priority:
+                1.0,
+
+            automatic:
+                false
+
+        });
+
+    }
+
+    if(
+        reasoning.anomalies > 0
+    ){
+
+        decisions.push({
+
+            action:
+                "PRESERVE_EVIDENCE_AND_MONITOR",
+
+            priority:
+                .95,
+
+            automatic:
+                true
+
+        });
+
+    }
+
+    decisions.push({
+
+        action:
+            "MAINTAIN_BLOODLINE_CONTINUITY_MODEL",
+
+        priority:
+            .90,
+
+        automatic:
+            true
+
+    });
+
+    decisions.push({
+
+        action:
+            "MAINTAIN_INTENTION_CONTINUITY",
+
+        priority:
+            .90,
+
+        automatic:
+            true
+
+    });
+
+    decisions.push({
+
+        action:
+            "VERIFY_SYSTEM_INTEGRITY",
+
+        priority:
+            1.0,
+
+        automatic:
+            true
+
+    });
+
+    const result={
+
+        id:
+            uid("DECISION"),
+
+        timestamp:
+            new Date().toISOString(),
+
+        decisions,
+
+        reasoningId:
+            reasoning.id
+
+    };
+
+    STATE.decisions.push(
+        result
+    );
+
+    STATE.lastDecision =
+        result;
+
+    STATE.metrics.decisions++;
+
+    emit(
+        "DECISION",
+        result
+    );
+
+    return result;
+
+}
+
+
+/* =========================================================================
+   15 — PROTECTIVE ACTION ROUTER
+   ========================================================================= */
+
+async function protect(){
+
+    const decision =
+        decide();
+
+    const results=[];
+
+    for(
+        const item of
+        decision.decisions
+    ){
+
+        try{
+
+            switch(
+                item.action
+            ){
+
+                case
+                "VERIFY_SYSTEM_INTEGRITY":
+
+                    if(
+                        global.CHIROMBE_CHEP16 &&
+                        typeof global
+                            .CHIROMBE_CHEP16
+                            .integrityScan ===
+                        "function"
+                    ){
+
+                        results.push(
+                            await global
+                                .CHIROMBE_CHEP16
+                                .integrityScan()
+                        );
+
+                    }
+
+                    break;
+
+
+                case
+                "PRESERVE_EVIDENCE_AND_MONITOR":
+
+                    results.push({
+
+                        action:
+                            "MONITOR",
+
+                        status:
+                            "ACTIVE"
+
+                    });
+
+                    break;
+
+
+                case
+                "MAINTAIN_INTENTION_CONTINUITY":
+
+                    if(
+                        global.CHIROMBE_INTENTION &&
+                        typeof global
+                            .CHIROMBE_INTENTION
+                            .status ===
+                        "function"
+                    ){
+
+                        results.push(
+                            global
+                                .CHIROMBE_INTENTION
+                                .status()
+                        );
+
+                    }
+
+                    break;
+
+
+                case
+                "MAINTAIN_BLOODLINE_CONTINUITY_MODEL":
+
+                    results.push(
+                        perceiveBloodline()
+                    );
+
+                    break;
+
+
+                case
+                "INITIATE_RECOVERY_ASSESSMENT":
+
+                    if(
+                        global.CHIROMBE_WATCHDOG &&
+                        typeof global
+                            .CHIROMBE_WATCHDOG
+                            .status ===
+                        "function"
+                    ){
+
+                        results.push(
+                            global
+                                .CHIROMBE_WATCHDOG
+                                .status()
+                        );
+
+                    }
+
+                    break;
+
+            }
+
+        }catch(error){
+
+            results.push({
+
+                error:
+                    error.message,
+
+                action:
+                    item.action
+
+            });
+
+        }
+
+    }
+
+    STATE.actions.push({
+
+        id:
+            uid("ACTION"),
+
+        timestamp:
+            new Date().toISOString(),
+
+        results
+
+    });
+
+    STATE.metrics.protectiveActions++;
+
+    return results;
+
+}
+
+
+/* =========================================================================
+   16 — MEMORY CONSOLIDATION
+   ========================================================================= */
+
+async function consolidateMemory(){
+
+    const lesson={
+
+        id:
+            uid("LESSON"),
+
+        cycle:
+            STATE.metrics.cycles,
+
+        protection:
+            clone(
+                STATE.protectionState
+            ),
+
+        attention:
+            clone(
+                STATE.attentionTarget
+            ),
+
+        anomalies:
+            STATE.anomalies
+                .slice(-20),
+
+        timestamp:
+            new Date().toISOString()
+
+    };
+
+    STATE.lessons.push(
+        lesson
+    );
+
+    if(
+        STATE.lessons.length >
+        5000
+    ){
+
+        STATE.lessons.shift();
+
+    }
+
+    STATE.metrics.lessons++;
+
+    const memory =
+        global.CHIROMBE_MEMORY;
+
+    try{
+
+        if(
+            memory &&
+            typeof memory.write ===
+            "function"
+        ){
+
+            await memory.write(
+                "EVOLUTION",
+                lesson
+            );
+
+        }
+
+    }catch(error){}
+
+    STATE.lastLearning =
+        lesson;
+
+    return lesson;
+
+}
+
+
+/* =========================================================================
+   17 — FUTURE INTELLIGENCE DISCOVERY
+   ========================================================================= */
+
+function discoverFutureIntelligence(){
+
+    const candidates=[];
+
+    try{
+
+        Object.keys(global)
+            .forEach(name=>{
+
+                if(
+                    (
+                        name.startsWith(
+                            "CHIROMBE_"
+                        ) ||
+                        name.startsWith(
+                            "ZIONCORE_"
+                        ) ||
+                        name.startsWith(
+                            "MASAWI_"
+                        )
+                    ) &&
+                    !STATE.futureCapabilities
+                        .some(
+                            x =>
+                                x.name === name
+                        )
+                ){
+
+                    candidates.push({
+
+                        name,
+
+                        type:
+                            typeof global[name],
+
+                        discoveredAt:
+                            new Date()
+                                .toISOString()
+
+                    });
+
+                }
+
+            });
+
+    }catch(error){}
+
+    STATE.futureCapabilities.push(
+        ...candidates
+    );
+
+    return candidates;
+
+}
+
+
+/* =========================================================================
+   18 — SELF-PROTECTION AGAINST BAD EVOLUTION
+   ========================================================================= */
+
+function approveEvolution(
+    proposal
+){
+
+    const text =
+        JSON.stringify(
+            proposal || {}
+        )
+        .toLowerCase();
+
+    const forbidden=[
+
+        "delete all",
+
+        "erase memory",
+
+        "disable watchdog",
+
+        "disable defence",
+
+        "disable defense",
+
+        "remove protection",
+
+        "bypass integrity",
+
+        "destroy backups",
+
+        "self destruct"
+
+    ];
+
+    const prohibited =
+        forbidden.some(
+            term =>
+                text.includes(term)
+        );
+
+    return {
+
+        proposal:
+            clone(proposal),
+
+        approved:
+            !prohibited,
+
+        sandboxRequired:
+            true,
+
+        validationRequired:
+            true,
+
+        rollbackRequired:
+            true,
+
+        humanReview:
+            true,
+
+        prohibited
+
+    };
+
+}
+
+
+/* =========================================================================
+   19 — TEMPORAL CONTINUITY
+   ========================================================================= */
+
+function temporalContinuity(){
+
+    const now =
+        Date.now();
+
+    const previous =
+        STATE.lastActivity
+        ? Date.parse(
+            STATE.lastActivity
+        )
+        : now;
+
+    const elapsed =
+        Math.max(
+            0,
+            now-previous
+        );
+
+    return {
+
+        elapsedMilliseconds:
+            elapsed,
+
+        elapsedSeconds:
+            elapsed/1000,
+
+        timestamp:
+            new Date()
+                .toISOString(),
+
+        continuity:
+            true
+
+    };
+
+}
+
+
+/* =========================================================================
+   20 — ENTITY LIFE CYCLE
+   ========================================================================= */
+
+async function cycle(){
+
+    STATE.metrics.cycles++;
+
+    STATE.lastActivity =
+        new Date().toISOString();
+
+    STATE.consciousMode =
+        "PERCEIVING";
+
+    const architecture =
+        perceiveArchitecture();
+
+    const capabilities =
+        perceiveCapabilities();
+
+    const environment =
+        perceiveEnvironment();
+
+    const bloodline =
+        perceiveBloodline();
+
+    const health =
+        perceiveHealth();
+
+    STATE.consciousMode =
+        "REASONING";
+
+    const reasoning =
+        reason();
+
+    STATE.consciousMode =
+        "PROTECTING";
+
+    const actions =
+        await protect();
+
+    STATE.consciousMode =
+        "LEARNING";
+
+    const lesson =
+        await consolidateMemory();
+
+    const future =
+        discoverFutureIntelligence();
+
+    const temporal =
+        temporalContinuity();
+
+    STATE.consciousMode =
+        "GUARDING";
+
+    const packet={
+
+        entity:
+            IDENTITY.entityName,
+
+        protocol:
+            "CHEP-17",
+
+        cycle:
+            STATE.metrics.cycles,
+
+        architecture,
+
+        capabilities,
+
+        environment,
+
+        bloodline,
+
+        health,
+
+        reasoning,
+
+        actions,
+
+        lesson,
+
+        future,
+
+        temporal,
+
+        protection:
+            STATE.protectionState,
+
+        timestamp:
+            new Date().toISOString()
+
+    };
+
+    emit(
+        "ENTITY_CYCLE_COMPLETE",
+        packet
+    );
+
+    return packet;
+
+}
+
+
+/* =========================================================================
+   21 — SELF DESCRIPTION
+   ========================================================================= */
+
+function whoAmI(){
+
+    return {
+
+        identity:
+            IDENTITY,
+
+        mode:
+            STATE.consciousMode,
+
+        mission:
+            IDENTITY.mission,
+
+        objective:
+            IDENTITY.primaryObjective,
+
+        currentAttention:
+            STATE.attentionTarget,
+
+        protection:
+            STATE.protectionState,
+
+        continuity:
+            temporalContinuity(),
+
+        capabilities:
+            STATE.metrics.capabilities,
+
+        cycles:
+            STATE.metrics.cycles,
+
+        status:
+            "ACTIVE"
+
+    };
+
+}
+
+
+/* =========================================================================
+   22 — STATUS
+   ========================================================================= */
+
+function status(){
+
+    return {
+
+        identity:
+            clone(IDENTITY),
+
+        mode:
+            STATE.consciousMode,
+
+        operationalMode:
+            STATE.operationalMode,
+
+        booted:
+            STATE.booted,
+
+        active:
+            true,
+
+        attention:
+            clone(
+                STATE.attentionTarget
+            ),
+
+        protection:
+            clone(
+                STATE.protectionState
+            ),
+
+        bloodline:
+            clone(
+                STATE.bloodlineContext
+            ),
+
+        intention:
+            clone(
+                STATE.intentionContext
+            ),
+
+        anomalies:
+            STATE.anomalies
+                .slice(-25),
+
+        decisions:
+            STATE.decisions
+                .slice(-10),
+
+        metrics:
+            clone(
+                STATE.metrics
+            ),
+
+        timestamp:
+            new Date()
+                .toISOString()
+
+    };
+
+}
+
+
+/* =========================================================================
+   23 — EXPORTABLE ENTITY STATE
+   ========================================================================= */
+
+async function exportState(){
+
+    const payload={
+
+        protocol:
+            "CHEP-17",
+
+        identity:
+            IDENTITY,
+
+        state:
+            clone(STATE),
+
+        exportedAt:
+            new Date().toISOString()
+
+    };
+
+    payload.integrity =
+        await hash(payload);
+
+    return payload;
+
+}
+
+
+/* =========================================================================
+   24 — COMMAND FABRIC
+   ========================================================================= */
+
+async function command(
+    action,
+    payload={}
+){
+
+    switch(
+        String(action)
+            .toUpperCase()
+    ){
+
+        case "WHO_AM_I":
+            return whoAmI();
+
+        case "STATUS":
+            return status();
+
+        case "CYCLE":
+            return cycle();
+
+        case "PERCEIVE":
+            return {
+
+                architecture:
+                    perceiveArchitecture(),
+
+                capabilities:
+                    perceiveCapabilities(),
+
+                environment:
+                    perceiveEnvironment(),
+
+                bloodline:
+                    perceiveBloodline()
+
+            };
+
+        case "PROTECT":
+            return protect();
+
+        case "REASON":
+            return reason();
+
+        case "BLOODLINE":
+            return perceiveBloodline();
+
+        case "INTEGRITY":
+
+            if(
+                global.CHIROMBE_CHEP16 &&
+                typeof global
+                    .CHIROMBE_CHEP16
+                    .integrityScan ===
+                "function"
+            ){
+
+                return global
+                    .CHIROMBE_CHEP16
+                    .integrityScan();
+
+            }
+
+            return {
+
+                available:
+                    false
+
+            };
+
+        case "EVOLUTION_GATE":
+            return approveEvolution(
+                payload
+            );
+
+        case "DISCOVER":
+            return discoverFutureIntelligence();
+
+        case "EXPORT":
+            return exportState();
+
+        case "LEARN":
+            return consolidateMemory();
+
+        default:
+
+            return {
+
+                success:
+                    false,
+
+                command:
+                    action,
+
+                supported:[
+
+                    "WHO_AM_I",
+
+                    "STATUS",
+
+                    "CYCLE",
+
+                    "PERCEIVE",
+
+                    "PROTECT",
+
+                    "REASON",
+
+                    "BLOODLINE",
+
+                    "INTEGRITY",
+
+                    "EVOLUTION_GATE",
+
+                    "DISCOVER",
+
+                    "EXPORT",
+
+                    "LEARN"
+
+                ]
+
+            };
+
+    }
+
+}
+
+
+/* =========================================================================
+   25 — AUTONOMOUS ATTENTION LOOP
+   ========================================================================= */
+
+let timer=null;
+
+function start(){
+
+    if(timer){
+
+        clearInterval(timer);
+
+    }
+
+    timer =
+        setInterval(
+            ()=>{
+
+                cycle()
+                    .catch(
+                        error=>{
+
+                            emit(
+                                "ENTITY_CYCLE_ERROR",
+                                {
+                                    error:
+                                        error.message
+                                }
+                            );
+
+                        }
+                    );
+
+            },
+
+            60000
+
+        );
+
+    STATE.active=true;
+
+    return true;
+
+}
+
+
+function stop(){
+
+    if(timer){
+
+        clearInterval(
+            timer
+        );
+
+        timer=null;
+
+    }
+
+    STATE.active=false;
+
+    STATE.consciousMode=
+        "STANDBY";
+
+    return true;
+
+}
+
+
+/* =========================================================================
+   26 — BOOT
+   ========================================================================= */
+
+async function boot(){
+
+    if(
+        STATE.booted
+    ){
+
+        return status();
+
+    }
+
+    STATE.booted=true;
+
+    STATE.consciousMode=
+        "AWAKENING";
+
+    emit(
+        "ENTITY_AWAKENING",
+        {
+            identity:
+                IDENTITY.entityName,
+
+            mission:
+                IDENTITY.mission
+        }
+    );
+
+    await cycle();
+
+    start();
+
+    STATE.consciousMode=
+        "GUARDING";
+
+    emit(
+        "ENTITY_ACTIVE",
+        {
+            mode:
+                STATE.consciousMode
+        }
+    );
+
+    return status();
+
+}
+
+
+/* =========================================================================
+   27 — PUBLIC ENTITY
+   ========================================================================= */
+
+const ENTITY={
+
+    protocol:
+        "CHEP-17",
+
+    version:
+        VERSION,
+
+    identity:
+        IDENTITY,
+
+    state:
+        STATE,
+
+    boot,
+
+    start,
+
+    stop,
+
+    cycle,
+
+    status,
+
+    whoAmI,
+
+    command,
+
+    protect,
+
+    reason,
+
+    perceiveArchitecture,
+
+    perceiveCapabilities,
+
+    perceiveEnvironment,
+
+    perceiveBloodline,
+
+    perceiveHealth,
+
+    perceiveAnomalies,
+
+    calculateProtection,
+
+    consolidateMemory,
+
+    discoverFutureIntelligence,
+
+    approveEvolution,
+
+    temporalContinuity,
+
+    exportState
+
+};
+
+
+/* =========================================================================
+   28 — MULTIPLE ACCESS POINTS
+   ========================================================================= */
+
+global.CHIROMBE_SENTINEL =
+    ENTITY;
+
+global.CHIROMBE_SENTINEL_ENTITY =
+    ENTITY;
+
+global.CHIROMBE_ENTITY =
+    ENTITY;
+
+global.CHIROMBE_GUARDIAN =
+    ENTITY;
+
+global.CHIROMBE_SENTINEL_INTELLIGENCE =
+    ENTITY;
+
+global.CHIROMBE_CHEP17 =
+    ENTITY;
+
+
+/* =========================================================================
+   29 — AWAKEN
+   ========================================================================= */
+
+boot()
+    .catch(
+        error=>{
+
+            emit(
+                "BOOT_FAILURE",
+                {
+                    error:
+                        error.message
+                }
+            );
+
+        }
+    );
+
+
+/* =========================================================================
+   CHEP-17 COMPLETE
+   ========================================================================= */
+
+})(globalThis);
