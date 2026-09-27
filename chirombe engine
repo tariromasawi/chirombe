@@ -4466,4 +4466,3088 @@
 /* ==========================================================================
    END OF CHIROMBE EVOLUTION ENGINE
    PART 04 / 10
+   ========================================================================== *//* ==========================================================================
+   CHIROMBE PATHWAY INTELLIGENCE ENGINE
+   PART 05 / 10
+   FILE: chirombe-pathways.js
+   PROTOCOL: CHEP-05
+   VERSION: 1.0.0
+
+   DEPENDENCIES
+   --------------------------------------------------------------------------
+   PART 01  chirombe-core.js
+   PART 02  chirombe-memory.js
+   PART 03  chirombe-workers.js
+   PART 04  chirombe-evolution.js
+
+   PURPOSE
+   --------------------------------------------------------------------------
+   The Pathway Intelligence Engine converts observations, evolutionary
+   proposals, system modules, tasks and objectives into a navigable graph.
+
+   It provides:
+
+       DISCOVER
+          ↓
+       MAP
+          ↓
+       CONNECT
+          ↓
+       ANALYSE
+          ↓
+       PRIORITISE
+          ↓
+       ROUTE
+          ↓
+       EXECUTE / HANDOFF
+          ↓
+       LEARN
+          ↓
+       REMAP
+
+   A pathway is represented as:
+
+       NODE → CONNECTION → NODE → ACTION
+
+   Examples of node categories:
+
+       SYSTEM
+       MODULE
+       WORKER
+       MEMORY
+       PROPOSAL
+       EXPERIMENT
+       OBJECTIVE
+       TASK
+       KNOWLEDGE
+       BUILD
+       RECOVERY
+
+   This engine is deliberately designed so that future backend workers can
+   replace the browser simulation layer without changing the public API.
+
+   ========================================================================== */
+
+(function (global) {
+
+    "use strict";
+
+
+    /* ----------------------------------------------------------------------
+       DEPENDENCIES
+       ---------------------------------------------------------------------- */
+
+    const CORE =
+        global.CHIROMBE ||
+        global.CHIROMBE_CORE ||
+        null;
+
+    const MEMORY =
+        global.CHIROMBE_MEMORY ||
+        global.CHIROMBE_PERSISTENT_MEMORY ||
+        null;
+
+    const WORKERS =
+        global.CHIROMBE_WORKERS ||
+        global.CHIROMBE_WORKER_SWARM ||
+        null;
+
+    const EVOLUTION =
+        global.CHIROMBE_EVOLUTION ||
+        global.CHIROMBE_EVOLUTION_ENGINE ||
+        null;
+
+
+    if (!CORE) {
+
+        console.error(
+            "[CHIROMBE PATHWAYS] CORE unavailable."
+        );
+
+        return;
+
+    }
+
+
+    /* ----------------------------------------------------------------------
+       CONFIGURATION
+       ---------------------------------------------------------------------- */
+
+    const CONFIG = {
+
+        protocol:
+            "CHEP-05",
+
+        module:
+            "PATHWAY_INTELLIGENCE",
+
+        version:
+            "1.0.0",
+
+        enabled:
+            true,
+
+        autonomousMapping:
+            true,
+
+        autonomousAnalysis:
+            true,
+
+        autonomousRouting:
+            true,
+
+        mappingInterval:
+            45000,
+
+        analysisInterval:
+            75000,
+
+        maximumNodes:
+            5000,
+
+        maximumEdges:
+            15000,
+
+        maximumPaths:
+            1000,
+
+        maximumHistory:
+            1000,
+
+        minimumPathConfidence:
+            0.55,
+
+        strongPathConfidence:
+            0.82,
+
+        protectedNodeTypes: [
+
+            "CORE",
+
+            "MEMORY",
+
+            "SECURITY",
+
+            "RECOVERY",
+
+            "INTEGRITY"
+
+        ]
+
+    };
+
+
+    /* ----------------------------------------------------------------------
+       STATE
+       ---------------------------------------------------------------------- */
+
+    const STATE = {
+
+        started:
+            false,
+
+        cycle:
+            0,
+
+        nodes:
+            new Map(),
+
+        edges:
+            new Map(),
+
+        paths:
+            new Map(),
+
+        objectives:
+            new Map(),
+
+        routes:
+            new Map(),
+
+        history:
+            [],
+
+        signals:
+            [],
+
+        metrics: {
+
+            nodes:
+                0,
+
+            edges:
+                0,
+
+            paths:
+                0,
+
+            objectives:
+                0,
+
+            routes:
+                0,
+
+            analyses:
+                0,
+
+            discoveries:
+                0,
+
+            failures:
+                0
+
+        },
+
+        timestamps: {
+
+            started:
+                0,
+
+            lastMapping:
+                0,
+
+            lastAnalysis:
+                0,
+
+            lastRoute:
+                0
+
+        }
+
+    };
+
+
+    /* ----------------------------------------------------------------------
+       UTILITIES
+       ---------------------------------------------------------------------- */
+
+    function now() {
+
+        return Date.now();
+
+    }
+
+
+    function uid(prefix) {
+
+        return (
+
+            prefix +
+
+            "_" +
+
+            now().toString(36) +
+
+            "_" +
+
+            Math.random()
+                .toString(36)
+                .slice(2, 10)
+
+        );
+
+    }
+
+
+    function clone(value) {
+
+        try {
+
+            return JSON.parse(
+                JSON.stringify(value)
+            );
+
+        } catch (error) {
+
+            return {
+
+                error:
+                    "CLONE_FAILURE",
+
+                message:
+                    error.message
+
+            };
+
+        }
+
+    }
+
+
+    function numeric(
+        value,
+        fallback = 0
+    ) {
+
+        return (
+
+            typeof value === "number" &&
+            Number.isFinite(value)
+
+        )
+            ? value
+            : fallback;
+
+    }
+
+
+    function clamp(
+        value,
+        minimum,
+        maximum
+    ) {
+
+        return Math.max(
+
+            minimum,
+
+            Math.min(
+                maximum,
+                value
+            )
+
+        );
+
+    }
+
+
+    function emit(
+        event,
+        payload
+    ) {
+
+        try {
+
+            if (
+                CORE.events &&
+                typeof CORE.events.emit ===
+                "function"
+            ) {
+
+                CORE.events.emit(
+                    event,
+                    payload
+                );
+
+            }
+
+        } catch (error) {
+
+            console.warn(
+                "[PATHWAY EVENT]",
+                error
+            );
+
+        }
+
+    }
+
+
+    function log(
+        message,
+        data
+    ) {
+
+        try {
+
+            if (
+                typeof CORE.log ===
+                "function"
+            ) {
+
+                CORE.log(
+
+                    "[PATHWAYS] " +
+                    message,
+
+                    data || ""
+
+                );
+
+            } else {
+
+                console.log(
+                    "[PATHWAYS]",
+                    message,
+                    data || ""
+                );
+
+            }
+
+        } catch (error) {
+
+            console.log(
+                "[PATHWAYS]",
+                message
+            );
+
+        }
+
+    }
+
+
+    function hash(value) {
+
+        try {
+
+            if (
+                typeof CORE.hash ===
+                "function"
+            ) {
+
+                return CORE.hash(
+                    value
+                );
+
+            }
+
+        } catch (error) {
+
+            /* fallback */
+
+        }
+
+
+        try {
+
+            return btoa(
+
+                unescape(
+
+                    encodeURIComponent(
+
+                        JSON.stringify(
+                            value
+                        )
+
+                    )
+
+                )
+
+            );
+
+        } catch (error) {
+
+            return String(
+                value
+            );
+
+        }
+
+    }
+
+
+    /* ----------------------------------------------------------------------
+       MEMORY ADAPTER
+       ---------------------------------------------------------------------- */
+
+    async function saveMemory(
+        namespace,
+        key,
+        value
+    ) {
+
+        if (!MEMORY) {
+
+            return null;
+
+        }
+
+
+        try {
+
+            if (
+                typeof MEMORY.write ===
+                "function"
+            ) {
+
+                return await MEMORY.write(
+
+                    namespace,
+
+                    key,
+
+                    value
+
+                );
+
+            }
+
+
+            if (
+                typeof MEMORY.set ===
+                "function"
+            ) {
+
+                return await MEMORY.set(
+
+                    namespace,
+
+                    key,
+
+                    value
+
+                );
+
+            }
+
+        } catch (error) {
+
+            STATE.metrics.failures++;
+
+            log(
+                "Memory persistence error.",
+                error.message
+            );
+
+        }
+
+        return null;
+
+    }
+
+
+    /* ----------------------------------------------------------------------
+       NODE ENGINE
+       ---------------------------------------------------------------------- */
+
+    function createNode(
+        input
+    ) {
+
+        if (
+            !input ||
+            typeof input !== "object"
+        ) {
+
+            throw new Error(
+                "Pathway node requires an object."
+            );
+
+        }
+
+
+        const node = {
+
+            id:
+                input.id ||
+                uid("NODE"),
+
+            type:
+                String(
+                    input.type ||
+                    "SYSTEM"
+                ).toUpperCase(),
+
+            name:
+                input.name ||
+                input.id ||
+                "Unnamed Node",
+
+            description:
+                input.description ||
+                "",
+
+            status:
+                input.status ||
+                "ACTIVE",
+
+            weight:
+                numeric(
+                    input.weight,
+                    1
+                ),
+
+            importance:
+                clamp(
+                    numeric(
+                        input.importance,
+                        0.5
+                    ),
+                    0,
+                    1
+                ),
+
+            resilience:
+                clamp(
+                    numeric(
+                        input.resilience,
+                        0.5
+                    ),
+                    0,
+                    1
+                ),
+
+            connectivity:
+                0,
+
+            metadata:
+                clone(
+                    input.metadata ||
+                    {}
+                ),
+
+            created:
+                now(),
+
+            updated:
+                now(),
+
+            hash:
+                null
+
+        };
+
+
+        node.hash =
+            hash(
+                node
+            );
+
+
+        STATE.nodes.set(
+            node.id,
+            node
+        );
+
+
+        STATE.metrics.nodes =
+            STATE.nodes.size;
+
+
+        return node;
+
+    }
+
+
+    function ensureNode(
+        input
+    ) {
+
+        if (
+            input.id &&
+            STATE.nodes.has(
+                input.id
+            )
+        ) {
+
+            return STATE.nodes.get(
+                input.id
+            );
+
+        }
+
+
+        return createNode(
+            input
+        );
+
+    }
+
+
+    function getNode(
+        id
+    ) {
+
+        return STATE.nodes.get(
+            id
+        ) || null;
+
+    }
+
+
+    function removeNode(
+        id
+    ) {
+
+        if (
+            !STATE.nodes.has(
+                id
+            )
+        ) {
+
+            return false;
+
+        }
+
+
+        STATE.nodes.delete(
+            id
+        );
+
+
+        for (
+            const [
+                edgeId,
+                edge
+            ]
+            of STATE.edges
+        ) {
+
+            if (
+                edge.from === id ||
+                edge.to === id
+            ) {
+
+                STATE.edges.delete(
+                    edgeId
+                );
+
+            }
+
+        }
+
+
+        STATE.metrics.nodes =
+            STATE.nodes.size;
+
+        STATE.metrics.edges =
+            STATE.edges.size;
+
+
+        emit(
+            "PATHWAY_NODE_REMOVED",
+            {
+                id
+            }
+        );
+
+
+        return true;
+
+    }
+
+
+    /* ----------------------------------------------------------------------
+       EDGE / CONNECTION ENGINE
+       ---------------------------------------------------------------------- */
+
+    function createEdge(
+        from,
+        to,
+        options = {}
+    ) {
+
+        if (
+            !STATE.nodes.has(from)
+        ) {
+
+            throw new Error(
+                "Unknown source node: " +
+                from
+            );
+
+        }
+
+
+        if (
+            !STATE.nodes.has(to)
+        ) {
+
+            throw new Error(
+                "Unknown destination node: " +
+                to
+            );
+
+        }
+
+
+        const edge = {
+
+            id:
+                options.id ||
+                uid("EDGE"),
+
+            from:
+                from,
+
+            to:
+                to,
+
+            type:
+                options.type ||
+                "DEPENDENCY",
+
+            weight:
+                clamp(
+                    numeric(
+                        options.weight,
+                        0.5
+                    ),
+                    0,
+                    1
+                ),
+
+            confidence:
+                clamp(
+                    numeric(
+                        options.confidence,
+                        0.7
+                    ),
+                    0,
+                    1
+                ),
+
+            cost:
+                clamp(
+                    numeric(
+                        options.cost,
+                        0.5
+                    ),
+                    0,
+                    1
+                ),
+
+            reversible:
+                options.reversible !== false,
+
+            status:
+                options.status ||
+                "ACTIVE",
+
+            metadata:
+                clone(
+                    options.metadata ||
+                    {}
+                ),
+
+            created:
+                now(),
+
+            hash:
+                null
+
+        };
+
+
+        edge.hash =
+            hash(
+                edge
+            );
+
+
+        STATE.edges.set(
+            edge.id,
+            edge
+        );
+
+
+        STATE.metrics.edges =
+            STATE.edges.size;
+
+
+        updateConnectivity();
+
+
+        emit(
+            "PATHWAY_EDGE_CREATED",
+            edge
+        );
+
+
+        return edge;
+
+    }
+
+
+    function updateConnectivity() {
+
+        for (
+            const node
+            of STATE.nodes.values()
+        ) {
+
+            node.connectivity = 0;
+
+        }
+
+
+        for (
+            const edge
+            of STATE.edges.values()
+        ) {
+
+            const source =
+                STATE.nodes.get(
+                    edge.from
+                );
+
+            const target =
+                STATE.nodes.get(
+                    edge.to
+                );
+
+
+            if (source) {
+
+                source.connectivity++;
+
+            }
+
+
+            if (target) {
+
+                target.connectivity++;
+
+            }
+
+        }
+
+    }
+
+
+    function getOutgoing(
+        nodeId
+    ) {
+
+        const output = [];
+
+
+        for (
+            const edge
+            of STATE.edges.values()
+        ) {
+
+            if (
+                edge.from === nodeId
+            ) {
+
+                output.push(
+                    edge
+                );
+
+            }
+
+        }
+
+
+        return output;
+
+    }
+
+
+    function getIncoming(
+        nodeId
+    ) {
+
+        const output = [];
+
+
+        for (
+            const edge
+            of STATE.edges.values()
+        ) {
+
+            if (
+                edge.to === nodeId
+            ) {
+
+                output.push(
+                    edge
+                );
+
+            }
+
+        }
+
+
+        return output;
+
+    }
+
+
+    /* ----------------------------------------------------------------------
+       GRAPH DISCOVERY
+       ---------------------------------------------------------------------- */
+
+    function discoverSystem() {
+
+        STATE.cycle++;
+
+        STATE.metrics.discoveries++;
+
+
+        /* Core node */
+
+        ensureNode({
+
+            id:
+                "SYSTEM_CORE",
+
+            type:
+                "CORE",
+
+            name:
+                "Chirombe Core",
+
+            description:
+                "Primary system kernel.",
+
+            importance:
+                1,
+
+            resilience:
+                0.9
+
+        });
+
+
+        /* Memory node */
+
+        ensureNode({
+
+            id:
+                "SYSTEM_MEMORY",
+
+            type:
+                "MEMORY",
+
+            name:
+                "Persistent Memory",
+
+            description:
+                "Evolutionary memory and state persistence.",
+
+            importance:
+                0.95,
+
+            resilience:
+                0.85
+
+        });
+
+
+        /* Worker node */
+
+        ensureNode({
+
+            id:
+                "SYSTEM_WORKERS",
+
+            type:
+                "WORKER",
+
+            name:
+                "Worker Swarm",
+
+            description:
+                "Task and job orchestration layer.",
+
+            importance:
+                0.90,
+
+            resilience:
+                0.80
+
+        });
+
+
+        /* Evolution node */
+
+        ensureNode({
+
+            id:
+                "SYSTEM_EVOLUTION",
+
+            type:
+                "MODULE",
+
+            name:
+                "Evolution Engine",
+
+            description:
+                "Controlled system improvement layer.",
+
+            importance:
+                0.90,
+
+            resilience:
+                0.80
+
+        });
+
+
+        /* Pathway node */
+
+        ensureNode({
+
+            id:
+                "SYSTEM_PATHWAYS",
+
+            type:
+                "MODULE",
+
+            name:
+                "Pathway Intelligence",
+
+            description:
+                "Graph and route intelligence.",
+
+            importance:
+                0.88,
+
+            resilience:
+                0.80
+
+        });
+
+
+        /* Future architecture nodes */
+
+        const futureModules = [
+
+            [
+                "SYSTEM_WATCHDOG",
+                "WATCHDOG",
+                "Future continuous system monitoring layer."
+            ],
+
+            [
+                "SYSTEM_KNOWLEDGE",
+                "KNOWLEDGE",
+                "Future knowledge synthesis layer."
+            ],
+
+            [
+                "SYSTEM_BUILD",
+                "BUILD",
+                "Future controlled build and deployment layer."
+            ],
+
+            [
+                "SYSTEM_ORCHESTRATOR",
+                "ORCHESTRATOR",
+                "Future high-level coordination layer."
+            ],
+
+            [
+                "SYSTEM_EXTERNAL_AI",
+                "AI_BRIDGE",
+                "Future external AI integration layer."
+            ]
+
+        ];
+
+
+        for (
+            const module
+            of futureModules
+        ) {
+
+            ensureNode({
+
+                id:
+                    module[0],
+
+                type:
+                    module[1],
+
+                name:
+                    module[1],
+
+                description:
+                    module[2],
+
+                importance:
+                    0.75,
+
+                resilience:
+                    0.65,
+
+                metadata: {
+
+                    future:
+                        true
+
+                }
+
+            });
+
+        }
+
+
+        /* Core architecture connections */
+
+        const connections = [
+
+            [
+                "SYSTEM_CORE",
+                "SYSTEM_MEMORY",
+                "PERSISTENCE",
+                0.95
+            ],
+
+            [
+                "SYSTEM_CORE",
+                "SYSTEM_WORKERS",
+                "ORCHESTRATION",
+                0.90
+            ],
+
+            [
+                "SYSTEM_MEMORY",
+                "SYSTEM_EVOLUTION",
+                "MEMORY_FEEDBACK",
+                0.90
+            ],
+
+            [
+                "SYSTEM_WORKERS",
+                "SYSTEM_EVOLUTION",
+                "EXECUTION",
+                0.85
+            ],
+
+            [
+                "SYSTEM_EVOLUTION",
+                "SYSTEM_PATHWAYS",
+                "EVOLUTION_PATHWAY",
+                0.90
+            ],
+
+            [
+                "SYSTEM_PATHWAYS",
+                "SYSTEM_WATCHDOG",
+                "MONITORING",
+                0.70
+            ],
+
+            [
+                "SYSTEM_PATHWAYS",
+                "SYSTEM_KNOWLEDGE",
+                "KNOWLEDGE_FLOW",
+                0.75
+            ],
+
+            [
+                "SYSTEM_KNOWLEDGE",
+                "SYSTEM_BUILD",
+                "BUILD_KNOWLEDGE",
+                0.75
+            ],
+
+            [
+                "SYSTEM_BUILD",
+                "SYSTEM_ORCHESTRATOR",
+                "DEPLOYMENT_CONTROL",
+                0.70
+            ],
+
+            [
+                "SYSTEM_ORCHESTRATOR",
+                "SYSTEM_EXTERNAL_AI",
+                "AI_BRIDGE",
+                0.65
+            ]
+
+        ];
+
+
+        for (
+            const connection
+            of connections
+        ) {
+
+            const exists =
+                Array.from(
+                    STATE.edges.values()
+                ).some(
+
+                    edge =>
+
+                        edge.from ===
+                            connection[0] &&
+
+                        edge.to ===
+                            connection[1]
+
+                );
+
+
+            if (!exists) {
+
+                createEdge(
+
+                    connection[0],
+
+                    connection[1],
+
+                    {
+
+                        type:
+                            connection[2],
+
+                        confidence:
+                            connection[3],
+
+                        weight:
+                            connection[3]
+
+                    }
+
+                );
+
+            }
+
+        }
+
+
+        STATE.timestamps.lastMapping =
+            now();
+
+
+        emit(
+
+            "PATHWAY_SYSTEM_DISCOVERED",
+
+            {
+
+                cycle:
+                    STATE.cycle,
+
+                nodes:
+                    STATE.nodes.size,
+
+                edges:
+                    STATE.edges.size
+
+            }
+
+        );
+
+
+        return getGraph();
+
+    }
+
+
+    /* ----------------------------------------------------------------------
+       EVOLUTION INTEGRATION
+       ---------------------------------------------------------------------- */
+
+    function importEvolutionProposals() {
+
+        if (!EVOLUTION) {
+
+            return 0;
+
+        }
+
+
+        let proposals = [];
+
+
+        try {
+
+            if (
+                typeof EVOLUTION.getProposals ===
+                "function"
+            ) {
+
+                proposals =
+                    EVOLUTION.getProposals();
+
+            }
+
+        } catch (error) {
+
+            STATE.metrics.failures++;
+
+            log(
+                "Unable to read evolution proposals.",
+                error.message
+            );
+
+            return 0;
+
+        }
+
+
+        let imported = 0;
+
+
+        for (
+            const proposal
+            of proposals
+        ) {
+
+            const nodeId =
+                "PROPOSAL_" +
+                proposal.id;
+
+
+            if (
+                STATE.nodes.has(
+                    nodeId
+                )
+            ) {
+
+                continue;
+
+            }
+
+
+            const node =
+                createNode({
+
+                    id:
+                        nodeId,
+
+                    type:
+                        "PROPOSAL",
+
+                    name:
+                        proposal.objective ||
+                        proposal.id,
+
+                    description:
+                        proposal.objective ||
+                        "",
+
+                    importance:
+                        numeric(
+                            proposal.scores &&
+                            proposal.scores.total,
+                            0.5
+                        ),
+
+                    resilience:
+                        0.7,
+
+                    metadata: {
+
+                        proposal:
+                            clone(proposal)
+
+                    }
+
+                });
+
+
+            imported++;
+
+
+            const targetId =
+                "SYSTEM_" +
+                String(
+                    proposal.target ||
+                    "EVOLUTION"
+                ).toUpperCase();
+
+
+            if (
+                STATE.nodes.has(
+                    targetId
+                )
+            ) {
+
+                createEdge(
+
+                    "SYSTEM_EVOLUTION",
+
+                    node.id,
+
+                    {
+
+                        type:
+                            "PROPOSAL_GENERATION",
+
+                        confidence:
+                            0.85,
+
+                        weight:
+                            0.80
+
+                    }
+
+                );
+
+
+                createEdge(
+
+                    node.id,
+
+                    targetId,
+
+                    {
+
+                        type:
+                            "PROPOSED_CHANGE",
+
+                        confidence:
+                            numeric(
+                                proposal.scores &&
+                                proposal.scores.total,
+                                0.60
+                            ),
+
+                        weight:
+                            0.75
+
+                    }
+
+                );
+
+            }
+
+        }
+
+
+        return imported;
+
+    }
+
+
+    /* ----------------------------------------------------------------------
+       PATH SEARCH
+       ---------------------------------------------------------------------- */
+
+    function findPath(
+        start,
+        target,
+        options = {}
+    ) {
+
+        if (
+            !STATE.nodes.has(start) ||
+            !STATE.nodes.has(target)
+        ) {
+
+            return null;
+
+        }
+
+
+        const queue = [
+
+            {
+
+                node:
+                    start,
+
+                path:
+                    [start],
+
+                score:
+                    1,
+
+                cost:
+                    0
+
+            }
+
+        ];
+
+
+        const visited =
+            new Set();
+
+
+        const maximumDepth =
+            options.maximumDepth ||
+            20;
+
+
+        while (
+            queue.length > 0
+        ) {
+
+            queue.sort(
+
+                (a, b) =>
+                    b.score -
+                    a.score
+
+            );
+
+
+            const current =
+                queue.shift();
+
+
+            if (
+                current.node ===
+                target
+            ) {
+
+                return {
+
+                    id:
+                        uid("PATH"),
+
+                    start:
+                        start,
+
+                    target:
+                        target,
+
+                    nodes:
+                        current.path,
+
+                    confidence:
+                        clamp(
+                            current.score,
+                            0,
+                            1
+                        ),
+
+                    cost:
+                        current.cost,
+
+                    depth:
+                        current.path.length - 1,
+
+                    created:
+                        now()
+
+                };
+
+            }
+
+
+            if (
+                current.path.length >
+                maximumDepth
+            ) {
+
+                continue;
+
+            }
+
+
+            if (
+                visited.has(
+                    current.node
+                )
+            ) {
+
+                continue;
+
+            }
+
+
+            visited.add(
+                current.node
+            );
+
+
+            const edges =
+                getOutgoing(
+                    current.node
+                );
+
+
+            for (
+                const edge
+                of edges
+            ) {
+
+                if (
+                    visited.has(
+                        edge.to
+                    )
+                ) {
+
+                    continue;
+
+                }
+
+
+                const nextScore =
+                    current.score *
+                    edge.confidence;
+
+
+                const nextCost =
+                    current.cost +
+                    edge.cost;
+
+
+                queue.push({
+
+                    node:
+                        edge.to,
+
+                    path:
+                        current.path.concat(
+                            edge.to
+                        ),
+
+                    score:
+                        nextScore,
+
+                    cost:
+                        nextCost
+
+                });
+
+            }
+
+        }
+
+
+        return null;
+
+    }
+
+
+    /* ----------------------------------------------------------------------
+       PATH REGISTRATION
+       ---------------------------------------------------------------------- */
+
+    function registerPath(
+        path
+    ) {
+
+        if (!path) {
+
+            return null;
+
+        }
+
+
+        const id =
+            path.id ||
+            uid("PATH");
+
+
+        path.id =
+            id;
+
+
+        STATE.paths.set(
+            id,
+            path
+        );
+
+
+        STATE.metrics.paths =
+            STATE.paths.size;
+
+
+        if (
+            STATE.paths.size >
+            CONFIG.maximumPaths
+        ) {
+
+            const first =
+                STATE.paths.keys()
+                    .next()
+                    .value;
+
+
+            STATE.paths.delete(
+                first
+            );
+
+        }
+
+
+        return path;
+
+    }
+
+
+    /* ----------------------------------------------------------------------
+       ROUTE OPTIMISATION
+       ---------------------------------------------------------------------- */
+
+    function analyseRoutes() {
+
+        const routes = [];
+
+
+        const importantNodes =
+            Array.from(
+                STATE.nodes.values()
+            )
+                .filter(
+
+                    node =>
+                        node.importance >=
+                        0.70
+
+                );
+
+
+        for (
+            const source
+            of importantNodes
+        ) {
+
+            for (
+                const target
+                of importantNodes
+            ) {
+
+                if (
+                    source.id ===
+                    target.id
+                ) {
+
+                    continue;
+
+                }
+
+
+                const path =
+                    findPath(
+
+                        source.id,
+
+                        target.id,
+
+                        {
+
+                            maximumDepth:
+                                12
+
+                        }
+
+                    );
+
+
+                if (!path) {
+
+                    continue;
+
+                }
+
+
+                if (
+                    path.confidence <
+                    CONFIG.minimumPathConfidence
+                ) {
+
+                    continue;
+
+                }
+
+
+                registerPath(
+                    path
+                );
+
+
+                routes.push(
+                    path
+                );
+
+            }
+
+        }
+
+
+        STATE.metrics.analyses++;
+
+        STATE.timestamps.lastAnalysis =
+            now();
+
+
+        return routes;
+
+    }
+
+
+    /* ----------------------------------------------------------------------
+       OBJECTIVE ENGINE
+       ---------------------------------------------------------------------- */
+
+    function createObjective(
+        input
+    ) {
+
+        const objective = {
+
+            id:
+                input.id ||
+                uid("OBJ"),
+
+            name:
+                input.name ||
+                "Unnamed Objective",
+
+            description:
+                input.description ||
+                "",
+
+            priority:
+                clamp(
+                    numeric(
+                        input.priority,
+                        0.5
+                    ),
+                    0,
+                    1
+                ),
+
+            target:
+                input.target ||
+                null,
+
+            status:
+                "ACTIVE",
+
+            created:
+                now(),
+
+            updated:
+                now(),
+
+            metadata:
+                clone(
+                    input.metadata ||
+                    {}
+                )
+
+        };
+
+
+        STATE.objectives.set(
+
+            objective.id,
+
+            objective
+
+        );
+
+
+        STATE.metrics.objectives =
+            STATE.objectives.size;
+
+
+        saveMemory(
+
+            "PATHWAYS",
+
+            objective.id,
+
+            objective
+
+        );
+
+
+        emit(
+
+            "PATHWAY_OBJECTIVE_CREATED",
+
+            objective
+
+        );
+
+
+        return objective;
+
+    }
+
+
+    /* ----------------------------------------------------------------------
+       OBJECTIVE ROUTING
+       ---------------------------------------------------------------------- */
+
+    function routeObjective(
+        objectiveId
+    ) {
+
+        const objective =
+            STATE.objectives.get(
+                objectiveId
+            );
+
+
+        if (!objective) {
+
+            return null;
+
+        }
+
+
+        if (!objective.target) {
+
+            return null;
+
+        }
+
+
+        const source =
+            "SYSTEM_CORE";
+
+
+        const path =
+            findPath(
+
+                source,
+
+                objective.target,
+
+                {
+
+                    maximumDepth:
+                        20
+
+                }
+
+            );
+
+
+        if (!path) {
+
+            objective.status =
+                "NO_ROUTE";
+
+
+            return {
+
+                objective:
+                    objectiveId,
+
+                status:
+                    "NO_ROUTE"
+
+            };
+
+        }
+
+
+        const route = {
+
+            id:
+                uid("ROUTE"),
+
+            objectiveId:
+                objectiveId,
+
+            path:
+                path,
+
+            priority:
+                objective.priority,
+
+            status:
+                "READY",
+
+            created:
+                now(),
+
+            hash:
+                null
+
+        };
+
+
+        route.hash =
+            hash(
+                route
+            );
+
+
+        STATE.routes.set(
+            route.id,
+            route
+        );
+
+
+        STATE.metrics.routes =
+            STATE.routes.size;
+
+
+        STATE.timestamps.lastRoute =
+            now();
+
+
+        saveMemory(
+
+            "PATHWAYS",
+
+            route.id,
+
+            route
+
+        );
+
+
+        emit(
+
+            "PATHWAY_ROUTE_CREATED",
+
+            route
+
+        );
+
+
+        return route;
+
+    }
+
+
+    /* ----------------------------------------------------------------------
+       BOTTLENECK DETECTION
+       ---------------------------------------------------------------------- */
+
+    function detectBottlenecks() {
+
+        const bottlenecks = [];
+
+
+        for (
+            const node
+            of STATE.nodes.values()
+        ) {
+
+            const incoming =
+                getIncoming(
+                    node.id
+                ).length;
+
+
+            const outgoing =
+                getOutgoing(
+                    node.id
+                ).length;
+
+
+            const connectivity =
+                incoming +
+                outgoing;
+
+
+            if (
+                connectivity >= 4
+            ) {
+
+                bottlenecks.push({
+
+                    node:
+                        node.id,
+
+                    type:
+                        "HIGH_CONNECTIVITY",
+
+                    connectivity:
+                        connectivity,
+
+                    importance:
+                        node.importance,
+
+                    recommendation:
+                        "Analyse node dependency concentration."
+
+                });
+
+            }
+
+
+            if (
+                node.resilience <
+                0.30
+            ) {
+
+                bottlenecks.push({
+
+                    node:
+                        node.id,
+
+                    type:
+                        "LOW_RESILIENCE",
+
+                    resilience:
+                        node.resilience,
+
+                    recommendation:
+                        "Create redundancy or recovery pathway."
+
+                });
+
+            }
+
+        }
+
+
+        STATE.signals.push(
+            ...bottlenecks
+        );
+
+
+        return bottlenecks;
+
+    }
+
+
+    /* ----------------------------------------------------------------------
+       GRAPH EXPORT
+       ---------------------------------------------------------------------- */
+
+    function getGraph() {
+
+        return {
+
+            protocol:
+                CONFIG.protocol,
+
+            cycle:
+                STATE.cycle,
+
+            nodes:
+                Array.from(
+                    STATE.nodes.values()
+                ).map(
+                    clone
+                ),
+
+            edges:
+                Array.from(
+                    STATE.edges.values()
+                ).map(
+                    clone
+                ),
+
+            nodeCount:
+                STATE.nodes.size,
+
+            edgeCount:
+                STATE.edges.size
+
+        };
+
+    }
+
+
+    /* ----------------------------------------------------------------------
+       PATH QUERY
+       ---------------------------------------------------------------------- */
+
+    function getPath(
+        id
+    ) {
+
+        return clone(
+            STATE.paths.get(
+                id
+            ) ||
+            null
+        );
+
+    }
+
+
+    function getRoutes() {
+
+        return clone(
+
+            Array.from(
+                STATE.routes.values()
+            )
+
+        );
+
+    }
+
+
+    function getObjectives() {
+
+        return clone(
+
+            Array.from(
+                STATE.objectives.values()
+            )
+
+        );
+
+    }
+
+
+    function getSignals() {
+
+        return clone(
+            STATE.signals
+        );
+
+    }
+
+
+    /* ----------------------------------------------------------------------
+       FULL ANALYSIS CYCLE
+       ---------------------------------------------------------------------- */
+
+    async function analyse() {
+
+        if (
+            !CONFIG.enabled
+        ) {
+
+            return {
+
+                status:
+                    "DISABLED"
+
+            };
+
+        }
+
+
+        const graph =
+            discoverSystem();
+
+
+        const imported =
+            importEvolutionProposals();
+
+
+        const routes =
+            analyseRoutes();
+
+
+        const bottlenecks =
+            detectBottlenecks();
+
+
+        const analysis = {
+
+            id:
+                uid("ANALYSIS"),
+
+            timestamp:
+                now(),
+
+            cycle:
+                STATE.cycle,
+
+            nodes:
+                STATE.nodes.size,
+
+            edges:
+                STATE.edges.size,
+
+            importedProposals:
+                imported,
+
+            routes:
+                routes.length,
+
+            bottlenecks:
+                bottlenecks.length,
+
+            graphHash:
+                hash(graph),
+
+            status:
+                "COMPLETE"
+
+        };
+
+
+        await saveMemory(
+
+            "PATHWAYS",
+
+            analysis.id,
+
+            analysis
+
+        );
+
+
+        emit(
+
+            "PATHWAY_ANALYSIS_COMPLETE",
+
+            analysis
+
+        );
+
+
+        return analysis;
+
+    }
+
+
+    /* ----------------------------------------------------------------------
+       WORKER REGISTRATION
+       ---------------------------------------------------------------------- */
+
+    function registerWorkers() {
+
+        if (!WORKERS) {
+
+            log(
+                "Worker swarm unavailable."
+            );
+
+            return;
+
+        }
+
+
+        try {
+
+            if (
+                typeof WORKERS.register ===
+                "function"
+            ) {
+
+
+                WORKERS.register({
+
+                    id:
+                        "PATHWAY_DISCOVERY",
+
+                    lane:
+                        "PATHWAYS",
+
+                    priority:
+                        65,
+
+                    handler:
+                        async function () {
+
+                            return discoverSystem();
+
+                        }
+
+                });
+
+
+                WORKERS.register({
+
+                    id:
+                        "PATHWAY_ANALYST",
+
+                    lane:
+                        "PATHWAYS",
+
+                    priority:
+                        60,
+
+                    handler:
+                        async function () {
+
+                            return analyse();
+
+                        }
+
+                });
+
+
+                WORKERS.register({
+
+                    id:
+                        "PATHWAY_ROUTE_ENGINE",
+
+                    lane:
+                        "PATHWAYS",
+
+                    priority:
+                        55,
+
+                    handler:
+                        async function () {
+
+                            return analyseRoutes();
+
+                        }
+
+                });
+
+
+                WORKERS.register({
+
+                    id:
+                        "PATHWAY_STATUS",
+
+                    lane:
+                        "SYSTEM",
+
+                    priority:
+                        35,
+
+                    handler:
+                        async function () {
+
+                            return status();
+
+                        }
+
+                });
+
+
+                log(
+                    "Pathway workers registered."
+                );
+
+            }
+
+        } catch (error) {
+
+            STATE.metrics.failures++;
+
+            console.error(
+
+                "[PATHWAY WORKERS]",
+
+                error
+
+            );
+
+        }
+
+    }
+
+
+    /* ----------------------------------------------------------------------
+       SCHEDULER
+       ---------------------------------------------------------------------- */
+
+    let mappingTimer =
+        null;
+
+    let analysisTimer =
+        null;
+
+
+    function startScheduler() {
+
+        if (
+            mappingTimer ||
+            analysisTimer
+        ) {
+
+            return;
+
+        }
+
+
+        if (
+            CONFIG.autonomousMapping
+        ) {
+
+            mappingTimer =
+                setInterval(
+
+                    function () {
+
+                        try {
+
+                            discoverSystem();
+
+                            importEvolutionProposals();
+
+                        } catch (error) {
+
+                            STATE.metrics.failures++;
+
+                        }
+
+                    },
+
+                    CONFIG.mappingInterval
+
+                );
+
+        }
+
+
+        if (
+            CONFIG.autonomousAnalysis
+        ) {
+
+            analysisTimer =
+                setInterval(
+
+                    function () {
+
+                        analyse()
+                            .catch(
+                                function (error) {
+
+                                    STATE.metrics.failures++;
+
+                                    console.error(
+                                        "[PATHWAY ANALYSIS]",
+                                        error
+                                    );
+
+                                }
+                            );
+
+                    },
+
+                    CONFIG.analysisInterval
+
+                );
+
+        }
+
+
+        log(
+            "Pathway scheduler online."
+        );
+
+    }
+
+
+    function stopScheduler() {
+
+        if (
+            mappingTimer
+        ) {
+
+            clearInterval(
+                mappingTimer
+            );
+
+            mappingTimer =
+                null;
+
+        }
+
+
+        if (
+            analysisTimer
+        ) {
+
+            clearInterval(
+                analysisTimer
+            );
+
+            analysisTimer =
+                null;
+
+        }
+
+
+        log(
+            "Pathway scheduler stopped."
+        );
+
+    }
+
+
+    /* ----------------------------------------------------------------------
+       STATUS
+       ---------------------------------------------------------------------- */
+
+    function status() {
+
+        return {
+
+            protocol:
+                CONFIG.protocol,
+
+            module:
+                CONFIG.module,
+
+            version:
+                CONFIG.version,
+
+            enabled:
+                CONFIG.enabled,
+
+            started:
+                STATE.started,
+
+            cycle:
+                STATE.cycle,
+
+            metrics:
+                clone(
+                    STATE.metrics
+                ),
+
+            nodes:
+                STATE.nodes.size,
+
+            edges:
+                STATE.edges.size,
+
+            paths:
+                STATE.paths.size,
+
+            objectives:
+                STATE.objectives.size,
+
+            routes:
+                STATE.routes.size,
+
+            signals:
+                STATE.signals.length,
+
+            timestamps:
+                clone(
+                    STATE.timestamps
+                )
+
+        };
+
+    }
+
+
+    /* ----------------------------------------------------------------------
+       RESET
+       ---------------------------------------------------------------------- */
+
+    function reset() {
+
+        stopScheduler();
+
+
+        STATE.nodes.clear();
+
+        STATE.edges.clear();
+
+        STATE.paths.clear();
+
+        STATE.objectives.clear();
+
+        STATE.routes.clear();
+
+        STATE.history = [];
+
+        STATE.signals = [];
+
+        STATE.cycle = 0;
+
+
+        STATE.metrics = {
+
+            nodes:
+                0,
+
+            edges:
+                0,
+
+            paths:
+                0,
+
+            objectives:
+                0,
+
+            routes:
+                0,
+
+            analyses:
+                0,
+
+            discoveries:
+                0,
+
+            failures:
+                0
+
+        };
+
+
+        return status();
+
+    }
+
+
+    /* ----------------------------------------------------------------------
+       PUBLIC API
+       ---------------------------------------------------------------------- */
+
+    const API = {
+
+        protocol:
+            CONFIG.protocol,
+
+        version:
+            CONFIG.version,
+
+        config:
+            CONFIG,
+
+        state:
+            STATE,
+
+        node:
+            createNode,
+
+        ensureNode:
+            ensureNode,
+
+        getNode:
+            getNode,
+
+        removeNode:
+            removeNode,
+
+        edge:
+            createEdge,
+
+        getOutgoing:
+            getOutgoing,
+
+        getIncoming:
+            getIncoming,
+
+        discover:
+            discoverSystem,
+
+        importEvolution:
+            importEvolutionProposals,
+
+        findPath:
+            findPath,
+
+        registerPath:
+            registerPath,
+
+        analyseRoutes:
+            analyseRoutes,
+
+        bottlenecks:
+            detectBottlenecks,
+
+        objective:
+            createObjective,
+
+        route:
+            routeObjective,
+
+        analyse:
+            analyse,
+
+        graph:
+            getGraph,
+
+        path:
+            getPath,
+
+        routes:
+            getRoutes,
+
+        objectives:
+            getObjectives,
+
+        signals:
+            getSignals,
+
+        status:
+            status,
+
+        start:
+            function () {
+
+                if (
+                    STATE.started
+                ) {
+
+                    return status();
+
+                }
+
+
+                STATE.started =
+                    true;
+
+                STATE.timestamps.started =
+                    now();
+
+
+                registerWorkers();
+
+                discoverSystem();
+
+                importEvolutionProposals();
+
+                startScheduler();
+
+
+                emit(
+
+                    "PATHWAY_ENGINE_STARTED",
+
+                    status()
+
+                );
+
+
+                log(
+                    "Pathway Intelligence Engine ONLINE."
+                );
+
+
+                return status();
+
+            },
+
+        stop:
+            function () {
+
+                stopScheduler();
+
+                STATE.started =
+                    false;
+
+
+                emit(
+
+                    "PATHWAY_ENGINE_STOPPED",
+
+                    status()
+
+                );
+
+
+                return status();
+
+            },
+
+        reset:
+            reset
+
+    };
+
+
+    /* ----------------------------------------------------------------------
+       GLOBAL REGISTRATION
+       ---------------------------------------------------------------------- */
+
+    global.CHIROMBE_PATHWAYS =
+        API;
+
+    global.CHIROMBE_PATHWAY_ENGINE =
+        API;
+
+
+    /* ----------------------------------------------------------------------
+       CORE MODULE REGISTRATION
+       ---------------------------------------------------------------------- */
+
+    try {
+
+        if (
+            CORE.modules &&
+            typeof CORE.modules.register ===
+            "function"
+        ) {
+
+            CORE.modules.register(
+
+                "PATHWAY_INTELLIGENCE",
+
+                API
+
+            );
+
+        }
+
+    } catch (error) {
+
+        console.warn(
+            "[PATHWAYS] Core registration unavailable.",
+            error
+        );
+
+    }
+
+
+    /* ----------------------------------------------------------------------
+       INITIAL MEMORY RECORD
+       ---------------------------------------------------------------------- */
+
+    saveMemory(
+
+        "SYSTEM",
+
+        "PATHWAY_INTELLIGENCE",
+
+        {
+
+            protocol:
+                CONFIG.protocol,
+
+            module:
+                CONFIG.module,
+
+            version:
+                CONFIG.version,
+
+            initialized:
+                now(),
+
+            maximumNodes:
+                CONFIG.maximumNodes,
+
+            maximumEdges:
+                CONFIG.maximumEdges,
+
+            autonomousMapping:
+                CONFIG.autonomousMapping,
+
+            autonomousAnalysis:
+                CONFIG.autonomousAnalysis
+
+        }
+
+    );
+
+
+    /* ----------------------------------------------------------------------
+       START
+       ---------------------------------------------------------------------- */
+
+    API.start();
+
+
+    /* ----------------------------------------------------------------------
+       CONSOLE BOOT REPORT
+       ---------------------------------------------------------------------- */
+
+    console.log(
+        "============================================================"
+    );
+
+    console.log(
+        " CHIROMBE PATHWAY INTELLIGENCE ENGINE"
+    );
+
+    console.log(
+        " PROTOCOL: " +
+        CONFIG.protocol
+    );
+
+    console.log(
+        " VERSION: " +
+        CONFIG.version
+    );
+
+    console.log(
+        " NODE DISCOVERY: ONLINE"
+    );
+
+    console.log(
+        " GRAPH ENGINE: ONLINE"
+    );
+
+    console.log(
+        " PATH SEARCH: ONLINE"
+    );
+
+    console.log(
+        " ROUTING: ONLINE"
+    );
+
+    console.log(
+        " BOTTLENECK ANALYSIS: ONLINE"
+    );
+
+    console.log(
+        " EVOLUTION INTEGRATION: ONLINE"
+    );
+
+    console.log(
+        " MEMORY HANDOFF: ONLINE"
+    );
+
+    console.log(
+        "============================================================"
+    );
+
+
+})(globalThis);
+
+
+/* ==========================================================================
+   END OF PART 05
    ========================================================================== */
