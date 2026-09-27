@@ -31446,4 +31446,3218 @@ try{
 
 })(typeof window !== "undefined"
     ? window
+    : globalThis);/* ================================================================
+   CHIROMBE SPIRITUAL INTENTION & RESONANCE INTERFACE
+   CHEP-14
+   VERSION 1.0.0
+
+   ================================================================
+   PURPOSE
+   ================================================================
+
+   CHEP-14 introduces an explicit INTENTION LAYER.
+
+   The system can now take a deliberately declared intention and
+   represent it as a structured, persistent, cryptographically
+   auditable signal within the Chirombe lineage model.
+
+   CONCEPTUAL FLOW:
+
+       HUMAN INTENTION
+              ↓
+       SPIRITUAL DECLARATION
+              ↓
+       SYMBOLIC ENCODING
+              ↓
+       INTENTION SIGNATURE
+              ↓
+       BLOODLINE TARGETING
+              ↓
+       RESONANCE MODEL
+              ↓
+       LATTICE PROPAGATION MODEL
+              ↓
+       PROTECTIVE STATE
+              ↓
+       OBSERVATION
+              ↓
+       CHANGE DETECTION
+              ↓
+       LEARNING
+              ↓
+       REINFORCEMENT
+
+   "SPIRITUAL LATTICE" IN THIS MODULE IS A COMPUTATIONAL MODEL
+   representing relationships between declared intentions, people,
+   lineage nodes, values, places, knowledge and symbolic states.
+
+   It is NOT presented as scientifically established evidence of
+   a literal supernatural network.
+
+   The engine does NOT claim that software can physically transmit
+   energy into a spiritual dimension.
+
+   It DOES provide a formal mechanism for:
+
+       - declaring intention
+       - encoding intention
+       - creating a resonance signature
+       - associating intention with lineage nodes
+       - modelling propagation
+       - measuring internal state changes
+       - maintaining intention history
+       - detecting correlations
+       - preserving evidence
+       - strengthening resilience-oriented states
+
+   ================================================================ */
+
+(function(global){
+
+"use strict";
+
+
+/* ================================================================
+   DEPENDENCIES
+   ================================================================ */
+
+const CORE =
+    global.CHIROMBE ||
+    global.CHIROMBE_CORE ||
+    null;
+
+const MEMORY =
+    global.CHIROMBE_MEMORY ||
+    null;
+
+const WORKERS =
+    global.CHIROMBE_WORKERS ||
+    null;
+
+const PATHWAYS =
+    global.CHIROMBE_PATHWAYS ||
+    global.CHIROMBE_PATHWAY_ENGINE ||
+    null;
+
+const BLOODLINE =
+    global.CHIROMBE_BLOODLINE ||
+    global.CHIROMBE_BLOODLINE_ENGINE ||
+    null;
+
+const LEGACY =
+    global.CHIROMBE_LEGACY ||
+    global.CHIROMBE_LEGACY_ENGINE ||
+    null;
+
+const DEFENCE =
+    global.CHIROMBE_DEFENCE ||
+    global.CHIROMBE_DEFENSE ||
+    null;
+
+const WATCHDOG =
+    global.CHIROMBE_WATCHDOG ||
+    global.CHIROMBE_WATCHDOG_ENGINE ||
+    null;
+
+const KNOWLEDGE =
+    global.CHIROMBE_KNOWLEDGE ||
+    global.CHIROMBE_KNOWLEDGE_ENGINE ||
+    null;
+
+const ORCHESTRATOR =
+    global.CHIROMBE_ORCHESTRATOR ||
+    global.CHIROMBE_ORCHESTRATION_ENGINE ||
+    null;
+
+
+/* ================================================================
+   CONFIGURATION
+   ================================================================ */
+
+const CONFIG = {
+
+    protocol:"CHEP-14",
+
+    version:"1.0.0",
+
+    name:
+        "CHIROMBE SPIRITUAL INTENTION & RESONANCE INTERFACE",
+
+    scanInterval:60000,
+
+    resonanceInterval:90000,
+
+    latticeInterval:120000,
+
+    maximumIntentions:50000,
+
+    maximumSignatures:50000,
+
+    maximumLatticeNodes:100000,
+
+    maximumLatticeEdges:250000,
+
+    maximumObservations:100000,
+
+    maximumRitualStates:50000,
+
+    maximumDeclarations:50000,
+
+    minimumConfidence:0.60,
+
+    strongConfidence:0.85,
+
+    intentionPersistence:true,
+
+    symbolicMode:true,
+
+    quantumInspiredMode:true,
+
+    automaticExternalAction:false,
+
+    automaticProductionModification:false,
+
+    automaticDeployment:false,
+
+    destructiveAction:false,
+
+    protectedMode:true
+
+};
+
+
+/* ================================================================
+   STATE
+   ================================================================ */
+
+const state = {
+
+    booted:false,
+
+    active:false,
+
+    startedAt:null,
+
+    lastIntention:null,
+
+    lastResonance:null,
+
+    lastLatticeScan:null,
+
+    intentions:{},
+
+    declarations:{},
+
+    signatures:{},
+
+    latticeNodes:{},
+
+    latticeEdges:{},
+
+    observations:{},
+
+    resonanceStates:{},
+
+    ritualStates:{},
+
+    shifts:{},
+
+    protectionStates:{},
+
+    metrics:{
+
+        intentions:0,
+
+        declarations:0,
+
+        signatures:0,
+
+        latticeNodes:0,
+
+        latticeEdges:0,
+
+        observations:0,
+
+        resonanceCalculations:0,
+
+        latticeScans:0,
+
+        shiftsDetected:0,
+
+        protectionStates:0,
+
+        reinforcementCycles:0,
+
+        integrityChecks:0
+
+    },
+
+    timers:{
+
+        scan:null,
+
+        resonance:null,
+
+        lattice:null
+
+    }
+
+};
+
+
+/* ================================================================
+   UTILITIES
+   ================================================================ */
+
+function uid(prefix){
+
+    return (
+
+        prefix +
+
+        "_" +
+
+        Date.now().toString(36) +
+
+        "_" +
+
+        Math.random()
+
+            .toString(36)
+
+            .slice(2,10)
+
+    ).toUpperCase();
+
+}
+
+
+function now(){
+
+    return new Date().toISOString();
+
+}
+
+
+function clamp(value,min=0,max=1){
+
+    const n=Number(value);
+
+    if(!Number.isFinite(n)){
+
+        return min;
+
+    }
+
+    return Math.max(
+
+        min,
+
+        Math.min(max,n)
+
+    );
+
+}
+
+
+function clone(value){
+
+    try{
+
+        return JSON.parse(
+
+            JSON.stringify(value)
+
+        );
+
+    }catch(error){
+
+        return null;
+
+    }
+
+}
+
+
+function text(value){
+
+    return String(value ?? "").trim();
+
+}
+
+
+function persist(key,value){
+
+    try{
+
+        if(
+
+            MEMORY &&
+
+            typeof MEMORY.write ===
+
+            "function"
+
+        ){
+
+            MEMORY.write(
+
+                "SPIRITUAL_INTENTION",
+
+                key,
+
+                clone(value)
+
+            );
+
+        }
+
+    }catch(error){}
+
+}
+
+
+function emit(event,payload={}){
+
+    try{
+
+        if(
+
+            CORE &&
+
+            typeof CORE.emit ===
+
+            "function"
+
+        ){
+
+            CORE.emit(
+
+                event,
+
+                payload
+
+            );
+
+        }
+
+    }catch(error){}
+
+    try{
+
+        if(
+
+            typeof global.dispatchEvent ===
+
+            "function"
+
+        ){
+
+            global.dispatchEvent(
+
+                new CustomEvent(
+
+                    "CHIROMBE:" + event,
+
+                    {
+
+                        detail:payload
+
+                    }
+
+                )
+
+            );
+
+        }
+
+    }catch(error){}
+
+}
+
+
+/* ================================================================
+   CRYPTOGRAPHIC SIGNATURE
+   ================================================================ */
+
+/*
+   The signature provides digital integrity.
+
+   It does NOT constitute proof of supernatural transmission.
+
+   The signature simply ensures that an intention record can be
+   detected if its stored content is subsequently altered.
+*/
+
+async function digest(value){
+
+    const source =
+
+        JSON.stringify(
+
+            value,
+
+            Object.keys(value || {}).sort()
+
+        );
+
+    try{
+
+        if(
+
+            global.crypto &&
+
+            global.crypto.subtle
+
+        ){
+
+            const bytes =
+
+                new TextEncoder()
+
+                    .encode(source);
+
+            const hash =
+
+                await global.crypto.subtle.digest(
+
+                    "SHA-256",
+
+                    bytes
+
+                );
+
+            return Array.from(
+
+                new Uint8Array(hash)
+
+            )
+
+                .map(
+
+                    b=>
+
+                        b.toString(16)
+
+                         .padStart(2,"0")
+
+                )
+
+                .join("");
+
+        }
+
+    }catch(error){}
+
+    let hash=2166136261;
+
+    for(
+
+        let i=0;
+
+        i<source.length;
+
+        i++
+
+    ){
+
+        hash ^= source.charCodeAt(i);
+
+        hash +=
+
+            (hash<<1)+
+
+            (hash<<4)+
+
+            (hash<<7)+
+
+            (hash<<8)+
+
+            (hash<<24);
+
+    }
+
+    return (
+
+        hash >>> 0
+
+    ).toString(16);
+
+}
+
+
+/* ================================================================
+   SPIRITUAL DECLARATION ENGINE
+   ================================================================ */
+
+function createDeclaration(data={}){
+
+    const id =
+
+        data.id ||
+
+        uid("DECLARATION");
+
+    const declaration={
+
+        id,
+
+        intention:
+
+            text(
+
+                data.intention ||
+
+                "May the bloodline remain protected, strengthened and preserved."
+
+            ),
+
+        purpose:
+
+            text(
+
+                data.purpose ||
+
+                "BLOODLINE_PROTECTION"
+
+            ),
+
+        language:
+
+            text(
+
+                data.language ||
+
+                "ENGLISH"
+
+            ),
+
+        sacredWords:
+
+            Array.isArray(
+
+                data.sacredWords
+
+            )
+
+                ? [...data.sacredWords]
+
+                : [],
+
+        symbols:
+
+            Array.isArray(
+
+                data.symbols
+
+            )
+
+                ? [...data.symbols]
+
+                : [],
+
+        values:
+
+            Array.isArray(
+
+                data.values
+
+            )
+
+                ? [...data.values]
+
+                : [
+
+                    "PROTECTION",
+
+                    "CONTINUITY",
+
+                    "TRUTH",
+
+                    "UNITY",
+
+                    "RESILIENCE",
+
+                    "LEGACY"
+
+                ],
+
+        declaredBy:
+
+            text(
+
+                data.declaredBy ||
+
+                "SYSTEM_USER"
+
+            ),
+
+        confidence:
+
+            clamp(
+
+                data.confidence === undefined
+
+                    ? 1
+
+                    : data.confidence
+
+            ),
+
+        createdAt:now()
+
+    };
+
+    state.declarations[id]=declaration;
+
+    state.metrics.declarations++;
+
+    persist(
+
+        "DECLARATION_"+id,
+
+        declaration
+
+    );
+
+    emit(
+
+        "SPIRITUAL_DECLARATION_CREATED",
+
+        declaration
+
+    );
+
+    return clone(declaration);
+
+}
+
+
+/* ================================================================
+   INTENTION ENGINE
+   ================================================================ */
+
+async function registerIntention(data={}){
+
+    const id =
+
+        data.id ||
+
+        uid("INTENTION");
+
+    const declaration =
+
+        data.declaration ||
+
+        createDeclaration(data);
+
+    const intention={
+
+        id,
+
+        declarationId:
+
+            declaration.id,
+
+        title:
+
+            text(
+
+                data.title ||
+
+                "BLOODLINE PROTECTION INTENTION"
+
+            ),
+
+        purpose:
+
+            text(
+
+                data.purpose ||
+
+                "PROTECTION_AND_ENHANCEMENT"
+
+            ),
+
+        targetScope:
+
+            text(
+
+                data.targetScope ||
+
+                "BLOODLINE"
+
+            ),
+
+        targetNodes:
+
+            Array.isArray(
+
+                data.targetNodes
+
+            )
+
+                ? [...data.targetNodes]
+
+                : [],
+
+        desiredState:{
+
+            protection:
+
+                clamp(
+
+                    data.protection === undefined
+
+                        ? 1
+
+                        : data.protection
+
+                ),
+
+            continuity:
+
+                clamp(
+
+                    data.continuity === undefined
+
+                        ? 1
+
+                        : data.continuity
+
+                ),
+
+            resilience:
+
+                clamp(
+
+                    data.resilience === undefined
+
+                        ? 1
+
+                        : data.resilience
+
+                ),
+
+            unity:
+
+                clamp(
+
+                    data.unity === undefined
+
+                        ? 1
+
+                        : data.unity
+
+                ),
+
+            knowledge:
+
+                clamp(
+
+                    data.knowledge === undefined
+
+                        ? 0.90
+
+                        : data.knowledge
+
+                )
+
+        },
+
+        symbolicIntensity:
+
+            clamp(
+
+                data.symbolicIntensity === undefined
+
+                    ? 0.90
+
+                    : data.symbolicIntensity
+
+            ),
+
+        repetition:
+
+            Number.isFinite(
+
+                Number(data.repetition)
+
+            )
+
+                ? Number(data.repetition)
+
+                : 1,
+
+        confidence:
+
+            clamp(
+
+                data.confidence === undefined
+
+                    ? 0.90
+
+                    : data.confidence
+
+            ),
+
+        status:"DECLARED",
+
+        createdAt:now(),
+
+        updatedAt:now()
+
+    };
+
+    state.intentions[id]=intention;
+
+    state.lastIntention=id;
+
+    state.metrics.intentions++;
+
+    persist(
+
+        "INTENTION_"+id,
+
+        intention
+
+    );
+
+    const signature =
+
+        await createSignature(
+
+            intention,
+
+            declaration
+
+        );
+
+    intention.signatureId=
+
+        signature.id;
+
+    intention.status=
+
+        "ENCODED";
+
+    intention.updatedAt=now();
+
+    state.intentions[id]=intention;
+
+    persist(
+
+        "INTENTION_UPDATED_"+id,
+
+        intention
+
+    );
+
+    emit(
+
+        "SPIRITUAL_INTENTION_REGISTERED",
+
+        intention
+
+    );
+
+    return clone(intention);
+
+}
+
+
+/* ================================================================
+   INTENTION SIGNATURE
+   ================================================================ */
+
+async function createSignature(
+
+    intention,
+
+    declaration
+
+){
+
+    const payload={
+
+        protocol:
+
+            CONFIG.protocol,
+
+        intentionId:
+
+            intention.id,
+
+        declarationId:
+
+            declaration.id,
+
+        purpose:
+
+            intention.purpose,
+
+        scope:
+
+            intention.targetScope,
+
+        desiredState:
+
+            intention.desiredState,
+
+        symbolicIntensity:
+
+            intention.symbolicIntensity,
+
+        timestamp:now()
+
+    };
+
+    const hash=
+
+        await digest(payload);
+
+    const signature={
+
+        id:
+
+            uid("SIGNATURE"),
+
+        intentionId:
+
+            intention.id,
+
+        hash,
+
+        algorithm:
+
+            "SHA-256",
+
+        payload,
+
+        createdAt:now(),
+
+        verified:true,
+
+        scientificInterpretation:
+
+            "DIGITAL_INTEGRITY_SIGNATURE",
+
+        spiritualInterpretation:
+
+            "SYMBOLIC_INTENTION_MARKER"
+
+    };
+
+    state.signatures[signature.id]=
+
+        signature;
+
+    state.metrics.signatures++;
+
+    persist(
+
+        "SIGNATURE_"+signature.id,
+
+        signature
+
+    );
+
+    emit(
+
+        "SPIRITUAL_INTENTION_SIGNED",
+
+        signature
+
+    );
+
+    return clone(signature);
+
+}
+
+
+/* ================================================================
+   SPIRITUAL LATTICE MODEL
+   ================================================================ */
+
+function createLatticeNode(data={}){
+
+    const id=
+
+        data.id ||
+
+        uid("LATTICE");
+
+    const node={
+
+        id,
+
+        type:
+
+            text(
+
+                data.type ||
+
+                "SYMBOLIC"
+
+            ),
+
+        label:
+
+            text(data.label),
+
+        source:
+
+            text(
+
+                data.source ||
+
+                "INTENTION_ENGINE"
+
+            ),
+
+        intentionIds:
+
+            Array.isArray(
+
+                data.intentionIds
+
+            )
+
+                ? [...data.intentionIds]
+
+                : [],
+
+        resonance:
+
+            clamp(
+
+                data.resonance === undefined
+
+                    ? 0.5
+
+                    : data.resonance
+
+            ),
+
+        coherence:
+
+            clamp(
+
+                data.coherence === undefined
+
+                    ? 0.5
+
+                    : data.coherence
+
+            ),
+
+        confidence:
+
+            clamp(
+
+                data.confidence === undefined
+
+                    ? 0.70
+
+                    : data.confidence
+
+            ),
+
+        symbolic:true,
+
+        createdAt:now(),
+
+        updatedAt:now()
+
+    };
+
+    state.latticeNodes[id]=node;
+
+    state.metrics.latticeNodes=
+
+        Object.keys(
+
+            state.latticeNodes
+
+        ).length;
+
+    persist(
+
+        "LATTICE_NODE_"+id,
+
+        node
+
+    );
+
+    emit(
+
+        "SPIRITUAL_LATTICE_NODE_CREATED",
+
+        node
+
+    );
+
+    return clone(node);
+
+}
+
+
+/* ================================================================
+   LATTICE EDGE ENGINE
+   ================================================================ */
+
+function createLatticeEdge(data={}){
+
+    const id=
+
+        data.id ||
+
+        uid("RESONANCE_EDGE");
+
+    const edge={
+
+        id,
+
+        from:
+
+            text(data.from),
+
+        to:
+
+            text(data.to),
+
+        type:
+
+            text(
+
+                data.type ||
+
+                "RESONANCE"
+
+            ),
+
+        weight:
+
+            clamp(
+
+                data.weight === undefined
+
+                    ? 0.5
+
+                    : data.weight
+
+            ),
+
+        coherence:
+
+            clamp(
+
+                data.coherence === undefined
+
+                    ? 0.5
+
+                    : data.coherence
+
+            ),
+
+        confidence:
+
+            clamp(
+
+                data.confidence === undefined
+
+                    ? 0.70
+
+                    : data.confidence
+
+            ),
+
+        reversible:true,
+
+        symbolic:true,
+
+        createdAt:now()
+
+    };
+
+    state.latticeEdges[id]=edge;
+
+    state.metrics.latticeEdges=
+
+        Object.keys(
+
+            state.latticeEdges
+
+        ).length;
+
+    persist(
+
+        "LATTICE_EDGE_"+id,
+
+        edge
+
+    );
+
+    emit(
+
+        "SPIRITUAL_LATTICE_EDGE_CREATED",
+
+        edge
+
+    );
+
+    return clone(edge);
+
+}
+
+
+/* ================================================================
+   BLOODLINE LATTICE CONSTRUCTION
+   ================================================================ */
+
+function buildBloodlineLattice(){
+
+    const created=[];
+
+    if(BLOODLINE){
+
+        try{
+
+            const source=
+
+                BLOODLINE.state;
+
+            if(source.persons){
+
+                Object.values(
+
+                    source.persons
+
+                ).forEach(person=>{
+
+                    created.push(
+
+                        createLatticeNode({
+
+                            id:
+
+                                "BLOODLINE_"+
+
+                                person.id,
+
+                            type:
+
+                                "BLOODLINE_PERSON",
+
+                            label:
+
+                                person.name ||
+
+                                person.id,
+
+                            confidence:
+
+                                person.confidence,
+
+                            resonance:0.5,
+
+                            coherence:
+
+                                person.confidence
+
+                        })
+
+                    );
+
+                });
+
+            }
+
+            if(source.relationships){
+
+                Object.values(
+
+                    source.relationships
+
+                ).forEach(rel=>{
+
+                    createLatticeEdge({
+
+                        id:
+
+                            "RELATION_"+
+
+                            rel.id,
+
+                        from:
+
+                            "BLOODLINE_"+
+
+                            rel.from,
+
+                        to:
+
+                            "BLOODLINE_"+
+
+                            rel.to,
+
+                        type:
+
+                            rel.type ||
+
+                            "LINEAGE",
+
+                        weight:
+
+                            rel.confidence,
+
+                        coherence:
+
+                            rel.confidence,
+
+                        confidence:
+
+                            rel.confidence
+
+                    });
+
+                });
+
+            }
+
+        }catch(error){}
+
+    }
+
+    const result={
+
+        timestamp:now(),
+
+        nodes:
+
+            Object.keys(
+
+                state.latticeNodes
+
+            ).length,
+
+        edges:
+
+            Object.keys(
+
+                state.latticeEdges
+
+            ).length
+
+    };
+
+    state.lastLatticeScan=now();
+
+    state.metrics.latticeScans++;
+
+    persist(
+
+        "LATTICE_BUILD_"+Date.now(),
+
+        result
+
+    );
+
+    emit(
+
+        "SPIRITUAL_LATTICE_BUILT",
+
+        result
+
+    );
+
+    return result;
+
+}
+
+
+/* ================================================================
+   INTENTION PROPAGATION MODEL
+   ================================================================ */
+
+/*
+   This function models how a declared intention could propagate
+   through the COMPUTATIONAL lattice.
+
+   It does not claim that a supernatural force has physically
+   propagated.
+
+   Propagation values represent symbolic/systemic association.
+*/
+
+function propagateIntention(intentionId){
+
+    const intention=
+
+        state.intentions[intentionId];
+
+    if(!intention){
+
+        return {
+
+            success:false,
+
+            reason:"INTENTION_NOT_FOUND"
+
+        };
+
+    }
+
+    const nodes=
+
+        Object.values(
+
+            state.latticeNodes
+
+        );
+
+    const edges=
+
+        Object.values(
+
+            state.latticeEdges
+
+        );
+
+    const affected=[];
+
+    const sourceStrength=
+
+        clamp(
+
+            intention.symbolicIntensity *
+
+            intention.confidence
+
+        );
+
+    nodes.forEach(node=>{
+
+        let relationship=
+
+            0;
+
+        if(
+
+            intention.targetNodes
+
+                .includes(node.id)
+
+        ){
+
+            relationship=1;
+
+        }else{
+
+            const connected=
+
+                edges.filter(
+
+                    edge=>
+
+                        edge.from===node.id ||
+
+                        edge.to===node.id
+
+                );
+
+            if(connected.length){
+
+                relationship=
+
+                    clamp(
+
+                        average(
+
+                            connected.map(
+
+                                edge=>
+
+                                    edge.weight *
+
+                                    edge.confidence
+
+                            )
+
+                        )
+
+                    );
+
+            }
+
+        }
+
+        const resonance=
+
+            clamp(
+
+                sourceStrength *
+
+                (
+
+                    0.50 +
+
+                    relationship*0.50
+
+                )
+
+            );
+
+        if(resonance > 0.20){
+
+            node.resonance=
+
+                clamp(
+
+                    (
+
+                        node.resonance +
+
+                        resonance
+
+                    ) / 2
+
+                );
+
+            node.intentionIds =
+
+                Array.from(
+
+                    new Set([
+
+                        ...(node.intentionIds || []),
+
+                        intentionId
+
+                    ])
+
+                );
+
+            node.updatedAt=now();
+
+            affected.push({
+
+                nodeId:node.id,
+
+                resonance,
+
+                relationship
+
+            });
+
+        }
+
+    });
+
+    const result={
+
+        id:
+
+            uid("PROPAGATION"),
+
+        intentionId,
+
+        timestamp:now(),
+
+        sourceStrength,
+
+        affectedNodes:
+
+            affected.length,
+
+        affected,
+
+        interpretation:
+
+            "SYMBOLIC_LATTICE_PROPAGATION"
+
+    };
+
+    persist(
+
+        "PROPAGATION_"+result.id,
+
+        result
+
+    );
+
+    emit(
+
+        "SPIRITUAL_INTENTION_PROPAGATED",
+
+        result
+
+    );
+
+    return clone(result);
+
+}
+
+
+/* ================================================================
+   RESONANCE CALCULATION
+   ================================================================ */
+
+function calculateResonance(){
+
+    const nodes=
+
+        Object.values(
+
+            state.latticeNodes
+
+        );
+
+    const edges=
+
+        Object.values(
+
+            state.latticeEdges
+
+        );
+
+    const nodeResonance=
+
+        nodes.length
+
+            ? average(
+
+                nodes.map(
+
+                    node=>node.resonance
+
+                )
+
+            )
+
+            : 0;
+
+    const edgeCoherence=
+
+        edges.length
+
+            ? average(
+
+                edges.map(
+
+                    edge=>edge.coherence
+
+                )
+
+            )
+
+            : 0;
+
+    const intentionStrength=
+
+        Object.values(
+
+            state.intentions
+
+        ).length
+
+            ? average(
+
+                Object.values(
+
+                    state.intentions
+
+                ).map(
+
+                    intention=>
+
+                        intention.symbolicIntensity *
+
+                        intention.confidence
+
+                )
+
+            )
+
+            : 0;
+
+    const resonance=
+
+        clamp(
+
+            nodeResonance*0.40 +
+
+            edgeCoherence*0.25 +
+
+            intentionStrength*0.35
+
+        );
+
+    const result={
+
+        timestamp:now(),
+
+        resonance,
+
+        nodeResonance,
+
+        edgeCoherence,
+
+        intentionStrength,
+
+        nodes:nodes.length,
+
+        edges:edges.length,
+
+        intentions:
+
+            Object.keys(
+
+                state.intentions
+
+            ).length,
+
+        model:
+
+            "SYMBOLIC_RESONANCE_STATE"
+
+    };
+
+    state.lastResonance=result;
+
+    state.metrics.resonanceCalculations++;
+
+    persist(
+
+        "RESONANCE_"+Date.now(),
+
+        result
+
+    );
+
+    emit(
+
+        "SPIRITUAL_RESONANCE_UPDATED",
+
+        result
+
+    );
+
+    return clone(result);
+
+}
+
+
+/* ================================================================
+   SHIFT DETECTION
+   ================================================================ */
+
+function detectShift(){
+
+    const current=
+
+        calculateResonance();
+
+    const previousStates=
+
+        Object.values(
+
+            state.resonanceStates
+
+        );
+
+    const previous=
+
+        previousStates.length
+
+            ? previousStates[
+
+                previousStates.length-1
+
+            ]
+
+            : null;
+
+    const delta=
+
+        previous
+
+            ? current.resonance -
+
+              previous.resonance
+
+            : 0;
+
+    const shift={
+
+        id:
+
+            uid("SHIFT"),
+
+        timestamp:now(),
+
+        before:
+
+            previous
+
+                ? previous.resonance
+
+                : null,
+
+        after:
+
+            current.resonance,
+
+        delta,
+
+        direction:
+
+            delta > 0.05
+
+                ? "POSITIVE_SHIFT"
+
+                : delta < -0.05
+
+                    ? "NEGATIVE_SHIFT"
+
+                    : "STABLE",
+
+        confidence:
+
+            previous
+
+                ? clamp(
+
+                    Math.abs(delta)*2
+
+                )
+
+                : 0.20,
+
+        interpretation:
+
+            "COMPUTATIONAL_STATE_CHANGE"
+
+    };
+
+    state.shifts[shift.id]=shift;
+
+    state.metrics.shiftsDetected++;
+
+    state.resonanceStates[
+
+        shift.id
+
+    ]=current;
+
+    persist(
+
+        "SHIFT_"+shift.id,
+
+        shift
+
+    );
+
+    emit(
+
+        "SPIRITUAL_RESONANCE_SHIFT_DETECTED",
+
+        shift
+
+    );
+
+    return clone(shift);
+
+}
+
+
+/* ================================================================
+   PROTECTIVE INTENTION STATE
+   ================================================================ */
+
+function calculateProtectionState(){
+
+    const resonance=
+
+        state.lastResonance ||
+
+        calculateResonance();
+
+    const bloodline=
+
+        BLOODLINE &&
+
+        typeof BLOODLINE.resilienceScore ===
+
+        "function"
+
+            ? BLOODLINE.resilienceScore()
+
+            : {score:0.5};
+
+    const legacy=
+
+        LEGACY &&
+
+        typeof LEGACY.calculateTwinConfidence ===
+
+        "function"
+
+            ? LEGACY.calculateTwinConfidence()
+
+            : 0.5;
+
+    const defence=
+
+        DEFENCE &&
+
+        typeof DEFENCE.resilienceScore ===
+
+        "function"
+
+            ? Number(
+
+                DEFENCE.resilienceScore().score ||
+
+                0.5
+
+            )
+
+            : 0.5;
+
+    const score=
+
+        clamp(
+
+            resonance.resonance*0.25 +
+
+            (bloodline.score || 0.5)*0.35 +
+
+            legacy*0.15 +
+
+            defence*0.25
+
+        );
+
+    const protection={
+
+        id:
+
+            uid("PROTECTION"),
+
+        timestamp:now(),
+
+        score,
+
+        resonance:
+
+            resonance.resonance,
+
+        bloodline:
+
+            bloodline.score || 0.5,
+
+        legacy,
+
+        defence,
+
+        state:
+
+            score >= 0.85
+
+                ? "STRONGLY_REINFORCED"
+
+                : score >= 0.65
+
+                    ? "REINFORCED"
+
+                    : score >= 0.45
+
+                        ? "DEVELOPING"
+
+                        : "REQUIRES_ATTENTION",
+
+        mechanism:
+
+            "SYMBOLIC_AND_COMPUTATIONAL_RESILIENCE"
+
+    };
+
+    state.protectionStates[
+
+        protection.id
+
+    ]=protection;
+
+    state.metrics.protectionStates++;
+
+    persist(
+
+        "PROTECTION_"+protection.id,
+
+        protection
+
+    );
+
+    emit(
+
+        "BLOODLINE_PROTECTION_STATE_UPDATED",
+
+        protection
+
+    );
+
+    return clone(protection);
+
+}
+
+
+/* ================================================================
+   INTENTION REINFORCEMENT
+   ================================================================ */
+
+function reinforceIntention(intentionId){
+
+    const intention=
+
+        state.intentions[intentionId];
+
+    if(!intention){
+
+        return {
+
+            success:false,
+
+            reason:"INTENTION_NOT_FOUND"
+
+        };
+
+    }
+
+    intention.repetition++;
+
+    intention.updatedAt=now();
+
+    intention.status="REINFORCED";
+
+    state.intentions[intentionId]=
+
+        intention;
+
+    persist(
+
+        "REINFORCED_"+intentionId,
+
+        intention
+
+    );
+
+    const propagation=
+
+        propagateIntention(
+
+            intentionId
+
+        );
+
+    const resonance=
+
+        calculateResonance();
+
+    const shift=
+
+        detectShift();
+
+    const protection=
+
+        calculateProtectionState();
+
+    state.metrics.reinforcementCycles++;
+
+    const result={
+
+        timestamp:now(),
+
+        intention:
+
+            clone(intention),
+
+        propagation,
+
+        resonance,
+
+        shift,
+
+        protection
+
+    };
+
+    persist(
+
+        "REINFORCEMENT_"+Date.now(),
+
+        result
+
+    );
+
+    emit(
+
+        "SPIRITUAL_INTENTION_REINFORCED",
+
+        result
+
+    );
+
+    return clone(result);
+
+}
+
+
+/* ================================================================
+   OBSERVATION ENGINE
+   ================================================================ */
+
+function observe(){
+
+    const protection=
+
+        calculateProtectionState();
+
+    const resonance=
+
+        calculateResonance();
+
+    const observation={
+
+        id:
+
+            uid("OBS"),
+
+        timestamp:now(),
+
+        resonance:
+
+            resonance.resonance,
+
+        protection:
+
+            protection.score,
+
+        activeIntentions:
+
+            Object.keys(
+
+                state.intentions
+
+            ).length,
+
+        latticeNodes:
+
+            Object.keys(
+
+                state.latticeNodes
+
+            ).length,
+
+        latticeEdges:
+
+            Object.keys(
+
+                state.latticeEdges
+
+            ).length,
+
+        interpretation:
+
+            "SYSTEM_STATE_OBSERVATION"
+
+    };
+
+    state.observations[
+
+        observation.id
+
+    ]=observation;
+
+    state.metrics.observations++;
+
+    persist(
+
+        "OBSERVATION_"+observation.id,
+
+        observation
+
+    );
+
+    emit(
+
+        "SPIRITUAL_STATE_OBSERVED",
+
+        observation
+
+    );
+
+    return clone(observation);
+
+}
+
+
+/* ================================================================
+   COMPLETE INTENTION CYCLE
+   ================================================================ */
+
+async function intentionCycle(){
+
+    buildBloodlineLattice();
+
+    const observations=
+
+        observe();
+
+    const resonance=
+
+        calculateResonance();
+
+    const shift=
+
+        detectShift();
+
+    const protection=
+
+        calculateProtectionState();
+
+    const result={
+
+        timestamp:now(),
+
+        observations,
+
+        resonance,
+
+        shift,
+
+        protection,
+
+        intentions:
+
+            Object.keys(
+
+                state.intentions
+
+            ).length,
+
+        lattice:
+
+            {
+
+                nodes:
+
+                    Object.keys(
+
+                        state.latticeNodes
+
+                    ).length,
+
+                edges:
+
+                    Object.keys(
+
+                        state.latticeEdges
+
+                    ).length
+
+            }
+
+    };
+
+    persist(
+
+        "INTENTION_CYCLE_"+Date.now(),
+
+        result
+
+    );
+
+    emit(
+
+        "SPIRITUAL_INTENTION_CYCLE_COMPLETE",
+
+        result
+
+    );
+
+    return clone(result);
+
+}
+
+
+/* ================================================================
+   SELF TEST
+   ================================================================ */
+
+async function selfTest(){
+
+    const tests=[
+
+        {
+
+            name:"CORE",
+
+            passed:!!CORE
+
+        },
+
+        {
+
+            name:"MEMORY",
+
+            passed:!!MEMORY
+
+        },
+
+        {
+
+            name:"BLOODLINE",
+
+            passed:!!BLOODLINE
+
+        },
+
+        {
+
+            name:"LEGACY",
+
+            passed:!!LEGACY
+
+        },
+
+        {
+
+            name:"INTENTION_ENGINE",
+
+            passed:
+
+                typeof registerIntention ===
+
+                "function"
+
+        },
+
+        {
+
+            name:"LATTICE_ENGINE",
+
+            passed:
+
+                typeof createLatticeNode ===
+
+                "function"
+
+        },
+
+        {
+
+            name:"RESONANCE_ENGINE",
+
+            passed:
+
+                typeof calculateResonance ===
+
+                "function"
+
+        },
+
+        {
+
+            name:"SHIFT_ENGINE",
+
+            passed:
+
+                typeof detectShift ===
+
+                "function"
+
+        },
+
+        {
+
+            name:"PROTECTION_ENGINE",
+
+            passed:
+
+                typeof calculateProtectionState ===
+
+                "function"
+
+        }
+
+    ];
+
+    const passed=
+
+        tests.filter(
+
+            t=>t.passed
+
+        ).length;
+
+    const report={
+
+        timestamp:now(),
+
+        passed,
+
+        total:tests.length,
+
+        success:
+
+            passed===tests.length,
+
+        tests
+
+    };
+
+    persist(
+
+        "SELF_TEST",
+
+        report
+
+    );
+
+    emit(
+
+        "SPIRITUAL_ENGINE_SELF_TEST",
+
+        report
+
+    );
+
+    return report;
+
+}
+
+
+/* ================================================================
+   STATUS
+   ================================================================ */
+
+function status(){
+
+    return {
+
+        protocol:
+
+            CONFIG.protocol,
+
+        version:
+
+            CONFIG.version,
+
+        name:
+
+            CONFIG.name,
+
+        booted:
+
+            state.booted,
+
+        active:
+
+            state.active,
+
+        startedAt:
+
+            state.startedAt,
+
+        lastIntention:
+
+            state.lastIntention,
+
+        lastResonance:
+
+            state.lastResonance,
+
+        lastLatticeScan:
+
+            state.lastLatticeScan,
+
+        intentions:
+
+            Object.keys(
+
+                state.intentions
+
+            ).length,
+
+        declarations:
+
+            Object.keys(
+
+                state.declarations
+
+            ).length,
+
+        signatures:
+
+            Object.keys(
+
+                state.signatures
+
+            ).length,
+
+        latticeNodes:
+
+            Object.keys(
+
+                state.latticeNodes
+
+            ).length,
+
+        latticeEdges:
+
+            Object.keys(
+
+                state.latticeEdges
+
+            ).length,
+
+        observations:
+
+            Object.keys(
+
+                state.observations
+
+            ).length,
+
+        shifts:
+
+            Object.keys(
+
+                state.shifts
+
+            ).length,
+
+        protectionStates:
+
+            Object.keys(
+
+                state.protectionStates
+
+            ).length,
+
+        metrics:
+
+            clone(state.metrics)
+
+    };
+
+}
+
+
+/* ================================================================
+   EXPORT
+   ================================================================ */
+
+function exportState(){
+
+    return {
+
+        protocol:
+
+            CONFIG.protocol,
+
+        version:
+
+            CONFIG.version,
+
+        exportedAt:
+
+            now(),
+
+        status:
+
+            status(),
+
+        intentions:
+
+            clone(state.intentions),
+
+        declarations:
+
+            clone(state.declarations),
+
+        signatures:
+
+            clone(state.signatures),
+
+        latticeNodes:
+
+            clone(state.latticeNodes),
+
+        latticeEdges:
+
+            clone(state.latticeEdges),
+
+        observations:
+
+            clone(state.observations),
+
+        resonanceStates:
+
+            clone(state.resonanceStates),
+
+        shifts:
+
+            clone(state.shifts),
+
+        protectionStates:
+
+            clone(state.protectionStates)
+
+    };
+
+}
+
+
+/* ================================================================
+   WORKERS
+   ================================================================ */
+
+function registerWorkers(){
+
+    if(!WORKERS) return;
+
+    const workers=[
+
+        {
+
+            name:
+
+                "SPIRITUAL_INTENTION_SCAN",
+
+            handler:
+
+                ()=>intentionCycle(),
+
+            interval:
+
+                CONFIG.scanInterval
+
+        },
+
+        {
+
+            name:
+
+                "SPIRITUAL_RESONANCE_ENGINE",
+
+            handler:
+
+                ()=>calculateResonance(),
+
+            interval:
+
+                CONFIG.resonanceInterval
+
+        },
+
+        {
+
+            name:
+
+                "SPIRITUAL_LATTICE_ENGINE",
+
+            handler:
+
+                ()=>buildBloodlineLattice(),
+
+            interval:
+
+                CONFIG.latticeInterval
+
+        },
+
+        {
+
+            name:
+
+                "SPIRITUAL_SHIFT_DETECTOR",
+
+            handler:
+
+                ()=>detectShift(),
+
+            interval:
+
+                CONFIG.resonanceInterval
+
+        },
+
+        {
+
+            name:
+
+                "BLOODLINE_PROTECTION_STATE",
+
+            handler:
+
+                ()=>calculateProtectionState(),
+
+            interval:
+
+                CONFIG.resonanceInterval
+
+        }
+
+    ];
+
+    workers.forEach(worker=>{
+
+        try{
+
+            if(
+
+                typeof WORKERS.registerWorker ===
+
+                "function"
+
+            ){
+
+                WORKERS.registerWorker({
+
+                    name:worker.name,
+
+                    handler:worker.handler,
+
+                    interval:worker.interval,
+
+                    lane:"SPIRITUAL",
+
+                    priority:"HIGH"
+
+                });
+
+            }
+
+        }catch(error){}
+
+    });
+
+}
+
+
+/* ================================================================
+   TIMER CONTROL
+   ================================================================ */
+
+function stopTimers(){
+
+    Object.keys(
+
+        state.timers
+
+    ).forEach(key=>{
+
+        if(state.timers[key]){
+
+            clearInterval(
+
+                state.timers[key]
+
+            );
+
+            state.timers[key]=null;
+
+        }
+
+    });
+
+}
+
+
+function startTimers(){
+
+    stopTimers();
+
+    state.timers.scan=
+
+        setInterval(
+
+            ()=>{
+
+                try{
+
+                    intentionCycle();
+
+                }catch(error){}
+
+            },
+
+            CONFIG.scanInterval
+
+        );
+
+    state.timers.resonance=
+
+        setInterval(
+
+            ()=>{
+
+                try{
+
+                    calculateResonance();
+
+                    detectShift();
+
+                    calculateProtectionState();
+
+                }catch(error){}
+
+            },
+
+            CONFIG.resonanceInterval
+
+        );
+
+    state.timers.lattice=
+
+        setInterval(
+
+            ()=>{
+
+                try{
+
+                    buildBloodlineLattice();
+
+                }catch(error){}
+
+            },
+
+            CONFIG.latticeInterval
+
+        );
+
+}
+
+
+/* ================================================================
+   COMMAND API
+   ================================================================ */
+
+async function command(name,payload={}){
+
+    const cmd=
+
+        text(name).toUpperCase();
+
+    switch(cmd){
+
+        case "STATUS":
+
+            return status();
+
+        case "DECLARATION":
+
+            return createDeclaration(
+
+                payload
+
+            );
+
+        case "INTENTION":
+
+            return registerIntention(
+
+                payload
+
+            );
+
+        case "LATTICE":
+
+            return buildBloodlineLattice();
+
+        case "PROPAGATE":
+
+            return propagateIntention(
+
+                payload.intentionId
+
+            );
+
+        case "RESONANCE":
+
+            return calculateResonance();
+
+        case "SHIFT":
+
+            return detectShift();
+
+        case "PROTECTION":
+
+            return calculateProtectionState();
+
+        case "REINFORCE":
+
+            return reinforceIntention(
+
+                payload.intentionId
+
+            );
+
+        case "OBSERVE":
+
+            return observe();
+
+        case "CYCLE":
+
+            return intentionCycle();
+
+        case "SELF_TEST":
+
+            return selfTest();
+
+        case "EXPORT":
+
+            return exportState();
+
+        case "START":
+
+            return start();
+
+        case "STOP":
+
+            return stop();
+
+        default:
+
+            return {
+
+                success:false,
+
+                error:
+
+                    "UNKNOWN_COMMAND",
+
+                command:cmd
+
+            };
+
+    }
+
+}
+
+
+/* ================================================================
+   START
+   ================================================================ */
+
+function start(){
+
+    if(state.active){
+
+        return status();
+
+    }
+
+    state.active=true;
+
+    state.startedAt=
+
+        state.startedAt ||
+
+        now();
+
+    startTimers();
+
+    emit(
+
+        "SPIRITUAL_INTENTION_ENGINE_STARTED",
+
+        status()
+
+    );
+
+    return status();
+
+}
+
+
+/* ================================================================
+   STOP
+   ================================================================ */
+
+function stop(){
+
+    state.active=false;
+
+    stopTimers();
+
+    emit(
+
+        "SPIRITUAL_INTENTION_ENGINE_STOPPED",
+
+        status()
+
+    );
+
+    return status();
+
+}
+
+
+/* ================================================================
+   BOOT
+   ================================================================ */
+
+async function boot(){
+
+    if(state.booted){
+
+        return status();
+
+    }
+
+    state.booted=true;
+
+    state.startedAt=now();
+
+    registerWorkers();
+
+    buildBloodlineLattice();
+
+    calculateResonance();
+
+    calculateProtectionState();
+
+    await selfTest();
+
+    start();
+
+    emit(
+
+        "SPIRITUAL_INTENTION_ENGINE_BOOTED",
+
+        status()
+
+    );
+
+    console.log(
+
+        "[CHEP-14]",
+
+        "SPIRITUAL INTENTION & RESONANCE INTERFACE ONLINE",
+
+        status()
+
+    );
+
+    return status();
+
+}
+
+
+/* ================================================================
+   PUBLIC API
+   ================================================================ */
+
+const API={
+
+    protocol:
+
+        CONFIG.protocol,
+
+    version:
+
+        CONFIG.version,
+
+    config:
+
+        CONFIG,
+
+    state,
+
+    boot,
+
+    start,
+
+    stop,
+
+    status,
+
+    command,
+
+    createDeclaration,
+
+    registerIntention,
+
+    createSignature,
+
+    createLatticeNode,
+
+    createLatticeEdge,
+
+    buildBloodlineLattice,
+
+    propagateIntention,
+
+    calculateResonance,
+
+    detectShift,
+
+    calculateProtectionState,
+
+    reinforceIntention,
+
+    observe,
+
+    intentionCycle,
+
+    selfTest,
+
+    export:exportState
+
+};
+
+
+/* ================================================================
+   GLOBAL REGISTRATION
+   ================================================================ */
+
+global.CHIROMBE_INTENTION=API;
+
+global.CHIROMBE_SPIRITUAL_INTERFACE=API;
+
+global.CHIROMBE_RESONANCE_ENGINE=API;
+
+global.CHIROMBE_SPIRITUAL_RESONANCE=API;
+
+
+/* ================================================================
+   SAFE BOOT
+   ================================================================ */
+
+Promise.resolve()
+
+    .then(()=>boot())
+
+    .catch(error=>{
+
+        console.error(
+
+            "[CHEP-14] Boot failure:",
+
+            error
+
+        );
+
+    });
+
+
+/* ================================================================
+   END CHEP-14
+   ================================================================ */
+
+})(typeof window !== "undefined"
+    ? window
     : globalThis);
