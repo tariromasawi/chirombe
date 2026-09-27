@@ -25307,4 +25307,2733 @@
 
 /* ========================================================================
    END CHEP-11
-   ======================================================================== */
+   ======================================================================== *//* ================================================================
+   CHIROMBE BLOODLINE CONTINUITY & ANCESTRAL RESILIENCE ENGINE
+   CHEP-12
+   Version: 1.0.0
+
+   DESIGN PHILOSOPHY
+   ---------------------------------------------------------------
+   BLOODLINE → MEMORY → CONTINUITY → RESILIENCE → PROTECTION
+   → LEARNING → ADAPTATION → LEGACY
+
+   This module models a protected lineage as a structured network
+   containing people, generations, relationships, knowledge,
+   locations, records, symbols, assets, objectives and recovery
+   pathways.
+
+   IMPORTANT:
+   - This is a computational resilience/modeling system.
+   - Spiritual concepts may be represented symbolically.
+   - "Quantum" terminology is used only where mathematically useful
+     as a quantum-inspired state representation.
+   - The system does not claim scientific detection of spirits,
+     curses, supernatural forces or invisible energies.
+   - No external system is attacked.
+   - No person is automatically labelled hostile.
+   - No irreversible production action is performed automatically.
+
+   CORE LOOP
+
+   OBSERVE
+      ↓
+   IDENTIFY
+      ↓
+   MAP
+      ↓
+   CONNECT
+      ↓
+   PRESERVE
+      ↓
+   VERIFY
+      ↓
+   STRENGTHEN
+      ↓
+   RECOVER
+      ↓
+   LEARN
+      ↓
+   EVOLVE
+
+   ================================================================ */
+
+(function(global){
+
+"use strict";
+
+/* ================================================================
+   DEPENDENCY RESOLUTION
+   ================================================================ */
+
+const CORE =
+    global.CHIROMBE ||
+    global.CHIROMBE_CORE ||
+    null;
+
+const MEMORY =
+    global.CHIROMBE_MEMORY ||
+    null;
+
+const WORKERS =
+    global.CHIROMBE_WORKERS ||
+    null;
+
+const EVOLUTION =
+    global.CHIROMBE_EVOLUTION ||
+    null;
+
+const PATHWAYS =
+    global.CHIROMBE_PATHWAYS ||
+    null;
+
+const WATCHDOG =
+    global.CHIROMBE_WATCHDOG ||
+    global.CHIROMBE_WATCHDOG_ENGINE ||
+    null;
+
+const KNOWLEDGE =
+    global.CHIROMBE_KNOWLEDGE ||
+    global.CHIROMBE_KNOWLEDGE_ENGINE ||
+    null;
+
+const BUILD =
+    global.CHIROMBE_BUILD ||
+    global.CHIROMBE_BUILD_ENGINE ||
+    null;
+
+const ORCHESTRATOR =
+    global.CHIROMBE_ORCHESTRATOR ||
+    global.CHIROMBE_ORCHESTRATION_ENGINE ||
+    null;
+
+const BACKEND =
+    global.CHIROMBE_BACKEND ||
+    global.CHIROMBE_BACKEND_BRIDGE ||
+    null;
+
+const DEFENCE =
+    global.CHIROMBE_DEFENCE ||
+    global.CHIROMBE_DEFENSE ||
+    global.CHIROMBE_ADAPTIVE_DEFENCE ||
+    null;
+
+
+/* ================================================================
+   CONFIGURATION
+   ================================================================ */
+
+const CONFIG = {
+
+    protocol: "CHEP-12",
+
+    version: "1.0.0",
+
+    name:
+        "CHIROMBE BLOODLINE CONTINUITY & ANCESTRAL RESILIENCE ENGINE",
+
+    scanInterval: 60000,
+
+    continuityInterval: 120000,
+
+    integrityInterval: 180000,
+
+    maximumPersons: 10000,
+
+    maximumGenerations: 1000,
+
+    maximumRelationships: 50000,
+
+    maximumKnowledge: 50000,
+
+    maximumLocations: 10000,
+
+    maximumAssets: 50000,
+
+    maximumEvents: 50000,
+
+    maximumSignals: 50000,
+
+    maximumRecoveryPlans: 10000,
+
+    maximumObjectives: 10000,
+
+    minimumConfidence: 0.60,
+
+    strongConfidence: 0.85,
+
+    automaticProductionModification: false,
+
+    automaticDeployment: false,
+
+    automaticDeletion: false,
+
+    symbolicSpiritualLayer: true,
+
+    quantumInspiredLayer: true,
+
+    persistentNamespace: "BLOODLINE",
+
+    protectedSystems: [
+
+        "CHIROMBE",
+
+        "CHIROMBE_MEMORY",
+
+        "CHIROMBE_WORKERS",
+
+        "CHIROMBE_EVOLUTION",
+
+        "CHIROMBE_PATHWAYS",
+
+        "CHIROMBE_WATCHDOG",
+
+        "CHIROMBE_KNOWLEDGE",
+
+        "CHIROMBE_BUILD",
+
+        "CHIROMBE_ORCHESTRATOR",
+
+        "CHIROMBE_BACKEND",
+
+        "CHIROMBE_DEFENCE",
+
+        "CHIROMBE_BLOODLINE"
+
+    ]
+
+};
+
+
+/* ================================================================
+   STATE
+   ================================================================ */
+
+const state = {
+
+    booted: false,
+
+    active: false,
+
+    startedAt: null,
+
+    lastScan: null,
+
+    lastContinuityAnalysis: null,
+
+    lastIntegrityCheck: null,
+
+    generationCount: 0,
+
+    persons: {},
+
+    generations: {},
+
+    relationships: {},
+
+    knowledge: {},
+
+    locations: {},
+
+    assets: {},
+
+    events: {},
+
+    signals: {},
+
+    recoveryPlans: {},
+
+    objectives: {},
+
+    pathways: {},
+
+    continuity: {},
+
+    trustGraph: {},
+
+    lineageScores: {},
+
+    protectedNodes: {},
+
+    metrics: {
+
+        scans: 0,
+
+        personsRegistered: 0,
+
+        relationshipsRegistered: 0,
+
+        generationsMapped: 0,
+
+        knowledgeRecords: 0,
+
+        continuityAnalyses: 0,
+
+        anomalies: 0,
+
+        integrityChecks: 0,
+
+        recoveryPlans: 0,
+
+        objectives: 0,
+
+        pathways: 0,
+
+        resilienceCalculations: 0,
+
+        successfulRecoveries: 0,
+
+        failedRecoveries: 0
+
+    },
+
+    timers: {
+
+        scan: null,
+
+        continuity: null,
+
+        integrity: null
+
+    }
+
+};
+
+
+/* ================================================================
+   GENERAL UTILITIES
+   ================================================================ */
+
+function uid(prefix){
+
+    return (
+
+        prefix +
+
+        "_" +
+
+        Date.now().toString(36) +
+
+        "_" +
+
+        Math.random()
+
+            .toString(36)
+
+            .slice(2,10)
+
+    ).toUpperCase();
+
+}
+
+
+function now(){
+
+    return new Date().toISOString();
+
+}
+
+
+function clamp(value,min=0,max=1){
+
+    const n = Number(value);
+
+    if(!Number.isFinite(n)) return min;
+
+    return Math.max(min,Math.min(max,n));
+
+}
+
+
+function clone(value){
+
+    try{
+
+        return JSON.parse(JSON.stringify(value));
+
+    }catch(error){
+
+        return null;
+
+    }
+
+}
+
+
+function safeString(value){
+
+    return String(value ?? "").trim();
+
+}
+
+
+function emit(event,payload={}){
+
+    try{
+
+        if(CORE && typeof CORE.emit === "function"){
+
+            CORE.emit(event,payload);
+
+        }
+
+    }catch(error){}
+
+    try{
+
+        if(typeof global.dispatchEvent === "function"){
+
+            global.dispatchEvent(
+
+                new CustomEvent(
+
+                    "CHIROMBE:" + event,
+
+                    {detail:payload}
+
+                )
+
+            );
+
+        }
+
+    }catch(error){}
+
+}
+
+
+function persist(key,value){
+
+    try{
+
+        if(MEMORY && typeof MEMORY.write === "function"){
+
+            MEMORY.write(
+
+                CONFIG.persistentNamespace,
+
+                key,
+
+                clone(value)
+
+            );
+
+        }
+
+    }catch(error){}
+
+}
+
+
+function log(){
+
+    try{
+
+        console.log(
+
+            "[CHEP-12]",
+
+            ...arguments
+
+        );
+
+    }catch(error){}
+
+}
+
+
+/* ================================================================
+   BLOODLINE ENTITY MODEL
+   ================================================================ */
+
+/*
+   A person is represented by a stable internal identifier.
+
+   Only information deliberately supplied to the system should be
+   stored here.
+
+   The engine does not infer biological relationships.
+*/
+
+function registerPerson(data={}){
+
+    const id = data.id || uid("PERSON");
+
+    const person = {
+
+        id,
+
+        name: safeString(data.name),
+
+        generation: Number.isFinite(Number(data.generation))
+            ? Number(data.generation)
+            : null,
+
+        role: safeString(data.role),
+
+        parentIds: Array.isArray(data.parentIds)
+            ? [...data.parentIds]
+            : [],
+
+        childIds: Array.isArray(data.childIds)
+            ? [...data.childIds]
+            : [],
+
+        siblingIds: Array.isArray(data.siblingIds)
+            ? [...data.siblingIds]
+            : [],
+
+        spouseIds: Array.isArray(data.spouseIds)
+            ? [...data.spouseIds]
+            : [],
+
+        knowledgeTags: Array.isArray(data.knowledgeTags)
+            ? [...data.knowledgeTags]
+            : [],
+
+        protected: data.protected !== false,
+
+        confidence: clamp(
+
+            data.confidence === undefined
+                ? 1
+                : data.confidence
+
+        ),
+
+        createdAt:
+
+            data.createdAt ||
+
+            now(),
+
+        updatedAt:
+
+            now()
+
+    };
+
+    state.persons[id] = person;
+
+    state.metrics.personsRegistered++;
+
+    if(person.generation !== null){
+
+        const generationKey =
+
+            "GEN_" +
+
+            String(person.generation);
+
+        if(!state.generations[generationKey]){
+
+            state.generations[generationKey] = {
+
+                id: generationKey,
+
+                number: person.generation,
+
+                personIds: [],
+
+                createdAt: now()
+
+            };
+
+        }
+
+        if(
+
+            !state.generations[generationKey]
+
+                .personIds
+
+                .includes(id)
+
+        ){
+
+            state.generations[generationKey]
+
+                .personIds
+
+                .push(id);
+
+        }
+
+    }
+
+    persist("PERSON_" + id,person);
+
+    emit("BLOODLINE_PERSON_REGISTERED",person);
+
+    return clone(person);
+
+}
+
+
+/* ================================================================
+   RELATIONSHIP ENGINE
+   ================================================================ */
+
+function registerRelationship(data={}){
+
+    const id = data.id || uid("REL");
+
+    const relationship = {
+
+        id,
+
+        from: safeString(data.from),
+
+        to: safeString(data.to),
+
+        type: safeString(data.type || "RELATED"),
+
+        confidence: clamp(
+
+            data.confidence === undefined
+                ? 1
+                : data.confidence
+
+        ),
+
+        verified: data.verified === true,
+
+        source: safeString(data.source),
+
+        createdAt: now()
+
+    };
+
+    state.relationships[id] = relationship;
+
+    state.metrics.relationshipsRegistered++;
+
+    if(PATHWAYS){
+
+        try{
+
+            if(typeof PATHWAYS.registerNode === "function"){
+
+                PATHWAYS.registerNode({
+
+                    id,
+
+                    type: "BLOODLINE_RELATIONSHIP",
+
+                    label: relationship.type
+
+                });
+
+            }
+
+        }catch(error){}
+
+    }
+
+    persist("RELATIONSHIP_" + id,relationship);
+
+    emit(
+
+        "BLOODLINE_RELATIONSHIP_REGISTERED",
+
+        relationship
+
+    );
+
+    return clone(relationship);
+
+}
+
+
+/* ================================================================
+   GENERATION ENGINE
+   ================================================================ */
+
+function analyseGenerations(){
+
+    const generations = Object.values(
+
+        state.generations
+
+    );
+
+    state.generationCount = generations.length;
+
+    state.metrics.generationsMapped = generations.length;
+
+    const report = {
+
+        timestamp: now(),
+
+        generationCount: generations.length,
+
+        generations: [],
+
+        continuity: 0,
+
+        confidence: 0
+
+    };
+
+    let totalConfidence = 0;
+
+    let confidenceCount = 0;
+
+    generations
+
+        .sort((a,b)=>a.number-b.number)
+
+        .forEach(g=>{
+
+            const members = g.personIds
+
+                .map(id=>state.persons[id])
+
+                .filter(Boolean);
+
+            const average = members.length
+
+                ? members.reduce(
+
+                    (sum,p)=>sum+p.confidence,
+
+                    0
+
+                ) / members.length
+
+                : 0;
+
+            report.generations.push({
+
+                id:g.id,
+
+                number:g.number,
+
+                members:members.length,
+
+                confidence:average
+
+            });
+
+            totalConfidence += average;
+
+            confidenceCount++;
+
+        });
+
+    report.confidence =
+
+        confidenceCount
+
+            ? totalConfidence/confidenceCount
+
+            : 0;
+
+    if(generations.length > 1){
+
+        const mapped = generations.length;
+
+        const max = Math.max(
+
+            ...generations.map(g=>g.number)
+
+        );
+
+        const min = Math.min(
+
+            ...generations.map(g=>g.number)
+
+        );
+
+        const span = Math.max(1,max-min+1);
+
+        report.continuity = clamp(mapped/span);
+
+    }
+
+    state.continuity.generations = report;
+
+    state.lastContinuityAnalysis = now();
+
+    state.metrics.continuityAnalyses++;
+
+    persist("GENERATION_ANALYSIS",report);
+
+    emit("BLOODLINE_GENERATIONS_ANALYSED",report);
+
+    return clone(report);
+
+}
+
+
+/* ================================================================
+   KNOWLEDGE & LEGACY ENGINE
+   ================================================================ */
+
+function registerKnowledge(data={}){
+
+    const id = data.id || uid("KNOW");
+
+    const record = {
+
+        id,
+
+        title: safeString(data.title),
+
+        description: safeString(data.description),
+
+        category: safeString(data.category || "LEGACY"),
+
+        generation: data.generation ?? null,
+
+        personIds: Array.isArray(data.personIds)
+
+            ? [...data.personIds]
+
+            : [],
+
+        source: safeString(data.source),
+
+        confidence: clamp(
+
+            data.confidence === undefined
+                ? 0.8
+                : data.confidence
+
+        ),
+
+        verified: data.verified === true,
+
+        symbolic: data.symbolic === true,
+
+        createdAt: now(),
+
+        updatedAt: now()
+
+    };
+
+    state.knowledge[id] = record;
+
+    state.metrics.knowledgeRecords++;
+
+    persist("KNOWLEDGE_" + id,record);
+
+    emit("BLOODLINE_KNOWLEDGE_REGISTERED",record);
+
+    return clone(record);
+
+}
+
+
+/* ================================================================
+   LOCATION ENGINE
+   ================================================================ */
+
+function registerLocation(data={}){
+
+    const id = data.id || uid("LOC");
+
+    const location = {
+
+        id,
+
+        name: safeString(data.name),
+
+        type: safeString(data.type || "LOCATION"),
+
+        description: safeString(data.description),
+
+        symbolicImportance:
+
+            clamp(
+
+                data.symbolicImportance === undefined
+
+                    ? 0.5
+
+                    : data.symbolicImportance
+
+            ),
+
+        personIds: Array.isArray(data.personIds)
+
+            ? [...data.personIds]
+
+            : [],
+
+        verified: data.verified === true,
+
+        createdAt: now()
+
+    };
+
+    state.locations[id] = location;
+
+    persist("LOCATION_" + id,location);
+
+    emit("BLOODLINE_LOCATION_REGISTERED",location);
+
+    return clone(location);
+
+}
+
+
+/* ================================================================
+   LEGACY ASSET ENGINE
+   ================================================================ */
+
+function registerAsset(data={}){
+
+    const id = data.id || uid("ASSET");
+
+    const asset = {
+
+        id,
+
+        name: safeString(data.name),
+
+        type: safeString(data.type || "LEGACY"),
+
+        description: safeString(data.description),
+
+        ownerPersonId:
+
+            data.ownerPersonId || null,
+
+        generation:
+
+            data.generation ?? null,
+
+        integrity: clamp(
+
+            data.integrity === undefined
+
+                ? 1
+
+                : data.integrity
+
+        ),
+
+        importance: clamp(
+
+            data.importance === undefined
+
+                ? 0.5
+
+                : data.importance
+
+        ),
+
+        createdAt: now(),
+
+        updatedAt: now()
+
+    };
+
+    state.assets[id] = asset;
+
+    persist("ASSET_" + id,asset);
+
+    emit("BLOODLINE_ASSET_REGISTERED",asset);
+
+    return clone(asset);
+
+}
+
+
+/* ================================================================
+   CONTINUITY ENGINE
+   ================================================================ */
+
+function calculateContinuity(){
+
+    const people = Object.values(state.persons);
+
+    const knowledge = Object.values(state.knowledge);
+
+    const assets = Object.values(state.assets);
+
+    const relationships = Object.values(
+
+        state.relationships
+
+    );
+
+    const generationScore =
+
+        state.generationCount > 0
+
+            ? clamp(
+
+                state.generationCount /
+
+                Math.max(
+
+                    1,
+
+                    Math.min(
+
+                        CONFIG.maximumGenerations,
+
+                        state.generationCount
+
+                    )
+
+                )
+
+            )
+
+            : 0;
+
+    const relationshipScore =
+
+        people.length > 1
+
+            ? clamp(
+
+                relationships.length /
+
+                Math.max(1,people.length)
+
+            )
+
+            : 0;
+
+    const knowledgeScore =
+
+        people.length
+
+            ? clamp(
+
+                knowledge.length /
+
+                Math.max(1,people.length*2)
+
+            )
+
+            : 0;
+
+    const assetScore =
+
+        assets.length
+
+            ? clamp(
+
+                assets.reduce(
+
+                    (sum,a)=>sum+a.integrity,
+
+                    0
+
+                ) / assets.length
+
+            )
+
+            : 0.5;
+
+    const confidenceScore = people.length
+
+        ? people.reduce(
+
+            (sum,p)=>sum+p.confidence,
+
+            0
+
+        ) / people.length
+
+        : 0;
+
+    const score = clamp(
+
+        generationScore * 0.20 +
+
+        relationshipScore * 0.20 +
+
+        knowledgeScore * 0.20 +
+
+        assetScore * 0.20 +
+
+        confidenceScore * 0.20
+
+    );
+
+    const result = {
+
+        timestamp: now(),
+
+        score,
+
+        generationScore,
+
+        relationshipScore,
+
+        knowledgeScore,
+
+        assetScore,
+
+        confidenceScore,
+
+        people: people.length,
+
+        relationships: relationships.length,
+
+        knowledge: knowledge.length,
+
+        assets: assets.length
+
+    };
+
+    state.continuity.score = score;
+
+    state.continuity.latest = result;
+
+    persist("CONTINUITY_SCORE",result);
+
+    emit("BLOODLINE_CONTINUITY_CALCULATED",result);
+
+    return clone(result);
+
+}
+
+
+/* ================================================================
+   QUANTUM-INSPIRED STATE VECTOR
+   ================================================================ */
+
+/*
+   This is NOT a quantum computer.
+
+   It provides a compact mathematical representation of several
+   dimensions of lineage resilience.
+
+   [continuity, knowledge, integrity, connectivity, recovery]
+
+   The values are normalized between 0 and 1.
+
+   A normalized vector is useful for comparing system states over
+   time without claiming that it represents physical quantum
+   phenomena.
+*/
+
+function stateVector(){
+
+    const continuity =
+
+        state.continuity.latest ||
+
+        calculateContinuity();
+
+    const integrity =
+
+        calculateAssetIntegrity();
+
+    const connectivity =
+
+        calculateConnectivity();
+
+    const recovery =
+
+        calculateRecoveryReadiness();
+
+    const vector = [
+
+        clamp(continuity.score),
+
+        clamp(continuity.knowledgeScore),
+
+        clamp(integrity),
+
+        clamp(connectivity),
+
+        clamp(recovery)
+
+    ];
+
+    const magnitude = Math.sqrt(
+
+        vector.reduce(
+
+            (sum,value)=>sum+(value*value),
+
+            0
+
+        )
+
+    );
+
+    return {
+
+        timestamp: now(),
+
+        vector,
+
+        magnitude,
+
+        normalized:
+
+            magnitude
+
+                ? vector.map(v=>v/magnitude)
+
+                : vector,
+
+        model:
+
+            "QUANTUM_INSPIRED_RESILIENCE_VECTOR"
+
+    };
+
+}
+
+
+/* ================================================================
+   CONNECTIVITY ANALYSIS
+   ================================================================ */
+
+function calculateConnectivity(){
+
+    const people = Object.values(state.persons);
+
+    const relationships = Object.values(
+
+        state.relationships
+
+    );
+
+    if(!people.length){
+
+        return 0;
+
+    }
+
+    const possible = Math.max(
+
+        1,
+
+        people.length * 2
+
+    );
+
+    return clamp(
+
+        relationships.length / possible
+
+    );
+
+}
+
+
+/* ================================================================
+   ASSET INTEGRITY
+   ================================================================ */
+
+function calculateAssetIntegrity(){
+
+    const assets = Object.values(state.assets);
+
+    if(!assets.length){
+
+        return 1;
+
+    }
+
+    return clamp(
+
+        assets.reduce(
+
+            (sum,a)=>sum+clamp(a.integrity),
+
+            0
+
+        ) / assets.length
+
+    );
+
+}
+
+
+/* ================================================================
+   RECOVERY READINESS
+   ================================================================ */
+
+function calculateRecoveryReadiness(){
+
+    const plans = Object.values(
+
+        state.recoveryPlans
+
+    );
+
+    if(!plans.length){
+
+        return 0.5;
+
+    }
+
+    const valid = plans.filter(
+
+        p=>p.status !== "INVALID"
+
+    ).length;
+
+    return clamp(valid / plans.length);
+
+}
+
+
+/* ================================================================
+   RESILIENCE ENGINE
+   ================================================================ */
+
+function resilienceScore(){
+
+    const continuity = calculateContinuity();
+
+    const integrity = calculateAssetIntegrity();
+
+    const connectivity = calculateConnectivity();
+
+    const recovery = calculateRecoveryReadiness();
+
+    const defenceScore =
+
+        DEFENCE &&
+
+        typeof DEFENCE.resilienceScore === "function"
+
+            ? Number(DEFENCE.resilienceScore().score || 0)
+
+            : 0.5;
+
+    const score = clamp(
+
+        continuity.score * 0.30 +
+
+        integrity * 0.20 +
+
+        connectivity * 0.15 +
+
+        recovery * 0.15 +
+
+        clamp(defenceScore) * 0.20
+
+    );
+
+    const result = {
+
+        timestamp: now(),
+
+        score,
+
+        continuity: continuity.score,
+
+        integrity,
+
+        connectivity,
+
+        recovery,
+
+        defence: clamp(defenceScore),
+
+        classification:
+
+            score >= 0.85
+
+                ? "HIGH_RESILIENCE"
+
+                : score >= 0.65
+
+                    ? "STABLE"
+
+                    : score >= 0.45
+
+                        ? "DEVELOPING"
+
+                        : "FRAGILE"
+
+    };
+
+    state.lineageScores.latest = result;
+
+    state.metrics.resilienceCalculations++;
+
+    persist("RESILIENCE_SCORE",result);
+
+    emit("BLOODLINE_RESILIENCE_UPDATED",result);
+
+    return clone(result);
+
+}
+
+
+/* ================================================================
+   SIGNAL ENGINE
+   ================================================================ */
+
+function createSignal(data={}){
+
+    const id = data.id || uid("SIGNAL");
+
+    const signal = {
+
+        id,
+
+        category:
+
+            safeString(
+
+                data.category ||
+
+                "CONTINUITY"
+
+            ),
+
+        description:
+
+            safeString(data.description),
+
+        source:
+
+            safeString(data.source || "INTERNAL"),
+
+        severity:
+
+            clamp(
+
+                data.severity === undefined
+
+                    ? 0.2
+
+                    : data.severity
+
+            ),
+
+        confidence:
+
+            clamp(
+
+                data.confidence === undefined
+
+                    ? 0.5
+
+                    : data.confidence
+
+            ),
+
+        symbolic:
+
+            data.symbolic === true,
+
+        createdAt: now()
+
+    };
+
+    state.signals[id] = signal;
+
+    state.metrics.anomalies +=
+
+        signal.severity >= 0.7
+
+            ? 1
+
+            : 0;
+
+    persist("SIGNAL_" + id,signal);
+
+    emit("BLOODLINE_SIGNAL_CREATED",signal);
+
+    return clone(signal);
+
+}
+
+
+/* ================================================================
+   CONTINUITY SCAN
+   ================================================================ */
+
+function scan(){
+
+    state.metrics.scans++;
+
+    state.lastScan = now();
+
+    const people = Object.values(state.persons);
+
+    const relationships = Object.values(
+
+        state.relationships
+
+    );
+
+    const knowledge = Object.values(
+
+        state.knowledge
+
+    );
+
+    const assets = Object.values(
+
+        state.assets
+
+    );
+
+    const signals = [];
+
+    if(people.length === 0){
+
+        signals.push(
+
+            createSignal({
+
+                category:"LINEAGE_DATA",
+
+                description:
+
+                    "No lineage entities are currently registered.",
+
+                severity:0.30,
+
+                confidence:1
+
+            })
+
+        );
+
+    }
+
+    if(people.length > 1 && relationships.length === 0){
+
+        signals.push(
+
+            createSignal({
+
+                category:"CONNECTIVITY",
+
+                description:
+
+                    "People exist without recorded relationships.",
+
+                severity:0.60,
+
+                confidence:0.90
+
+            })
+
+        );
+
+    }
+
+    if(knowledge.length === 0){
+
+        signals.push(
+
+            createSignal({
+
+                category:"LEGACY_KNOWLEDGE",
+
+                description:
+
+                    "No legacy knowledge records are currently indexed.",
+
+                severity:0.50,
+
+                confidence:1
+
+            })
+
+        );
+
+    }
+
+    assets.forEach(asset=>{
+
+        if(asset.integrity < 0.60){
+
+            signals.push(
+
+                createSignal({
+
+                    category:"ASSET_INTEGRITY",
+
+                    description:
+
+                        "Legacy asset has reduced integrity score.",
+
+                    severity:
+
+                        1 - asset.integrity,
+
+                    confidence:0.90
+
+                })
+
+            );
+
+        }
+
+    });
+
+    const continuity = calculateContinuity();
+
+    const resilience = resilienceScore();
+
+    const vector = stateVector();
+
+    const report = {
+
+        timestamp: now(),
+
+        people: people.length,
+
+        relationships: relationships.length,
+
+        knowledge: knowledge.length,
+
+        assets: assets.length,
+
+        signals: signals.length,
+
+        continuity,
+
+        resilience,
+
+        stateVector: vector
+
+    };
+
+    persist("SCAN_" + Date.now(),report);
+
+    emit("BLOODLINE_SCAN_COMPLETE",report);
+
+    return clone(report);
+
+}
+
+
+/* ================================================================
+   TRUST GRAPH
+   ================================================================ */
+
+function buildTrustGraph(){
+
+    const graph = {
+
+        nodes:{},
+
+        edges:{},
+
+        timestamp:now()
+
+    };
+
+    Object.values(state.persons).forEach(person=>{
+
+        graph.nodes[person.id] = {
+
+            id:person.id,
+
+            type:"PERSON",
+
+            confidence:person.confidence,
+
+            protected:person.protected
+
+        };
+
+    });
+
+    Object.values(state.relationships).forEach(rel=>{
+
+        graph.edges[rel.id] = {
+
+            id:rel.id,
+
+            from:rel.from,
+
+            to:rel.to,
+
+            confidence:rel.confidence,
+
+            verified:rel.verified,
+
+            type:rel.type
+
+        };
+
+    });
+
+    state.trustGraph = graph;
+
+    persist("TRUST_GRAPH",graph);
+
+    emit("BLOODLINE_TRUST_GRAPH_UPDATED",graph);
+
+    return clone(graph);
+
+}
+
+
+/* ================================================================
+   PROTECTION OBJECTIVES
+   ================================================================ */
+
+function createObjective(data={}){
+
+    const id = data.id || uid("OBJ");
+
+    const objective = {
+
+        id,
+
+        title:
+
+            safeString(
+
+                data.title ||
+
+                "Protect Bloodline Continuity"
+
+            ),
+
+        description:
+
+            safeString(data.description),
+
+        priority:
+
+            clamp(
+
+                data.priority === undefined
+
+                    ? 0.8
+
+                    : data.priority
+
+            ),
+
+        status:"PENDING",
+
+        confidence:
+
+            clamp(
+
+                data.confidence === undefined
+
+                    ? 0.8
+
+                    : data.confidence
+
+            ),
+
+        createdAt:now(),
+
+        updatedAt:now()
+
+    };
+
+    state.objectives[id] = objective;
+
+    state.metrics.objectives++;
+
+    persist("OBJECTIVE_" + id,objective);
+
+    emit("BLOODLINE_OBJECTIVE_CREATED",objective);
+
+    return clone(objective);
+
+}
+
+
+/* ================================================================
+   RECOVERY PLANNING
+   ================================================================ */
+
+function createRecoveryPlan(data={}){
+
+    const id = data.id || uid("RECOVERY");
+
+    const plan = {
+
+        id,
+
+        trigger:
+
+            safeString(
+
+                data.trigger ||
+
+                "Continuity anomaly"
+
+            ),
+
+        actions:[
+
+            "Preserve current state",
+
+            "Create integrity snapshot",
+
+            "Verify lineage records",
+
+            "Check dependency health",
+
+            "Review affected pathways",
+
+            "Validate recovery candidate",
+
+            "Retest before release"
+
+        ],
+
+        status:"PLANNED",
+
+        automaticDeployment:false,
+
+        destructiveAction:false,
+
+        createdAt:now()
+
+    };
+
+    state.recoveryPlans[id] = plan;
+
+    state.metrics.recoveryPlans++;
+
+    persist("RECOVERY_" + id,plan);
+
+    emit("BLOODLINE_RECOVERY_PLAN_CREATED",plan);
+
+    return clone(plan);
+
+}
+
+
+/* ================================================================
+   PROTECTIVE PATHWAY ENGINE
+   ================================================================ */
+
+function createProtectivePathway(){
+
+    const id = uid("PATH");
+
+    const pathway = {
+
+        id,
+
+        name:"BLOODLINE_CONTINUITY_PATHWAY",
+
+        sequence:[
+
+            "OBSERVE",
+
+            "VERIFY",
+
+            "PRESERVE",
+
+            "CORRELATE",
+
+            "STRENGTHEN",
+
+            "RECOVER",
+
+            "LEARN",
+
+            "ADAPT"
+
+        ],
+
+        confidence:0.90,
+
+        reversible:true,
+
+        destructive:false,
+
+        createdAt:now()
+
+    };
+
+    state.pathways[id] = pathway;
+
+    state.metrics.pathways++;
+
+    persist("PATHWAY_" + id,pathway);
+
+    emit("BLOODLINE_PROTECTIVE_PATHWAY_CREATED",pathway);
+
+    return clone(pathway);
+
+}
+
+
+/* ================================================================
+   LEGACY PRESERVATION ENGINE
+   ================================================================ */
+
+function preservationAudit(){
+
+    const people = Object.values(state.persons);
+
+    const knowledge = Object.values(state.knowledge);
+
+    const assets = Object.values(state.assets);
+
+    const missing = [];
+
+    if(!people.length){
+
+        missing.push("PEOPLE");
+
+    }
+
+    if(!knowledge.length){
+
+        missing.push("KNOWLEDGE");
+
+    }
+
+    if(!assets.length){
+
+        missing.push("LEGACY_ASSETS");
+
+    }
+
+    const report = {
+
+        timestamp:now(),
+
+        people:people.length,
+
+        knowledge:knowledge.length,
+
+        assets:assets.length,
+
+        missing,
+
+        preservationScore:
+
+            clamp(
+
+                (
+
+                    (people.length ? 1 : 0) +
+
+                    (knowledge.length ? 1 : 0) +
+
+                    (assets.length ? 1 : 0)
+
+                ) / 3
+
+            )
+
+    };
+
+    persist("PRESERVATION_AUDIT",report);
+
+    emit("BLOODLINE_PRESERVATION_AUDIT",report);
+
+    return clone(report);
+
+}
+
+
+/* ================================================================
+   SELF-TEST
+   ================================================================ */
+
+function selfTest(){
+
+    const tests = [];
+
+    tests.push({
+
+        name:"CORE",
+
+        passed:!!CORE
+
+    });
+
+    tests.push({
+
+        name:"MEMORY",
+
+        passed:!!MEMORY
+
+    });
+
+    tests.push({
+
+        name:"WORKERS",
+
+        passed:!!WORKERS
+
+    });
+
+    tests.push({
+
+        name:"DEFENCE",
+
+        passed:!!DEFENCE
+
+    });
+
+    tests.push({
+
+        name:"PERSON_MODEL",
+
+        passed:
+
+            typeof registerPerson === "function"
+
+    });
+
+    tests.push({
+
+        name:"CONTINUITY",
+
+        passed:
+
+            typeof calculateContinuity === "function"
+
+    });
+
+    tests.push({
+
+        name:"STATE_VECTOR",
+
+        passed:
+
+            typeof stateVector === "function"
+
+    });
+
+    tests.push({
+
+        name:"RECOVERY",
+
+        passed:
+
+            typeof createRecoveryPlan === "function"
+
+    });
+
+    const passed = tests.filter(
+
+        test=>test.passed
+
+    ).length;
+
+    const report = {
+
+        timestamp:now(),
+
+        passed,
+
+        total:tests.length,
+
+        success:
+
+            passed === tests.length,
+
+        tests
+
+    };
+
+    persist("SELF_TEST",report);
+
+    emit("BLOODLINE_SELF_TEST",report);
+
+    return report;
+
+}
+
+
+/* ================================================================
+   AUTONOMOUS CONTINUITY CYCLE
+   ================================================================ */
+
+function continuityCycle(){
+
+    const generationReport =
+
+        analyseGenerations();
+
+    const trust =
+
+        buildTrustGraph();
+
+    const preservation =
+
+        preservationAudit();
+
+    const scanReport = scan();
+
+    const recovery =
+
+        createRecoveryPlan({
+
+            trigger:
+
+                "Scheduled bloodline continuity review"
+
+        });
+
+    const pathway =
+
+        createProtectivePathway();
+
+    const result = {
+
+        timestamp:now(),
+
+        generationReport,
+
+        trustNodes:
+
+            Object.keys(trust.nodes).length,
+
+        preservation,
+
+        scan:scanReport,
+
+        recovery,
+
+        pathway,
+
+        resilience:
+
+            resilienceScore(),
+
+        vector:
+
+            stateVector()
+
+    };
+
+    persist(
+
+        "CONTINUITY_CYCLE_" + Date.now(),
+
+        result
+
+    );
+
+    emit(
+
+        "BLOODLINE_CONTINUITY_CYCLE_COMPLETE",
+
+        result
+
+    );
+
+    return result;
+
+}
+
+
+/* ================================================================
+   STATUS
+   ================================================================ */
+
+function status(){
+
+    return {
+
+        protocol:CONFIG.protocol,
+
+        version:CONFIG.version,
+
+        name:CONFIG.name,
+
+        booted:state.booted,
+
+        active:state.active,
+
+        startedAt:state.startedAt,
+
+        lastScan:state.lastScan,
+
+        lastContinuityAnalysis:
+
+            state.lastContinuityAnalysis,
+
+        generationCount:
+
+            state.generationCount,
+
+        people:
+
+            Object.keys(state.persons).length,
+
+        generations:
+
+            Object.keys(state.generations).length,
+
+        relationships:
+
+            Object.keys(state.relationships).length,
+
+        knowledge:
+
+            Object.keys(state.knowledge).length,
+
+        locations:
+
+            Object.keys(state.locations).length,
+
+        assets:
+
+            Object.keys(state.assets).length,
+
+        signals:
+
+            Object.keys(state.signals).length,
+
+        recoveryPlans:
+
+            Object.keys(state.recoveryPlans).length,
+
+        objectives:
+
+            Object.keys(state.objectives).length,
+
+        pathways:
+
+            Object.keys(state.pathways).length,
+
+        resilience:
+
+            state.lineageScores.latest || null,
+
+        continuity:
+
+            state.continuity.latest || null,
+
+        metrics:
+
+            clone(state.metrics)
+
+    };
+
+}
+
+
+/* ================================================================
+   EXPORT
+   ================================================================ */
+
+function exportState(){
+
+    return {
+
+        protocol:CONFIG.protocol,
+
+        version:CONFIG.version,
+
+        exportedAt:now(),
+
+        state:clone(state),
+
+        continuity:calculateContinuity(),
+
+        resilience:resilienceScore(),
+
+        vector:stateVector(),
+
+        preservation:preservationAudit()
+
+    };
+
+}
+
+
+/* ================================================================
+   WORKER REGISTRATION
+   ================================================================ */
+
+function registerWorkers(){
+
+    if(!WORKERS) return;
+
+    const definitions = [
+
+        {
+
+            name:"BLOODLINE_SCAN",
+
+            handler:()=>scan(),
+
+            interval:CONFIG.scanInterval
+
+        },
+
+        {
+
+            name:"BLOODLINE_CONTINUITY",
+
+            handler:()=>continuityCycle(),
+
+            interval:CONFIG.continuityInterval
+
+        },
+
+        {
+
+            name:"BLOODLINE_TRUST_GRAPH",
+
+            handler:()=>buildTrustGraph(),
+
+            interval:CONFIG.integrityInterval
+
+        },
+
+        {
+
+            name:"BLOODLINE_RESILIENCE",
+
+            handler:()=>resilienceScore(),
+
+            interval:CONFIG.scanInterval
+
+        },
+
+        {
+
+            name:"BLOODLINE_SELF_TEST",
+
+            handler:()=>selfTest(),
+
+            interval:CONFIG.integrityInterval
+
+        }
+
+    ];
+
+    definitions.forEach(def=>{
+
+        try{
+
+            if(
+
+                typeof WORKERS.registerWorker ===
+
+                "function"
+
+            ){
+
+                WORKERS.registerWorker({
+
+                    name:def.name,
+
+                    handler:def.handler,
+
+                    interval:def.interval,
+
+                    lane:"DEFENCE",
+
+                    priority:"HIGH"
+
+                });
+
+            }
+
+        }catch(error){
+
+            log(
+
+                "Worker registration failed",
+
+                def.name,
+
+                error
+
+            );
+
+        }
+
+    });
+
+}
+
+
+/* ================================================================
+   TIMER ENGINE
+   ================================================================ */
+
+function startTimers(){
+
+    stopTimers();
+
+    state.timers.scan = setInterval(
+
+        ()=>{
+
+            try{
+
+                scan();
+
+            }catch(error){}
+
+        },
+
+        CONFIG.scanInterval
+
+    );
+
+    state.timers.continuity = setInterval(
+
+        ()=>{
+
+            try{
+
+                continuityCycle();
+
+            }catch(error){}
+
+        },
+
+        CONFIG.continuityInterval
+
+    );
+
+    state.timers.integrity = setInterval(
+
+        ()=>{
+
+            try{
+
+                buildTrustGraph();
+
+                selfTest();
+
+            }catch(error){}
+
+        },
+
+        CONFIG.integrityInterval
+
+    );
+
+}
+
+
+function stopTimers(){
+
+    Object.keys(state.timers).forEach(key=>{
+
+        if(state.timers[key]){
+
+            clearInterval(state.timers[key]);
+
+            state.timers[key] = null;
+
+        }
+
+    });
+
+}
+
+
+/* ================================================================
+   COMMAND CONSOLE
+   ================================================================ */
+
+function command(name,payload={}){
+
+    const cmd =
+
+        safeString(name).toUpperCase();
+
+    switch(cmd){
+
+        case "STATUS":
+
+            return status();
+
+        case "SCAN":
+
+            return scan();
+
+        case "CONTINUITY":
+
+            return calculateContinuity();
+
+        case "CYCLE":
+
+            return continuityCycle();
+
+        case "RESILIENCE":
+
+            return resilienceScore();
+
+        case "VECTOR":
+
+            return stateVector();
+
+        case "TRUST":
+
+            return buildTrustGraph();
+
+        case "PRESERVATION":
+
+            return preservationAudit();
+
+        case "SELF_TEST":
+
+            return selfTest();
+
+        case "RECOVERY":
+
+            return createRecoveryPlan(payload);
+
+        case "OBJECTIVE":
+
+            return createObjective(payload);
+
+        case "PATHWAY":
+
+            return createProtectivePathway();
+
+        case "EXPORT":
+
+            return exportState();
+
+        case "START":
+
+            start();
+
+            return status();
+
+        case "STOP":
+
+            stop();
+
+            return status();
+
+        default:
+
+            return {
+
+                success:false,
+
+                error:"UNKNOWN_COMMAND",
+
+                command:cmd
+
+            };
+
+    }
+
+}
+
+
+/* ================================================================
+   START / STOP
+   ================================================================ */
+
+function start(){
+
+    if(state.active) return status();
+
+    state.active = true;
+
+    state.startedAt =
+
+        state.startedAt || now();
+
+    startTimers();
+
+    emit(
+
+        "BLOODLINE_ENGINE_STARTED",
+
+        status()
+
+    );
+
+    return status();
+
+}
+
+
+function stop(){
+
+    state.active = false;
+
+    stopTimers();
+
+    emit(
+
+        "BLOODLINE_ENGINE_STOPPED",
+
+        status()
+
+    );
+
+    return status();
+
+}
+
+
+/* ================================================================
+   BOOT
+   ================================================================ */
+
+function boot(){
+
+    if(state.booted){
+
+        return status();
+
+    }
+
+    state.booted = true;
+
+    state.startedAt = now();
+
+    registerWorkers();
+
+    analyseGenerations();
+
+    buildTrustGraph();
+
+    preservationAudit();
+
+    createProtectivePathway();
+
+    resilienceScore();
+
+    stateVector();
+
+    selfTest();
+
+    start();
+
+    emit(
+
+        "BLOODLINE_ENGINE_BOOTED",
+
+        status()
+
+    );
+
+    log(
+
+        "CHEP-12 BLOODLINE ENGINE ONLINE",
+
+        status()
+
+    );
+
+    return status();
+
+}
+
+
+/* ================================================================
+   PUBLIC API
+   ================================================================ */
+
+const API = {
+
+    protocol:CONFIG.protocol,
+
+    version:CONFIG.version,
+
+    config:CONFIG,
+
+    state,
+
+    boot,
+
+    start,
+
+    stop,
+
+    status,
+
+    command,
+
+    scan,
+
+    continuityCycle,
+
+    calculateContinuity,
+
+    analyseGenerations,
+
+    registerPerson,
+
+    registerRelationship,
+
+    registerKnowledge,
+
+    registerLocation,
+
+    registerAsset,
+
+    calculateConnectivity,
+
+    calculateAssetIntegrity,
+
+    calculateRecoveryReadiness,
+
+    resilienceScore,
+
+    stateVector,
+
+    buildTrustGraph,
+
+    preservationAudit,
+
+    createSignal,
+
+    createObjective,
+
+    createRecoveryPlan,
+
+    createProtectivePathway,
+
+    selfTest,
+
+    export:exportState
+
+};
+
+
+/* ================================================================
+   GLOBAL REGISTRATION
+   ================================================================ */
+
+global.CHIROMBE_BLOODLINE = API;
+
+global.CHIROMBE_BLOODLINE_ENGINE = API;
+
+global.CHIROMBE_ANCESTRAL_RESILIENCE = API;
+
+global.CHIROMBE_LINEAGE_ENGINE = API;
+
+
+/* ================================================================
+   SAFE BOOT
+   ================================================================ */
+
+try{
+
+    boot();
+
+}catch(error){
+
+    console.error(
+
+        "[CHEP-12] Boot error:",
+
+        error
+
+    );
+
+}
+
+
+/* ================================================================
+   END CHEP-12
+   ================================================================ */
+
+})(typeof window !== "undefined" ? window : globalThis);
