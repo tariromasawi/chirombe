@@ -130,7 +130,7 @@
   function seedKnowledge() {
     if (knowledge.length) return;
     var items = [
-      { status: "KNOWN", confidence: 0.95, category: "architecture", description: "Live browser core is js/*.js plus app.html. The file named 'chirombe engine' is not referenced by any HTML page.", source: "repository-audit", provenance: "file scan 2026-09-27" },
+      { status: "KNOWN", confidence: 0.95, category: "architecture", description: "The main index links to inspect.html and loads js/chirombe.js. The preserved file is fetched by the kernel bridge, not pasted into the page.", source: "repository-audit", provenance: "index.html" },
       { status: "KNOWN", confidence: 0.99, category: "integrity", description: "chirombe engine does not parse: a git rejection sentence is spliced at line 1869.", source: "node --check", provenance: "syntax check" },
       { status: "KNOWN", confidence: 0.9, category: "bus", description: "js/command-bus.js was syntactically broken (unclosed registerCommand). A one-brace repair restored the existing bus. No commands were renamed.", source: "repository-audit", provenance: "node --check before and after" },
       { status: "KNOWN", confidence: 1, category: "bloodline", description: "HRH Tarry Kupakwashe Masawi, also known as Tarry, is the son of HRH Saint Tariro Masawi. An earlier spouse label is retained as previousGeneration. No person was removed.", source: "explicit owner statement 2026-09-27", provenance: "data/family.json lineageCorrection" },

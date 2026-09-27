@@ -5,7 +5,7 @@
   "use strict";
   if (g.CHIROMBE_ACTIVATION) return;
 
-  var CACHE_NAME = "CHIROMBE_STATIC_v5";
+  var CACHE_NAME = "CHIROMBE_STATIC_v6";
   var MEMORY_KEY = "CHIROMBE_ENGINE_MEMORY_v1";
   var active = false;
   var manifest = [];
@@ -455,8 +455,11 @@
   }
 
   function checkCache() {
-    if (!g.navigator || !g.navigator.serviceWorker || typeof g.MessageChannel !== "function") return Promise.resolve({ status: "NOT_AVAILABLE" });
-    var controller = g.navigator.serviceWorker.controller;
+    var sw = null;
+    try { sw = g.navigator && g.navigator.serviceWorker; } catch (e) { sw = null; }
+    if (!sw || typeof g.MessageChannel !== "function") return Promise.resolve({ status: "NOT_AVAILABLE" });
+    var controller = null;
+    try { controller = sw.controller; } catch (e) { return Promise.resolve({ status: "NOT_AVAILABLE" }); }
     if (!controller) return Promise.resolve({ status: "NOT_CONTROLLING" });
     return new Promise(function (resolve) {
       var channel = new g.MessageChannel();

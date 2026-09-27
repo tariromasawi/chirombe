@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>CHIROMBE FILE</title>
+<style>
+  :root { color-scheme: dark; --ink:#07110d; --panel:#0c1a14; --line:#1d3a2c; --text:#d7f3e4; --dim:#7ea892; --amber:#e6c27a; }
+  * { box-sizing: border-box; }
+  html, body { margin:0; background:var(--ink); color:var(--text); font:15px/1.45 "Iowan Old Style", Palatino, serif; }
+  header, main { padding:16px 18px; }
+  header { border-bottom:1px solid var(--line); }
+  h1 { margin:0; font-size:22px; letter-spacing:.08em; }
+  h1 span, h2 { color:var(--amber); letter-spacing:.14em; font-size:12px; display:block; }
+  h2 { margin:0 0 8px; }
+  a { color:var(--amber); }
+  nav { display:flex; flex-wrap:wrap; gap:12px; padding:12px 18px; }
+  main { display:grid; gap:12px; }
+  @media (min-width:900px) { main { grid-template-columns:1fr 1fr; } .wide { grid-column:1 / -1; } }
+  section { background:var(--panel); border:1px solid var(--line); padding:12px; min-width:0; max-width:100%; overflow-x:auto; }
+  pre, p { margin:0; white-space:pre-wrap; word-break:break-word; font:12px/1.45 ui-monospace, monospace; color:#cfe7da; }
+  table { width:100%; border-collapse:collapse; font:12px/1.35 ui-monospace, monospace; table-layout:fixed; }
+  th, td { text-align:left; padding:4px 6px; border-bottom:1px solid var(--line); vertical-align:top; word-break:break-word; }
+  button { background:#10261c; color:var(--text); border:1px solid var(--line); padding:8px 10px; font:12px/1 ui-monospace, monospace; cursor:pointer; }
+</style>
+</head>
+<body>
+<header>
+  <h1><span>PRESERVED SOURCE · LIVE PROJECTION</span>CHIROMBE FILE</h1>
+  <p id="lead" style="color:#7ea892">The GitHub file is inspected here. It is not pasted into the main index.</p>
+</header>
+<nav>
+  <a href="./">main index</a>
+  <a href="./engine.html">engine</a>
+  <a id="github" href="https://github.com/tariromasawi/chirombe/blob/main/chirombe%20engine">GitHub file</a>
+  <a href="https://github.com/tariromasawi/chirombe">repository</a>
+</nav>
+<main>
+  <section>
+    <h2>FILE</h2>
+    <pre id="file">Reading the live file…</pre>
+  </section>
+  <section>
+    <h2>LIVE SYSTEM</h2>
+    <pre id="live">Waiting for the kernel.</pre>
+  </section>
+  <section class="wide">
+    <h2>SPLICE</h2>
+    <pre id="splice">…</pre>
+  </section>
+  <section class="wide">
+    <h2>SEGMENTS</h2>
+    <table id="segments"><thead><tr><th>segment</th><th>lines</th><th>global</th></tr></thead><tbody></tbody></table>
+    <p style="margin-top:10px"><button type="button" id="more">Show lines 1–40</button></p>
+    <pre id="excerpt" style="margin-top:8px"></pre>
+  </section>
+</main>
+<script src="js/engine/policy.js"></script>
+<script src="js/engine/ledger.js"></script>
+<script src="js/engine/adapters.js"></script>
+<script src="js/engine/chirombe-engine.js"></script>
+<script src="js/engine/kernel-bridge.js"></script>
+<script src="js/engine/activation.js"></script>
+<script src="js/engine/recovery.js"></script>
+<script>
+(function () {
+  var SEGMENTS = [
+    ["CHEP-01 CORE", "8–768", "CHIROMBE"],
+    ["CHEP-02 MEMORY", "769–1868", "CHIROMBE_MEMORY"],
+    ["CHEP-03 WORKERS", "recovered file", "CHIROMBE_WORKERS"],
+    ["CHEP-04 EVOLUTION", "1872–4530", "CHIROMBE_EVOLUTION"],
+    ["CHEP-05 PATHWAYS", "4531–7613", "CHIROMBE_PATHWAYS"],
+    ["CHEP-06 WATCHDOG", "7614–9932", "CHIROMBE_WATCHDOG"],
+    ["CHEP-07 KNOWLEDGE", "9933–13184", "CHIROMBE_KNOWLEDGE"],
+    ["CHEP-08 BUILD", "13185–16551", "CHIROMBE_BUILD"],
+    ["CHEP-09 ORCHESTRATOR", "16552–19964", "CHIROMBE_ORCHESTRATOR"],
+    ["CHEP-10 BACKEND", "19965–22627", "CHIROMBE_BACKEND"],
+    ["CHEP-11 DEFENCE", "22628–25359", "CHIROMBE_DEFENCE"],
+    ["CHEP-12 BLOODLINE", "25360–28125", "CHIROMBE_BLOODLINE"],
+    ["CHEP-13 LEGACY", "28126–31514", "CHIROMBE_LEGACY"],
+    ["CHEP-14 INTENTION", "31515–34729", "CHIROMBE_INTENTION"],
+    ["CHEP-15 RESONANCE", "34730–37648", "CHIROMBE_RESONANCE_CHAMBER"],
+    ["CHEP-17 SENTINEL", "37649–40009", "CHIROMBE_SENTINEL"]
+  ];
+  var body = document.querySelector("#segments tbody");
+  SEGMENTS.forEach(function (row) {
+    var tr = document.createElement("tr");
+    tr.innerHTML = "<td>" + row[0] + "</td><td>" + row[1] + "</td><td>" + row[2] + "</td>";
+    body.appendChild(tr);
+  });
+
+  function sha256(text) {
+    return crypto.subtle.digest("SHA-256", new TextEncoder().encode(text)).then(function (buf) {
+      return Array.prototype.map.call(new Uint8Array(buf), function (b) { return ("0" + b.toString(16)).slice(-2); }).join("");
+    });
+  }
+
+  var sourceText = "";
+  Promise.all([
+    fetch("./chirombe%20engine").then(function (r) { if (!r.ok) throw new Error("FILE_" + r.status); return r.text(); }),
+    fetch("./data/trusted-manifest.json").then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; })
+  ]).then(function (parts) {
+    sourceText = parts[0];
+    var lines = sourceText.split("\n");
+    var pin = parts[1] && parts[1].files && parts[1].files["chirombe engine"] && parts[1].files["chirombe engine"].sha256;
+    return sha256(sourceText).then(function (hash) {
+      var match = pin ? (hash === pin ? "MATCH" : "MISMATCH") : "NO_PIN";
+      document.getElementById("file").textContent = [
+        "name: chirombe engine",
+        "lines: " + lines.length,
+        "characters: " + sourceText.length,
+        "sha256: " + hash,
+        "trusted pin: " + (pin || "missing"),
+        "pin: " + match,
+        "github: https://github.com/tariromasawi/chirombe/blob/main/chirombe%20engine",
+        "raw on this site: ./chirombe%20engine",
+        "executed directly: no",
+        "live projection: kernel-bridge"
+      ].join("\n");
+      var start = Math.max(0, 1864);
+      document.getElementById("splice").textContent = lines.slice(start, 1880).map(function (line, i) {
+        return String(start + i + 1) + "  " + line;
+      }).join("\n");
+    });
+  }).catch(function (error) {
+    document.getElementById("file").textContent = "FILE HELD · " + (error && error.message ? error.message : "unavailable");
+  });
+
+  document.getElementById("more").onclick = function () {
+    var lines = sourceText ? sourceText.split("\n").slice(0, 40) : [];
+    document.getElementById("excerpt").textContent = lines.map(function (line, i) { return (i + 1) + "  " + line; }).join("\n");
+  };
+
+  function paintLive() {
+    var kernel = window.CHIROMBE_KERNEL_STATE || {};
+    var swarm = window.CHIROMBE_WORKERS;
+    var recovery = window.CHIROMBE_RECOVERY_STATUS;
+    document.getElementById("live").textContent = [
+      "kernel loaded: " + !!window.__CHIROMBE_KERNEL_LOADED__,
+      "swarm: " + (swarm && swarm.name || "not attached"),
+      "bridge kept: " + !!(window.CHIROMBE_WORKERS_BRIDGE && window.CHIROMBE_WORKERS_BRIDGE.bridge),
+      "recovery: " + (recovery && recovery.recovery || "waiting"),
+      "core intact: " + (recovery && recovery.core || "unknown"),
+      "notes: " + ((window.CHIROMBE_KERNEL_NOTES || []).join(", ") || "none yet"),
+      "index link: ./inspect.html",
+      "people: " + (kernel.people == null ? "pending" : kernel.people)
+    ].join("\n");
+  }
+  paintLive();
+  setInterval(paintLive, 2000);
+})();
+</script>
+</body>
+</html>

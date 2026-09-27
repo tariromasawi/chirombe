@@ -313,8 +313,10 @@
   }
 
   function cacheTrusted(path, text) {
-    if (!g.caches || typeof Response === "undefined") return;
-    g.caches.open("CHIROMBE_TRUSTED_v1").then(function (cache) {
+    var store = null;
+    try { store = g.caches; } catch (e) { return; }
+    if (!store || typeof Response === "undefined") return;
+    store.open("CHIROMBE_TRUSTED_v1").then(function (cache) {
       return cache.put(path, new Response(text));
     }).catch(function () {});
   }
