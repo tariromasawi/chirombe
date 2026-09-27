@@ -65,6 +65,7 @@
       }
     });
     g.__CHIROMBE_SPAWNED_WORKERS__ = state.workersSpawned;
+    g.CHIROMBE_WORKERS = { status: "SPAWNED", count: state.workersSpawned, files: WORKER_FILES.slice(), list: function () { return state.workers; } };
     g.CHIROMBE_ENGINE_WORKER_SPAWN = state.workers;
     log("workers spawned " + state.workersSpawned + "/" + WORKER_FILES.length);
   }
