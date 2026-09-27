@@ -105,6 +105,7 @@
   var system = new ZionProtectionCore();
   g.ZionProtectionCore = ZionProtectionCore;
   g.ZionProtect = system;
+  g.ZionProtect.snapshot = function () { return system.snapshot(); };
 
   function wireFamily(members) {
     if (!members || !members.length) return;
