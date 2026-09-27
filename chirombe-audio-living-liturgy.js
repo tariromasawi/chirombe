@@ -1995,3 +1995,3303 @@
   );
 
 })();
+/* ============================================================================
+   CHIROMBE AUDIO LIVING LITURGY
+   PART 2 — INTELLIGENT LITURGY / PRAYER / CONTENT COMPOSITION ENGINE
+   ----------------------------------------------------------------------------
+   Builds upon Part 1.
+
+   Responsibilities:
+     - Intelligent prayer composition
+     - Dynamic liturgy construction
+     - Bloodline-person prayer orchestration
+     - Novelty and repetition control
+     - Multi-language content architecture
+     - Spiritual declaration generation
+     - Ritual sequencing
+     - Call-and-response preparation
+     - Sacred-source provenance
+     - Original-content generation
+     - Session continuity
+     - Content memory
+     - Broadcast-ready composition
+
+   Important distinction:
+     This subsystem can create spiritual and devotional material, but it does
+     not claim that software can scientifically detect, identify, communicate
+     with, or repel supernatural entities. Spiritual declarations are treated
+     as user-directed devotional practice.
+
+   Copyright/source principle:
+     CHIROMBE must not falsely attribute generated text to scripture, religion,
+     prophet, author, or historical source. Every item receives provenance.
+ ============================================================================ */
+
+(() => {
+  "use strict";
+
+  const AUDIO =
+    window.CHIROMBE_AUDIO ||
+    (
+      window.CHIROMBE &&
+      window.CHIROMBE.AudioLivingLiturgy
+    );
+
+  if (!AUDIO) {
+    console.error(
+      "CHIROMBE AUDIO PART 2: Part 1 kernel not found."
+    );
+    return;
+  }
+
+  const root =
+    window.CHIROMBE ||
+    (window.CHIROMBE = {});
+
+  const VERSION = "1.0.0-part2";
+
+  /* ------------------------------------------------------------------------
+     01. CONTENT ENGINE NAMESPACE
+     ------------------------------------------------------------------------ */
+
+  const LITURGY =
+    AUDIO.Liturgy ||
+    (AUDIO.Liturgy = {});
+
+  LITURGY.VERSION = VERSION;
+  LITURGY.STATUS = "INITIALISING";
+
+  window.CHIROMBE_AUDIO_LITURGY_ENGINE =
+    LITURGY;
+
+  /* ------------------------------------------------------------------------
+     02. CONTENT TAXONOMY
+     ------------------------------------------------------------------------ */
+
+  const CONTENT_TYPES = Object.freeze({
+
+    PRAYER:
+      "PRAYER",
+
+    DECLARATION:
+      "DECLARATION",
+
+    GRATITUDE:
+      "GRATITUDE",
+
+    REFLECTION:
+      "REFLECTION",
+
+    PROTECTION_INTENTION:
+      "PROTECTION_INTENTION",
+
+    PERSON_BLESSING:
+      "PERSON_BLESSING",
+
+    FAMILY_UNITY:
+      "FAMILY_UNITY",
+
+    COURAGE:
+      "COURAGE",
+
+    WISDOM:
+      "WISDOM",
+
+    PEACE:
+      "PEACE",
+
+    HOPE:
+      "HOPE",
+
+    REMEMBRANCE:
+      "REMEMBRANCE",
+
+    TRUTH:
+      "TRUTH",
+
+    COMPASSION:
+      "COMPASSION",
+
+    STEWARDSHIP:
+      "STEWARDSHIP",
+
+    CLOSING:
+      "CLOSING",
+
+    CALL:
+      "CALL",
+
+    RESPONSE:
+      "RESPONSE",
+
+    SILENCE:
+      "SILENCE",
+
+    SYSTEM_INFORMATION:
+      "SYSTEM_INFORMATION",
+
+    ALERT:
+      "ALERT",
+
+    RECOVERY_REPORT:
+      "RECOVERY_REPORT",
+
+    EVOLUTION_REPORT:
+      "EVOLUTION_REPORT"
+  });
+
+  LITURGY.CONTENT_TYPES =
+    CONTENT_TYPES;
+
+  /* ------------------------------------------------------------------------
+     03. THEMATIC VOCABULARY
+     ------------------------------------------------------------------------ */
+
+  const THEMES = {
+
+    PROTECTION: [
+      "protection",
+      "peace",
+      "wisdom",
+      "courage",
+      "clarity",
+      "resilience",
+      "truth",
+      "safety",
+      "unity"
+    ],
+
+    FAMILY: [
+      "family",
+      "lineage",
+      "unity",
+      "love",
+      "respect",
+      "responsibility",
+      "remembrance",
+      "continuity",
+      "legacy"
+    ],
+
+    COURAGE: [
+      "courage",
+      "strength",
+      "steadfastness",
+      "hope",
+      "perseverance",
+      "calm",
+      "confidence"
+    ],
+
+    PEACE: [
+      "peace",
+      "stillness",
+      "patience",
+      "compassion",
+      "rest",
+      "clarity",
+      "gentleness"
+    ],
+
+    WISDOM: [
+      "wisdom",
+      "discernment",
+      "truth",
+      "learning",
+      "understanding",
+      "humility",
+      "responsibility"
+    ],
+
+    GRATITUDE: [
+      "gratitude",
+      "life",
+      "family",
+      "creation",
+      "opportunity",
+      "knowledge",
+      "community",
+      "hope"
+    ],
+
+    NIGHT: [
+      "rest",
+      "peace",
+      "watchfulness",
+      "reflection",
+      "quiet",
+      "safety",
+      "renewal"
+    ],
+
+    MORNING: [
+      "renewal",
+      "purpose",
+      "gratitude",
+      "courage",
+      "wisdom",
+      "clarity",
+      "hope"
+    ],
+
+    REMEMBRANCE: [
+      "memory",
+      "legacy",
+      "gratitude",
+      "honour",
+      "continuity",
+      "family",
+      "wisdom"
+    ]
+  };
+
+  LITURGY.THEMES = THEMES;
+
+  /* ------------------------------------------------------------------------
+     04. TRADITION MODES
+     ------------------------------------------------------------------------ */
+
+  const TRADITION_MODES = {
+
+    ORIGINAL:
+      "ORIGINAL",
+
+    MASOWE_PERSONAL:
+      "MASOWE_PERSONAL",
+
+    CHRISTIAN_REFLECTION:
+      "CHRISTIAN_REFLECTION",
+
+    JEWISH_REFLECTION:
+      "JEWISH_REFLECTION",
+
+    ISLAMIC_REFLECTION:
+      "ISLAMIC_REFLECTION",
+
+    HINDU_REFLECTION:
+      "HINDU_REFLECTION",
+
+    BUDDHIST_REFLECTION:
+      "BUDDHIST_REFLECTION",
+
+    INTERFAITH_REFLECTION:
+      "INTERFAITH_REFLECTION",
+
+    USER_PROVIDED:
+      "USER_PROVIDED"
+  };
+
+  LITURGY.TRADITION_MODES =
+    TRADITION_MODES;
+
+  /*
+   * CHIROMBE does not automatically blend religions into one theology.
+   * A selected tradition is treated as a distinct interpretive mode.
+   */
+
+  /* ------------------------------------------------------------------------
+     05. LANGUAGE PACKS
+     ------------------------------------------------------------------------ */
+
+  const LANGUAGE_PACKS = {
+
+    en: {
+      name: "English",
+
+      openings: [
+        "May this moment begin in peace.",
+        "Let truth guide this moment.",
+        "Let wisdom govern our words and actions.",
+        "May courage remain steady within this household.",
+        "Let peace be established in this space."
+      ],
+
+      gratitude: [
+        "We give thanks for life, family, learning and another opportunity to grow.",
+        "We acknowledge the gift of another day and the responsibilities that come with it.",
+        "We give thanks for those who have helped us and for the wisdom gained through experience."
+      ],
+
+      protection: [
+        "May this household be guided by peace, wisdom, courage and truth.",
+        "Let fear give way to clarity, and confusion give way to understanding.",
+        "May every person here be strengthened to choose what protects life, dignity and peace.",
+        "Let harmful intentions find no encouragement in our actions or words."
+      ],
+
+      courage: [
+        "Give us courage to meet difficulty without surrendering wisdom.",
+        "Strengthen the heart to remain calm when circumstances become difficult.",
+        "Let courage be guided by compassion and responsibility."
+      ],
+
+      closing: [
+        "Let peace remain with this household.",
+        "May wisdom accompany every decision that follows.",
+        "Let this time of reflection end with gratitude, courage and peace."
+      ]
+    },
+
+    sh: {
+      name: "Shona",
+
+      openings: [
+        "Mwari ndiMwari; ngatitangei nerugare.",
+        "Ngirozi dzerunyararo nemweya werudo ngazvititungamirire.",
+        "Ngatitangei nguva ino nechokwadi, rugare nouchenjeri.",
+        "Ngative vakasimba mumwoyo asi vakapfava murudo."
+      ],
+
+      gratitude: [
+        "Tinotenda noupenyu, mhuri, kudzidza uye mukana wokukura.",
+        "Tinotenda Mwari nokuda kwezuva idzva nemikana mitsva.",
+        "Tinorangarira avo vakatitangira uye tinochengeta huchenjeri hwavakatidzidzisa."
+      ],
+
+      protection: [
+        "Mwari ndiMwari; ngapave norugare, chokwadi nouchenjeri mumhuri.",
+        "Kutya ngakudzike, rugare noruzivo zvikwire.",
+        "Ngatidzivirirei hupenyu, chiremerera uye kubatana kwemhuri.",
+        "Mwoyo yedu ngaigariswe norudo, huchenjeri uye ushingi."
+      ],
+
+      courage: [
+        "Mwari tipei ushingi hunotungamirirwa nouchenjeri.",
+        "Ngative vakasimba pakatarisana nematambudziko.",
+        "Uchenjeri ngarutitungamirire pakusarudza zvakanaka."
+      ],
+
+      closing: [
+        "Rugare ngarugare mumhuri.",
+        "Uchenjeri ngahufambe nesu muzvisarudzo zvedu.",
+        "Ngatipedzei nguva ino nerutendo, rugare noushingi."
+      ]
+    }
+  };
+
+  LITURGY.LANGUAGE_PACKS =
+    LANGUAGE_PACKS;
+
+  /* ------------------------------------------------------------------------
+     06. SACRED VOCABULARY
+     ------------------------------------------------------------------------ */
+
+  const SACRED_VOCABULARY = {
+
+    "MWARI_NDI_MWARI": {
+      text: "Mwari ndiMwari",
+      language: "sh",
+      provenance: "USER_PREFERRED_PHRASE",
+      category: "FAITH_ANCHOR"
+    },
+
+    "MUDZIMU_UNOYERA": {
+      text: "Mudzimu Unoyera",
+      language: "sh",
+      provenance: "USER_PREFERRED_PHRASE",
+      category: "SPIRITUAL_VOCABULARY"
+    },
+
+    "TRUTH": {
+      text: "Truth",
+      language: "en",
+      provenance: "ORIGINAL_CONCEPT",
+      category: "ANCHOR"
+    },
+
+    "PEACE": {
+      text: "Peace",
+      language: "en",
+      provenance: "ORIGINAL_CONCEPT",
+      category: "ANCHOR"
+    },
+
+    "UNITY": {
+      text: "Unity",
+      language: "en",
+      provenance: "ORIGINAL_CONCEPT",
+      category: "ANCHOR"
+    },
+
+    "CONTINUITY": {
+      text: "Continuity",
+      language: "en",
+      provenance: "ORIGINAL_CONCEPT",
+      category: "ANCHOR"
+    }
+  };
+
+  LITURGY.SACRED_VOCABULARY =
+    SACRED_VOCABULARY;
+
+  /* ------------------------------------------------------------------------
+     07. CONTENT MEMORY
+     ------------------------------------------------------------------------ */
+
+  const contentMemory = [];
+
+  function rememberContent(content) {
+
+    const record = {
+      id:
+        content.id ||
+        `CONTENT-${Date.now()}-${Math.random()
+          .toString(36)
+          .slice(2)}`,
+
+      timestamp:
+        new Date().toISOString(),
+
+      fingerprint:
+        fingerprint(
+          content.text ||
+          ""
+        ),
+
+      type:
+        content.type ||
+        CONTENT_TYPES.PRAYER,
+
+      theme:
+        content.theme ||
+        null,
+
+      language:
+        content.language ||
+        "en",
+
+      personKey:
+        content.personKey ||
+        null,
+
+      mode:
+        content.mode ||
+        TRADITION_MODES.ORIGINAL,
+
+      provenance:
+        content.provenance ||
+        "ORIGINAL",
+
+      text:
+        content.text ||
+        ""
+    };
+
+    contentMemory.push(record);
+
+    const max =
+      AUDIO.CONFIG &&
+      AUDIO.CONFIG.maxMemoryEntries
+        ? AUDIO.CONFIG.maxMemoryEntries
+        : 2000;
+
+    while (
+      contentMemory.length >
+      max
+    ) {
+      contentMemory.shift();
+    }
+
+    if (
+      typeof AUDIO.remember ===
+      "function"
+    ) {
+      AUDIO.remember(
+        "LITURGY_CONTENT",
+        record,
+        0.65
+      );
+    }
+
+    return record;
+  }
+
+  LITURGY.contentMemory =
+    contentMemory;
+
+  LITURGY.getContentMemory =
+    function(limit = 100) {
+      return contentMemory
+        .slice(-Math.max(1, limit));
+    };
+
+  /* ------------------------------------------------------------------------
+     08. FINGERPRINTING
+     ------------------------------------------------------------------------ */
+
+  function fingerprint(text) {
+
+    const value =
+      String(text || "")
+        .toLowerCase()
+        .replace(/[^\p{L}\p{N}\s]/gu, "")
+        .replace(/\s+/g, " ")
+        .trim();
+
+    let hash =
+      2166136261;
+
+    for (
+      let i = 0;
+      i < value.length;
+      i++
+    ) {
+      hash ^= value.charCodeAt(i);
+
+      hash +=
+        (hash << 1) +
+        (hash << 4) +
+        (hash << 7) +
+        (hash << 8) +
+        (hash << 24);
+    }
+
+    return (
+      hash >>> 0
+    ).toString(16);
+  }
+
+  LITURGY.fingerprint =
+    fingerprint;
+
+  /* ------------------------------------------------------------------------
+     09. TOKEN / PHRASE NOVELTY ANALYSIS
+     ------------------------------------------------------------------------ */
+
+  function tokenise(text) {
+
+    return String(text || "")
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}\s]/gu, " ")
+      .split(/\s+/)
+      .filter(Boolean);
+  }
+
+  function similarity(a, b) {
+
+    const A =
+      new Set(tokenise(a));
+
+    const B =
+      new Set(tokenise(b));
+
+    if (!A.size || !B.size) {
+      return 0;
+    }
+
+    let intersection = 0;
+
+    for (const token of A) {
+      if (B.has(token)) {
+        intersection += 1;
+      }
+    }
+
+    const union =
+      new Set([
+        ...A,
+        ...B
+      ]).size;
+
+    return (
+      intersection /
+      Math.max(1, union)
+    );
+  }
+
+  function noveltyScore(text) {
+
+    if (!contentMemory.length) {
+      return 1;
+    }
+
+    const recent =
+      contentMemory.slice(-100);
+
+    let maximumSimilarity = 0;
+
+    for (const item of recent) {
+
+      const score =
+        similarity(
+          text,
+          item.text
+        );
+
+      if (
+        score >
+        maximumSimilarity
+      ) {
+        maximumSimilarity =
+          score;
+      }
+    }
+
+    return Math.max(
+      0,
+      1 -
+      maximumSimilarity
+    );
+  }
+
+  LITURGY.similarity =
+    similarity;
+
+  LITURGY.noveltyScore =
+    noveltyScore;
+
+  /* ------------------------------------------------------------------------
+     10. TEMPLATE LIBRARY
+     ------------------------------------------------------------------------ */
+
+  const TEMPLATES = {
+
+    OPENING: [
+      "Let this moment begin with {theme}.",
+      "We enter this moment with {theme}.",
+      "Let our attention settle upon {theme}.",
+      "May this time be guided by {theme}."
+    ],
+
+    GRATITUDE: [
+      "We give thanks for {subject}.",
+      "We acknowledge with gratitude {subject}.",
+      "Let us remember with gratitude {subject}.",
+      "We honour the opportunity to appreciate {subject}."
+    ],
+
+    PROTECTION: [
+      "May {person} be surrounded by wisdom, peace and courage.",
+      "May {person} walk with clarity and strength.",
+      "Let {person} be guided toward choices that preserve dignity, safety and peace.",
+      "May {person} find courage when circumstances become difficult."
+    ],
+
+    FAMILY: [
+      "May this family remain united by truth, compassion and wisdom.",
+      "Let understanding strengthen the bonds between generations.",
+      "May the family remember its responsibilities to one another.",
+      "Let every generation contribute to peace and continuity."
+    ],
+
+    COURAGE: [
+      "When difficulty arrives, may courage remain stronger than fear.",
+      "May wisdom accompany courage in every difficult decision.",
+      "Let strength be expressed through patience, responsibility and compassion."
+    ],
+
+    PEACE: [
+      "Let the mind become still enough to recognise what truly matters.",
+      "May peace guide the atmosphere of this moment.",
+      "Let unnecessary fear give way to calm attention."
+    ],
+
+    CLOSING: [
+      "Let what is good in this reflection continue through the next actions.",
+      "May wisdom remain present after this moment ends.",
+      "Let peace accompany every person returning to the work of the day."
+    ]
+  };
+
+  LITURGY.TEMPLATES =
+    TEMPLATES;
+
+  /* ------------------------------------------------------------------------
+     11. RANDOMISATION WITHOUT CHAOS
+     ------------------------------------------------------------------------ */
+
+  function choose(list, excluded = []) {
+
+    if (
+      !Array.isArray(list) ||
+      !list.length
+    ) {
+      return "";
+    }
+
+    const available =
+      list.filter(
+        item =>
+          !excluded.includes(item)
+      );
+
+    const pool =
+      available.length
+        ? available
+        : list;
+
+    return pool[
+      Math.floor(
+        Math.random() *
+        pool.length
+      )
+    ];
+  }
+
+  /* ------------------------------------------------------------------------
+     12. THEME RESOLUTION
+     ------------------------------------------------------------------------ */
+
+  function resolveThemes(options = {}) {
+
+    const requested =
+      Array.isArray(options.themes)
+        ? options.themes
+        : [];
+
+    const result =
+      [...requested];
+
+    const category =
+      options.category ||
+      "PROTECTION";
+
+    const defaults =
+      THEMES[category] ||
+      THEMES.PROTECTION;
+
+    while (
+      result.length < 3
+    ) {
+
+      const candidate =
+        choose(defaults, result);
+
+      if (
+        candidate &&
+        !result.includes(candidate)
+      ) {
+        result.push(candidate);
+      } else {
+        break;
+      }
+    }
+
+    return [
+      ...new Set(result)
+    ];
+  }
+
+  LITURGY.resolveThemes =
+    resolveThemes;
+
+  /* ------------------------------------------------------------------------
+     13. LANGUAGE RESOLUTION
+     ------------------------------------------------------------------------ */
+
+  function resolveLanguage(
+    options = {}
+  ) {
+
+    const requested =
+      options.language;
+
+    if (
+      requested &&
+      LANGUAGE_PACKS[requested]
+    ) {
+      return requested;
+    }
+
+    if (
+      AUDIO.state &&
+      AUDIO.state.currentLanguage &&
+      LANGUAGE_PACKS[
+        AUDIO.state.currentLanguage
+      ]
+    ) {
+      return AUDIO.state.currentLanguage;
+    }
+
+    return "en";
+  }
+
+  LITURGY.resolveLanguage =
+    resolveLanguage;
+
+  /* ------------------------------------------------------------------------
+     14. PERSON PROFILE NORMALISATION
+     ------------------------------------------------------------------------ */
+
+  function normalisePerson(
+    person,
+    index = 0
+  ) {
+
+    if (
+      typeof person ===
+      "string"
+    ) {
+
+      return {
+        personKey:
+          `PERSON_${index + 1}`,
+
+        displayName:
+          person,
+
+        preferredLanguage:
+          "en",
+
+        approvedThemes:
+          [],
+
+        privacyMode:
+          false
+      };
+    }
+
+    if (
+      !person ||
+      typeof person !==
+      "object"
+    ) {
+
+      return {
+        personKey:
+          `PERSON_${index + 1}`,
+
+        displayName:
+          `Family member ${index + 1}`,
+
+        preferredLanguage:
+          "en",
+
+        approvedThemes:
+          [],
+
+        privacyMode:
+          true
+      };
+    }
+
+    return {
+
+      personKey:
+        person.personKey ||
+        person.id ||
+        `PERSON_${index + 1}`,
+
+      displayName:
+        person.displayName ||
+        person.name ||
+        `Family member ${index + 1}`,
+
+      preferredLanguage:
+        person.preferredLanguage ||
+        "en",
+
+      approvedThemes:
+        Array.isArray(
+          person.approvedThemes
+        )
+          ? person.approvedThemes
+          : [],
+
+      traditionMode:
+        person.traditionMode ||
+        TRADITION_MODES.ORIGINAL,
+
+      privacyMode:
+        !!person.privacyMode,
+
+      sessionFrequency:
+        person.sessionFrequency ||
+        null,
+
+      recentThemes:
+        Array.isArray(
+          person.recentThemes
+        )
+          ? person.recentThemes
+          : []
+    };
+  }
+
+  LITURGY.normalisePerson =
+    normalisePerson;
+
+  /* ------------------------------------------------------------------------
+     15. PERSON-SPECIFIC SUBJECT
+     ------------------------------------------------------------------------ */
+
+  function personReference(person) {
+
+    if (
+      person.privacyMode
+    ) {
+      return "this family member";
+    }
+
+    return person.displayName;
+  }
+
+  /* ------------------------------------------------------------------------
+     16. ORIGINAL PRAYER GENERATOR
+     ------------------------------------------------------------------------ */
+
+  function generatePrayer(
+    options = {}
+  ) {
+
+    const language =
+      resolveLanguage(options);
+
+    const pack =
+      LANGUAGE_PACKS[language] ||
+      LANGUAGE_PACKS.en;
+
+    const category =
+      options.category ||
+      "PROTECTION";
+
+    const themes =
+      resolveThemes({
+        ...options,
+        category
+      });
+
+    const person =
+      options.person
+        ? normalisePerson(
+            options.person
+          )
+        : null;
+
+    const personName =
+      person
+        ? personReference(person)
+        : "every person represented in this prayer";
+
+    const sections = [];
+
+    /*
+     * Opening
+     */
+    sections.push(
+      choose(
+        pack.openings
+      )
+    );
+
+    /*
+     * Theme statement
+     */
+    const theme =
+      choose(themes);
+
+    sections.push(
+      TEMPLATES.OPENING
+        ? fillTemplate(
+            choose(
+              TEMPLATES.OPENING
+            ),
+            {
+              theme
+            }
+          )
+        : ""
+    );
+
+    /*
+     * Gratitude
+     */
+    sections.push(
+      choose(
+        pack.gratitude
+      )
+    );
+
+    /*
+     * Person-specific protection
+     */
+    if (person) {
+
+      const template =
+        choose(
+          TEMPLATES.PROTECTION
+        );
+
+      sections.push(
+        fillTemplate(
+          template,
+          {
+            person:
+              personName
+          }
+        )
+      );
+    } else {
+
+      sections.push(
+        choose(
+          pack.protection
+        )
+      );
+    }
+
+    /*
+     * Courage
+     */
+    sections.push(
+      choose(
+        pack.courage
+      )
+    );
+
+    /*
+     * Family unity
+     */
+    if (
+      options.includeFamilyUnity !== false
+    ) {
+
+      sections.push(
+        choose(
+          TEMPLATES.FAMILY
+        )
+      );
+    }
+
+    /*
+     * Peace
+     */
+    sections.push(
+      choose(
+        TEMPLATES.PEACE
+      )
+    );
+
+    /*
+     * Optional sacred anchor
+     */
+    if (
+      options.includeSacredAnchor
+    ) {
+
+      const anchor =
+        choose(
+          Object.values(
+            SACRED_VOCABULARY
+          )
+            .filter(
+              item =>
+                item.language ===
+                language
+            )
+            .map(
+              item =>
+                item.text
+            )
+        );
+
+      if (anchor) {
+        sections.push(anchor);
+      }
+    }
+
+    /*
+     * Closing
+     */
+    sections.push(
+      choose(
+        pack.closing
+      )
+    );
+
+    let text =
+      sections
+        .filter(Boolean)
+        .join(" ");
+
+    /*
+     * Novelty repair.
+     *
+     * The system does not simply accept a generated sequence. It checks
+     * similarity against recent content and makes a second construction
+     * attempt when repetition becomes excessive.
+     */
+
+    let novelty =
+      noveltyScore(text);
+
+    let attempts = 0;
+
+    while (
+      novelty < 0.42 &&
+      attempts < 6
+    ) {
+
+      attempts += 1;
+
+      const alternativeSections =
+        sections.map(
+          section => {
+
+            if (
+              Math.random() >
+              0.45
+            ) {
+              return section;
+            }
+
+            return choose(
+              [
+                ...pack.protection,
+                ...pack.courage,
+                ...pack.closing
+              ]
+            );
+          }
+        );
+
+      text =
+        alternativeSections
+          .filter(Boolean)
+          .join(" ");
+
+      novelty =
+        noveltyScore(text);
+    }
+
+    const content = {
+
+      id:
+        `PRAYER-${Date.now()}-${Math.random()
+          .toString(36)
+          .slice(2)}`,
+
+      type:
+        person
+          ? CONTENT_TYPES.PERSON_BLESSING
+          : CONTENT_TYPES.PRAYER,
+
+      text,
+
+      language,
+
+      category,
+
+      themes,
+
+      personKey:
+        person
+          ? person.personKey
+          : null,
+
+      personName:
+        person
+          ? person.displayName
+          : null,
+
+      mode:
+        options.traditionMode ||
+        TRADITION_MODES.ORIGINAL,
+
+      provenance:
+        "ORIGINAL_GENERATED_BY_CHIROMBE",
+
+      novelty,
+
+      generationAttempts:
+        attempts + 1,
+
+      generatedAt:
+        new Date().toISOString()
+    };
+
+    rememberContent(content);
+
+    if (
+      typeof AUDIO.emit ===
+      "function"
+    ) {
+
+      AUDIO.emit(
+        "LITURGY_PRAYER_GENERATED",
+        content
+      );
+    }
+
+    return content;
+  }
+
+  LITURGY.generatePrayer =
+    generatePrayer;
+
+  /* ------------------------------------------------------------------------
+     17. TEMPLATE INTERPOLATION
+     ------------------------------------------------------------------------ */
+
+  function fillTemplate(
+    template,
+    values = {}
+  ) {
+
+    return String(template || "")
+      .replace(
+        /\{([^}]+)\}/g,
+        (_, key) =>
+          values[key] !== undefined
+            ? String(values[key])
+            : ""
+      );
+  }
+
+  /* ------------------------------------------------------------------------
+     18. PROTECTION DECLARATION GENERATOR
+     ------------------------------------------------------------------------ */
+
+  function generateDeclaration(
+    options = {}
+  ) {
+
+    const language =
+      resolveLanguage(options);
+
+    const pack =
+      LANGUAGE_PACKS[language] ||
+      LANGUAGE_PACKS.en;
+
+    const themes =
+      resolveThemes({
+        ...options,
+        category:
+          "PROTECTION"
+      });
+
+    const opening =
+      choose(
+        pack.protection
+      );
+
+    const emphasis =
+      choose([
+        "Let truth guide this household.",
+        "Let peace remain stronger than fear.",
+        "Let wisdom govern every response.",
+        "Let courage serve life and dignity.",
+        "Let unity overcome unnecessary division.",
+        "Let compassion remain present even during difficulty."
+      ]);
+
+    const closing =
+      choose(
+        pack.closing
+      );
+
+    const text =
+      [
+        opening,
+        emphasis,
+        closing
+      ].join(" ");
+
+    const declaration = {
+
+      id:
+        `DECL-${Date.now()}-${Math.random()
+          .toString(36)
+          .slice(2)}`,
+
+      type:
+        CONTENT_TYPES.DECLARATION,
+
+      text,
+
+      language,
+
+      themes,
+
+      mode:
+        options.traditionMode ||
+        TRADITION_MODES.ORIGINAL,
+
+      provenance:
+        "ORIGINAL_GENERATED_BY_CHIROMBE",
+
+      spiritualStatus:
+        "DEVOTIONAL_DECLARATION",
+
+      factualStatus:
+        "NOT_SENSOR_EVIDENCE",
+
+      generatedAt:
+        new Date().toISOString()
+    };
+
+    rememberContent(
+      declaration
+    );
+
+    return declaration;
+  }
+
+  LITURGY.generateDeclaration =
+    generateDeclaration;
+
+  /* ------------------------------------------------------------------------
+     19. GRATITUDE GENERATOR
+     ------------------------------------------------------------------------ */
+
+  function generateGratitude(
+    options = {}
+  ) {
+
+    const language =
+      resolveLanguage(options);
+
+    const pack =
+      LANGUAGE_PACKS[language] ||
+      LANGUAGE_PACKS.en;
+
+    const subject =
+      options.subject ||
+      choose([
+        "life",
+        "family",
+        "learning",
+        "wisdom gained through experience",
+        "the opportunity to begin again",
+        "people who have offered kindness",
+        "the responsibilities entrusted to us"
+      ]);
+
+    const text =
+      fillTemplate(
+        choose(
+          TEMPLATES.GRATITUDE
+        ),
+        {
+          subject
+        }
+      );
+
+    const result = {
+
+      id:
+        `GRAT-${Date.now()}-${Math.random()
+          .toString(36)
+          .slice(2)}`,
+
+      type:
+        CONTENT_TYPES.GRATITUDE,
+
+      text,
+
+      language,
+
+      subject,
+
+      provenance:
+        "ORIGINAL_GENERATED_BY_CHIROMBE",
+
+      generatedAt:
+        new Date().toISOString()
+    };
+
+    rememberContent(result);
+
+    return result;
+  }
+
+  LITURGY.generateGratitude =
+    generateGratitude;
+
+  /* ------------------------------------------------------------------------
+     20. PERSON-BY-PERSON PRAYER
+     ------------------------------------------------------------------------ */
+
+  function generatePersonPrayer(
+    person,
+    options = {}
+  ) {
+
+    const profile =
+      normalisePerson(person);
+
+    const language =
+      profile.preferredLanguage &&
+      LANGUAGE_PACKS[
+        profile.preferredLanguage
+      ]
+        ? profile.preferredLanguage
+        : resolveLanguage(options);
+
+    const themes =
+      profile.approvedThemes.length
+        ? profile.approvedThemes
+        : resolveThemes(options);
+
+    const result =
+      generatePrayer({
+        ...options,
+
+        language,
+
+        themes,
+
+        person: profile,
+
+        category:
+          options.category ||
+          "PROTECTION",
+
+        includeFamilyUnity:
+          options.includeFamilyUnity !== false,
+
+        includeSacredAnchor:
+          options.includeSacredAnchor === true
+      });
+
+    result.personKey =
+      profile.personKey;
+
+    result.personName =
+      profile.displayName;
+
+    return result;
+  }
+
+  LITURGY.generatePersonPrayer =
+    generatePersonPrayer;
+
+  /* ------------------------------------------------------------------------
+     21. BLOODLINE SOURCE RESOLUTION
+     ------------------------------------------------------------------------ */
+
+  function discoverBloodline() {
+
+    const candidates = [
+
+      window.CHIROMBE_BLOODLINE,
+
+      root.BLOODLINE,
+
+      window.ChirombeBloodline,
+
+      window.CHIROMBE_FAMILY,
+
+      window.CHIROMBE &&
+      window.CHIROMBE.BLOODLINE
+    ];
+
+    for (
+      const candidate of candidates
+    ) {
+
+      if (!candidate) {
+        continue;
+      }
+
+      if (
+        Array.isArray(candidate)
+      ) {
+        return candidate;
+      }
+
+      if (
+        Array.isArray(
+          candidate.members
+        )
+      ) {
+        return candidate.members;
+      }
+
+      if (
+        Array.isArray(
+          candidate.people
+        )
+      ) {
+        return candidate.people;
+      }
+    }
+
+    return [];
+  }
+
+  LITURGY.discoverBloodline =
+    discoverBloodline;
+
+  /* ------------------------------------------------------------------------
+     22. BLOODLINE PRAYER PLAN
+     ------------------------------------------------------------------------ */
+
+  function createBloodlinePlan(
+    options = {}
+  ) {
+
+    const people =
+      options.people ||
+      discoverBloodline();
+
+    const profiles =
+      people.map(
+        (person, index) =>
+          normalisePerson(
+            person,
+            index
+          )
+      );
+
+    const plan = {
+
+      id:
+        `PLAN-${Date.now()}-${Math.random()
+          .toString(36)
+          .slice(2)}`,
+
+      createdAt:
+        new Date().toISOString(),
+
+      mode:
+        options.mode ||
+        "BLOODLINE_WATCH",
+
+      language:
+        options.language ||
+        null,
+
+      people:
+        profiles.map(
+          profile => ({
+            personKey:
+              profile.personKey,
+
+            displayName:
+              profile.displayName,
+
+            preferredLanguage:
+              profile.preferredLanguage,
+
+            approvedThemes:
+              profile.approvedThemes,
+
+            privacyMode:
+              profile.privacyMode,
+
+            status:
+              "PENDING"
+          })
+        ),
+
+      total:
+        profiles.length,
+
+      completed:
+        0
+    };
+
+    if (
+      typeof AUDIO.remember ===
+      "function"
+    ) {
+
+      AUDIO.remember(
+        "BLOODLINE_LITURGY_PLAN",
+        plan,
+        0.85
+      );
+    }
+
+    if (
+      typeof AUDIO.emit ===
+      "function"
+    ) {
+
+      AUDIO.emit(
+        "BLOODLINE_LITURGY_PLAN_CREATED",
+        plan
+      );
+    }
+
+    return {
+      plan,
+      profiles
+    };
+  }
+
+  LITURGY.createBloodlinePlan =
+    createBloodlinePlan;
+
+  /* ------------------------------------------------------------------------
+     23. BLOODLINE SESSION GENERATOR
+     ------------------------------------------------------------------------ */
+
+  function generateBloodlineSession(
+    options = {}
+  ) {
+
+    const {
+      plan,
+      profiles
+    } =
+      createBloodlinePlan(
+        options
+      );
+
+    const content = [];
+
+    /*
+     * Opening
+     */
+    content.push(
+      generatePrayer({
+        ...options,
+
+        category:
+          "PROTECTION",
+
+        includeFamilyUnity:
+          true,
+
+        includeSacredAnchor:
+          options.includeSacredAnchor === true
+      })
+    );
+
+    /*
+     * Each approved/available person receives an individual composition.
+     *
+     * We do not infer curses, possession, spiritual status, guilt, or danger
+     * from a person's identity. The content is protective/devotional only.
+     */
+
+    for (
+      let i = 0;
+      i < profiles.length;
+      i++
+    ) {
+
+      const profile =
+        profiles[i];
+
+      const prayer =
+        generatePersonPrayer(
+          profile,
+          {
+            ...options,
+
+            category:
+              options.personCategory ||
+              "PROTECTION",
+
+            includeFamilyUnity:
+              false
+          }
+        );
+
+      prayer.sequence =
+        i + 1;
+
+      prayer.planId =
+        plan.id;
+
+      content.push(
+        prayer
+      );
+
+      plan.people[i].status =
+        "GENERATED";
+
+      plan.completed += 1;
+    }
+
+    /*
+     * Family-unity closing.
+     */
+
+    const familyClosing =
+      generatePrayer({
+        ...options,
+
+        category:
+          "FAMILY",
+
+        themes: [
+          "family",
+          "unity",
+          "continuity",
+          "legacy"
+        ],
+
+        includeFamilyUnity:
+          true
+      });
+
+    familyClosing.type =
+      CONTENT_TYPES.FAMILY_UNITY;
+
+    familyClosing.planId =
+      plan.id;
+
+    content.push(
+      familyClosing
+    );
+
+    plan.status =
+      "COMPLETE";
+
+    plan.completed =
+      profiles.length;
+
+    const session = {
+
+      id:
+        `BLOODLINE-SESSION-${Date.now()}-${Math.random()
+          .toString(36)
+          .slice(2)}`,
+
+      createdAt:
+        new Date().toISOString(),
+
+      planId:
+        plan.id,
+
+      mode:
+        plan.mode,
+
+      content,
+
+      peopleCovered:
+        profiles.length,
+
+      status:
+        "READY_FOR_PERFORMANCE",
+
+      provenance:
+        "CHIROMBE_AUDIO_LITURGY_ENGINE"
+    };
+
+    if (
+      typeof AUDIO.remember ===
+      "function"
+    ) {
+
+      AUDIO.remember(
+        "BLOODLINE_LITURGY_SESSION",
+        {
+          id:
+            session.id,
+
+          planId:
+            session.planId,
+
+          peopleCovered:
+            session.peopleCovered,
+
+          status:
+            session.status
+        },
+        0.95
+      );
+    }
+
+    if (
+      typeof AUDIO.emit ===
+      "function"
+    ) {
+
+      AUDIO.emit(
+        "BLOODLINE_LITURGY_READY",
+        session
+      );
+    }
+
+    return session;
+  }
+
+  LITURGY.generateBloodlineSession =
+    generateBloodlineSession;
+
+  /* ------------------------------------------------------------------------
+     24. RITUAL STAGE MODEL
+     ------------------------------------------------------------------------ */
+
+  const RITUAL_STAGES = Object.freeze([
+
+    {
+      id: "ARRIVAL",
+      type: CONTENT_TYPES.OPENING,
+      purpose:
+        "Transition attention into the session."
+    },
+
+    {
+      id: "GROUNDING",
+      type: CONTENT_TYPES.REFLECTION,
+      purpose:
+        "Establish calm and present awareness."
+    },
+
+    {
+      id: "OPENING_DECLARATION",
+      type: CONTENT_TYPES.DECLARATION,
+      purpose:
+        "Declare the intended values of the session."
+    },
+
+    {
+      id: "GRATITUDE",
+      type: CONTENT_TYPES.GRATITUDE,
+      purpose:
+        "Establish gratitude."
+    },
+
+    {
+      id: "PROTECTION_INTENTION",
+      type: CONTENT_TYPES.PROTECTION_INTENTION,
+      purpose:
+        "Express protective intentions centred on peace, truth, dignity and safety."
+    },
+
+    {
+      id: "PERSON_PRAYER",
+      type: CONTENT_TYPES.PERSON_BLESSING,
+      purpose:
+        "Offer individual family prayers."
+    },
+
+    {
+      id: "INTERCESSION",
+      type: CONTENT_TYPES.PRAYER,
+      purpose:
+        "Offer wider prayers for family and community."
+    },
+
+    {
+      id: "SILENCE",
+      type: CONTENT_TYPES.SILENCE,
+      purpose:
+        "Create deliberate silence."
+    },
+
+    {
+      id: "CALL_RESPONSE",
+      type: CONTENT_TYPES.CALL,
+      purpose:
+        "Invite optional spoken participation."
+    },
+
+    {
+      id: "CLOSING",
+      type: CONTENT_TYPES.CLOSING,
+      purpose:
+        "Conclude with peace, gratitude and continuity."
+    }
+
+  ]);
+
+  LITURGY.RITUAL_STAGES =
+    RITUAL_STAGES;
+
+  /* ------------------------------------------------------------------------
+     25. RITUAL SESSION BUILDER
+     ------------------------------------------------------------------------ */
+
+  function buildRitualSession(
+    options = {}
+  ) {
+
+    const language =
+      resolveLanguage(options);
+
+    const stages = [];
+
+    for (
+      const stage of RITUAL_STAGES
+    ) {
+
+      let item = null;
+
+      switch (stage.id) {
+
+        case "ARRIVAL":
+          item =
+            generatePrayer({
+              ...options,
+              language,
+              category:
+                "PEACE"
+            });
+          break;
+
+        case "GROUNDING":
+          item = {
+            type:
+              CONTENT_TYPES.REFLECTION,
+
+            text:
+              language === "sh"
+                ? "Ngatitangei nokunyarara, tichifema zvishoma uye tichitarisa nguva iripo."
+                : "Let us become still, breathe naturally, and give our attention to the present moment.",
+
+            language,
+
+            provenance:
+              "ORIGINAL_GENERATED_BY_CHIROMBE"
+          };
+          break;
+
+        case "OPENING_DECLARATION":
+          item =
+            generateDeclaration({
+              ...options,
+              language
+            });
+          break;
+
+        case "GRATITUDE":
+          item =
+            generateGratitude({
+              ...options,
+              language
+            });
+          break;
+
+        case "PROTECTION_INTENTION":
+          item =
+            generateDeclaration({
+              ...options,
+              language,
+              themes:
+                resolveThemes({
+                  ...options,
+                  category:
+                    "PROTECTION"
+                })
+            });
+
+          item.type =
+            CONTENT_TYPES.PROTECTION_INTENTION;
+          break;
+
+        case "PERSON_PRAYER":
+          item = {
+            type:
+              CONTENT_TYPES.PERSON_BLESSING,
+
+            text:
+              "PERSON_BY_PERSON_STAGE",
+
+            language,
+
+            provenance:
+              "RUNTIME_BLOODLINE_ORCHESTRATION"
+          };
+          break;
+
+        case "INTERCESSION":
+          item =
+            generatePrayer({
+              ...options,
+              language,
+              category:
+                "FAMILY"
+            });
+          break;
+
+        case "SILENCE":
+          item = {
+            type:
+              CONTENT_TYPES.SILENCE,
+
+            durationMs:
+              options.silenceDurationMs ||
+              30000,
+
+            language,
+
+            provenance:
+              "RITUAL_STRUCTURE"
+          };
+          break;
+
+        case "CALL_RESPONSE":
+
+          item = {
+
+            type:
+              CONTENT_TYPES.CALL,
+
+            call:
+              language === "sh"
+                ? "Rugare ngaruve nesu."
+                : "May peace remain with us.",
+
+            response:
+              language === "sh"
+                ? "Rugare, chokwadi nouchenjeri."
+                : "Peace, truth and wisdom.",
+
+            language,
+
+            provenance:
+              "ORIGINAL_GENERATED_BY_CHIROMBE"
+          };
+
+          break;
+
+        case "CLOSING":
+
+          item =
+            generatePrayer({
+              ...options,
+              language,
+              category:
+                "PEACE"
+            });
+
+          item.type =
+            CONTENT_TYPES.CLOSING;
+
+          break;
+      }
+
+      if (item) {
+
+        item.stage =
+          stage.id;
+
+        item.stagePurpose =
+          stage.purpose;
+
+        stages.push(item);
+      }
+    }
+
+    const session = {
+
+      id:
+        `RITUAL-${Date.now()}-${Math.random()
+          .toString(36)
+          .slice(2)}`,
+
+      createdAt:
+        new Date().toISOString(),
+
+      language,
+
+      mode:
+        options.mode ||
+        "DAILY_PROTECTION",
+
+      stages,
+
+      status:
+        "READY",
+
+      provenance:
+        "CHIROMBE_AUDIO_LITURGY_ENGINE"
+    };
+
+    if (
+      typeof AUDIO.remember ===
+      "function"
+    ) {
+
+      AUDIO.remember(
+        "RITUAL_SESSION_CREATED",
+        {
+          id:
+            session.id,
+
+          stageCount:
+            stages.length,
+
+          language,
+
+          mode:
+            session.mode
+        },
+        0.8
+      );
+    }
+
+    if (
+      typeof AUDIO.emit ===
+      "function"
+    ) {
+
+      AUDIO.emit(
+        "RITUAL_SESSION_CREATED",
+        session
+      );
+    }
+
+    return session;
+  }
+
+  LITURGY.buildRitualSession =
+    buildRitualSession;
+
+  /* ------------------------------------------------------------------------
+     26. DAILY ADAPTIVE LITURGY
+     ------------------------------------------------------------------------ */
+
+  function generateDailyLiturgy(
+    options = {}
+  ) {
+
+    const hour =
+      new Date().getHours();
+
+    let category =
+      "PROTECTION";
+
+    let mode =
+      "DAILY_PROTECTION";
+
+    if (
+      hour >= 5 &&
+      hour < 11
+    ) {
+
+      category =
+        "MORNING";
+
+      mode =
+        "DAWN";
+    }
+
+    if (
+      hour >= 20 ||
+      hour < 5
+    ) {
+
+      category =
+        "NIGHT";
+
+      mode =
+        "NIGHT_WATCH";
+    }
+
+    const prayer =
+      generatePrayer({
+        ...options,
+        category
+      });
+
+    const declaration =
+      generateDeclaration({
+        ...options
+      });
+
+    const gratitude =
+      generateGratitude({
+        ...options
+      });
+
+    const result = {
+
+      id:
+        `DAILY-${Date.now()}-${Math.random()
+          .toString(36)
+          .slice(2)}`,
+
+      createdAt:
+        new Date().toISOString(),
+
+      mode,
+
+      hour,
+
+      content: [
+        gratitude,
+        declaration,
+        prayer
+      ],
+
+      status:
+        "READY"
+    };
+
+    if (
+      typeof AUDIO.emit ===
+      "function"
+    ) {
+
+      AUDIO.emit(
+        "DAILY_LITURGY_GENERATED",
+        result
+      );
+    }
+
+    return result;
+  }
+
+  LITURGY.generateDailyLiturgy =
+    generateDailyLiturgy;
+
+  /* ------------------------------------------------------------------------
+     27. SYSTEM STATUS NARRATION
+     ------------------------------------------------------------------------ */
+
+  function narrateSystemEvent(
+    event,
+    options = {}
+  ) {
+
+    if (!event) {
+      return null;
+    }
+
+    const payload =
+      event.payload ||
+      {};
+
+    const name =
+      event.name ||
+      "UNKNOWN_EVENT";
+
+    let text =
+      "";
+
+    switch (name) {
+
+      case "AUDIO_HEARTBEAT":
+
+        text =
+          "CHIROMBE audio monitoring remains active.";
+
+        break;
+
+      case "AUDIO_KERNEL_READY":
+
+        text =
+          "The CHIROMBE audio kernel is ready and connected to its available capabilities.";
+
+        break;
+
+      case "PERSISTENT_STATE_RESTORED":
+
+        text =
+          "Previous CHIROMBE audio state has been restored.";
+
+        break;
+
+      case "BROADCAST_QUEUED":
+
+        text =
+          "A new CHIROMBE broadcast has entered the communication queue.";
+
+        break;
+
+      case "AUDIO_SAFE_STOP":
+
+        text =
+          "CHIROMBE audio has entered safe-stop mode.";
+
+        break;
+
+      case "LIVING_WATCH_STARTED":
+
+        text =
+          "CHIROMBE Living Watch is active.";
+
+        break;
+
+      default:
+
+        text =
+          `CHIROMBE has observed the system event ${name.replace(
+            /_/g,
+            " "
+          ).toLowerCase()}.`;
+
+        if (
+          payload.reason
+        ) {
+          text +=
+            ` Reason: ${payload.reason}.`;
+        }
+    }
+
+    return {
+
+      id:
+        `SYSVOICE-${Date.now()}-${Math.random()
+          .toString(36)
+          .slice(2)}`,
+
+      type:
+        CONTENT_TYPES.SYSTEM_INFORMATION,
+
+      text,
+
+      sourceEvent:
+        name,
+
+      language:
+        options.language ||
+        "en",
+
+      provenance:
+        "CHIROMBE_SYSTEM_STATE",
+
+      generatedAt:
+        new Date().toISOString()
+    };
+  }
+
+  LITURGY.narrateSystemEvent =
+    narrateSystemEvent;
+
+  /* ------------------------------------------------------------------------
+     28. USER QUESTION INTERPRETATION FOUNDATION
+     ------------------------------------------------------------------------ */
+
+  function interpretInquiry(
+    question
+  ) {
+
+    const q =
+      String(question || "")
+        .trim()
+        .toLowerCase();
+
+    if (!q) {
+      return {
+        intent:
+          "EMPTY"
+      };
+    }
+
+    if (
+      /what.*doing|what.*up to|activity|status/
+        .test(q)
+    ) {
+      return {
+        intent:
+          "SYSTEM_STATUS"
+      };
+    }
+
+    if (
+      /anything.*concern|concern|danger|warning|problem|wrong/
+        .test(q)
+    ) {
+      return {
+        intent:
+          "CONCERNS"
+      };
+    }
+
+    if (
+      /what.*change|changed|update|updated/
+        .test(q)
+    ) {
+      return {
+        intent:
+          "RECENT_CHANGES"
+      };
+    }
+
+    if (
+      /what.*design|designed|algorithm|technique/
+        .test(q)
+    ) {
+      return {
+        intent:
+          "ENGINE_DESIGN"
+      };
+    }
+
+    if (
+      /pray|prayer|liturgy/
+        .test(q)
+    ) {
+      return {
+        intent:
+          "PRAYER"
+      };
+    }
+
+    if (
+      /frequency|tone|sound|audio/
+        .test(q)
+    ) {
+      return {
+        intent:
+          "AUDIO_STATUS"
+      };
+    }
+
+    return {
+      intent:
+        "GENERAL_INQUIRY"
+    };
+  }
+
+  LITURGY.interpretInquiry =
+    interpretInquiry;
+
+  /* ------------------------------------------------------------------------
+     29. INQUIRY RESPONSE
+     ------------------------------------------------------------------------ */
+
+  function answerInquiry(
+    question
+  ) {
+
+    const interpretation =
+      interpretInquiry(
+        question
+      );
+
+    let text = "";
+
+    switch (
+      interpretation.intent
+    ) {
+
+      case "SYSTEM_STATUS": {
+
+        const status =
+          AUDIO.getStatus
+            ? AUDIO.getStatus()
+            : {};
+
+        text =
+          `CHIROMBE audio status: lifecycle ${
+            status.lifecycle ||
+            "unknown"
+          }. Living Watch ${
+            status.livingWatch
+              ? "active"
+              : "inactive"
+          }. Broadcast queue contains ${
+            status.queueLength ||
+            0
+          } items. The audio kernel has observed ${
+            status.eventsObserved ||
+            0
+          } events.`;
+
+        break;
+      }
+
+      case "CONCERNS": {
+
+        const status =
+          AUDIO.getStatus
+            ? AUDIO.getStatus()
+            : {};
+
+        text =
+          `CHIROMBE has recorded ${
+            status.warnings ||
+            0
+          } warnings and ${
+            status.errors ||
+            0
+          } errors in the current audio session. These are software observations and require context before being interpreted as significant.`;
+
+        break;
+      }
+
+      case "RECENT_CHANGES": {
+
+        const memory =
+          contentMemory
+            .slice(-5);
+
+        text =
+          memory.length
+            ? `Recent audio intelligence contains ${memory.length} recorded content developments.`
+            : "There are currently no recent audio content developments recorded.";
+        break;
+      }
+
+      case "ENGINE_DESIGN":
+
+        text =
+          "The audio intelligence layer is designed to generate, compare, prioritise and remember content rather than repeatedly replaying a fixed sequence.";
+
+        break;
+
+      case "PRAYER":
+
+        text =
+          "CHIROMBE can construct an original prayer according to the selected language, themes, person profile and liturgical mode.";
+
+        break;
+
+      case "AUDIO_STATUS": {
+
+        const status =
+          AUDIO.getStatus
+            ? AUDIO.getStatus()
+            : {};
+
+        text =
+          `The current audio context is ${
+            status.audioContext ||
+            "unavailable"
+          }, with a ${
+            status.sampleRate ||
+            "unknown"
+          } Hz sample rate and approximately ${
+            status.nyquistHz ||
+            "unknown"
+          } Hz Nyquist limit.`;
+
+        break;
+      }
+
+      default:
+
+        text =
+          "CHIROMBE has received the inquiry, but this content engine does not yet have enough context to provide a specific answer.";
+    }
+
+    const response = {
+
+      id:
+        `ANSWER-${Date.now()}-${Math.random()
+          .toString(36)
+          .slice(2)}`,
+
+      type:
+        CONTENT_TYPES.SYSTEM_INFORMATION,
+
+      question:
+        String(question),
+
+      intent:
+        interpretation.intent,
+
+      text,
+
+      provenance:
+        "CHIROMBE_AUDIO_INFORMATION_ENGINE",
+
+      generatedAt:
+        new Date().toISOString()
+    };
+
+    if (
+      typeof AUDIO.remember ===
+      "function"
+    ) {
+
+      AUDIO.remember(
+        "USER_AUDIO_INQUIRY",
+        {
+          question:
+            String(question),
+
+          intent:
+            interpretation.intent,
+
+          response:
+            text
+        },
+        0.7
+      );
+    }
+
+    return response;
+  }
+
+  LITURGY.answerInquiry =
+    answerInquiry;
+
+  /* ------------------------------------------------------------------------
+     30. BROADCAST PREPARATION
+     ------------------------------------------------------------------------ */
+
+  function prepareForBroadcast(
+    content,
+    options = {}
+  ) {
+
+    if (!content) {
+      return null;
+    }
+
+    const text =
+      typeof content ===
+      "string"
+        ? content
+        : content.text;
+
+    if (!text) {
+      return null;
+    }
+
+    const novelty =
+      noveltyScore(text);
+
+    const prepared = {
+
+      id:
+        `PREP-${Date.now()}-${Math.random()
+          .toString(36)
+          .slice(2)}`,
+
+      text,
+
+      language:
+        options.language ||
+        content.language ||
+        "en",
+
+      type:
+        options.type ||
+        content.type ||
+        CONTENT_TYPES.PRAYER,
+
+      category:
+        options.category ||
+        content.category ||
+        "GENERAL",
+
+      priority:
+        options.priority ??
+        (
+          content.type ===
+          CONTENT_TYPES.ALERT
+            ? 0.9
+            : 0.65
+        ),
+
+      novelty,
+
+      provenance:
+        content.provenance ||
+        "ORIGINAL",
+
+      spiritual:
+        [
+          CONTENT_TYPES.PRAYER,
+          CONTENT_TYPES.DECLARATION,
+          CONTENT_TYPES.PROTECTION_INTENTION,
+          CONTENT_TYPES.PERSON_BLESSING,
+          CONTENT_TYPES.FAMILY_UNITY
+        ].includes(
+          content.type
+        ),
+
+      performance:
+        {
+          pace:
+            options.pace ||
+            "NORMAL",
+
+          pauses:
+            options.pauses !== false,
+
+          emphasis:
+            options.emphasis !== false,
+
+          backgroundTone:
+            options.backgroundTone !== false
+        }
+    };
+
+    /*
+     * Connect directly to Part 1's broadcast queue.
+     */
+
+    if (
+      typeof AUDIO.queueBroadcast ===
+      "function"
+    ) {
+
+      prepared.queueItem =
+        AUDIO.queueBroadcast({
+          text:
+            prepared.text,
+
+          language:
+            prepared.language,
+
+          category:
+            prepared.category,
+
+          priority:
+            prepared.priority,
+
+          spiritual:
+            prepared.spiritual,
+
+          provenance:
+            prepared.provenance,
+
+          reason:
+            options.reason ||
+            "LITURGY_CONTENT_READY"
+        });
+    }
+
+    if (
+      typeof AUDIO.emit ===
+      "function"
+    ) {
+
+      AUDIO.emit(
+        "LITURGY_CONTENT_PREPARED",
+        prepared
+      );
+    }
+
+    return prepared;
+  }
+
+  LITURGY.prepareForBroadcast =
+    prepareForBroadcast;
+
+  /* ------------------------------------------------------------------------
+     31. LIVE WATCH CONTENT GENERATOR
+     ------------------------------------------------------------------------ */
+
+  function generateLivingWatchMessage(
+    options = {}
+  ) {
+
+    const status =
+      AUDIO.getStatus
+        ? AUDIO.getStatus()
+        : {};
+
+    const messages = [];
+
+    if (
+      status.errors &&
+      status.errors > 0
+    ) {
+
+      messages.push(
+        `CHIROMBE has recorded ${status.errors} audio-system error${status.errors === 1 ? "" : "s"} in the current session.`
+      );
+    }
+
+    if (
+      status.warnings &&
+      status.warnings > 0
+    ) {
+
+      messages.push(
+        `CHIROMBE has recorded ${status.warnings} warning${status.warnings === 1 ? "" : "s"} requiring contextual review.`
+      );
+    }
+
+    if (
+      !messages.length
+    ) {
+
+      messages.push(
+        "CHIROMBE Living Watch reports no current high-priority audio-system concerns."
+      );
+    }
+
+    const result = {
+
+      id:
+        `WATCH-${Date.now()}-${Math.random()
+          .toString(36)
+          .slice(2)}`,
+
+      type:
+        CONTENT_TYPES.SYSTEM_INFORMATION,
+
+      text:
+        messages.join(" "),
+
+      priority:
+        messages.length === 1 &&
+        messages[0].includes(
+          "no current"
+        )
+          ? 0.35
+          : 0.75,
+
+      provenance:
+        "CHIROMBE_LIVING_WATCH",
+
+      generatedAt:
+        new Date().toISOString()
+    };
+
+    return result;
+  }
+
+  LITURGY.generateLivingWatchMessage =
+    generateLivingWatchMessage;
+
+  /* ------------------------------------------------------------------------
+     32. ADAPTIVE SESSION GENERATOR
+     ------------------------------------------------------------------------ */
+
+  function generateAdaptiveSession(
+    options = {}
+  ) {
+
+    const mode =
+      options.mode ||
+      (
+        AUDIO.state &&
+        AUDIO.state.currentMode
+      ) ||
+      "DAILY_PROTECTION";
+
+    switch (mode) {
+
+      case "BLOODLINE_WATCH":
+
+        return generateBloodlineSession(
+          options
+        );
+
+      case "NIGHT_WATCH":
+
+        return buildRitualSession({
+          ...options,
+          mode
+        });
+
+      case "FAMILY_UNITY":
+
+        return buildRitualSession({
+          ...options,
+          mode,
+          category:
+            "FAMILY"
+        });
+
+      case "REMEMBRANCE":
+
+        return buildRitualSession({
+          ...options,
+          mode,
+          category:
+            "REMEMBRANCE"
+        });
+
+      case "INTERFAITH_REFLECTION":
+
+        return buildRitualSession({
+          ...options,
+          mode,
+          traditionMode:
+            TRADITION_MODES.INTERFAITH_REFLECTION
+        });
+
+      case "MASOWE_PERSONAL":
+
+        return buildRitualSession({
+          ...options,
+          mode,
+          language:
+            options.language ||
+            "sh",
+
+          traditionMode:
+            TRADITION_MODES.MASOWE_PERSONAL,
+
+          includeSacredAnchor:
+            true
+        });
+
+      default:
+
+        return generateDailyLiturgy(
+          options
+        );
+    }
+  }
+
+  LITURGY.generateAdaptiveSession =
+    generateAdaptiveSession;
+
+  /* ------------------------------------------------------------------------
+     33. EVENT-DRIVEN CONTENT RESPONSE
+     ------------------------------------------------------------------------ */
+
+  function respondToSystemEvent(
+    event
+  ) {
+
+    if (!event) {
+      return null;
+    }
+
+    const name =
+      event.name ||
+      "";
+
+    /*
+     * Certain events receive immediate information content.
+     * Others are remembered without interrupting the user.
+     */
+
+    const highPriorityEvents = [
+
+      "AUDIO_SAFE_STOP",
+      "AUDIO_CONTEXT_ERROR",
+      "ENGINE_INTEGRITY_FAILURE",
+      "SECURITY_ALERT",
+      "WATCHDOG_ALERT",
+      "RECOVERY_FAILURE",
+      "CRITICAL_ANOMALY"
+    ];
+
+    const mediumPriorityEvents = [
+
+      "AUDIO_KERNEL_READY",
+      "PERSISTENT_STATE_RESTORED",
+      "LIVING_WATCH_STARTED",
+      "BLOODLINE_LITURGY_READY",
+      "RITUAL_SESSION_CREATED",
+      "EVOLUTION_PROPOSAL_CREATED",
+      "EVOLUTION_COMMITTED"
+    ];
+
+    if (
+      highPriorityEvents.includes(
+        name
+      )
+    ) {
+
+      const narration =
+        narrateSystemEvent(
+          event
+        );
+
+      return prepareForBroadcast(
+        narration,
+        {
+          priority:
+            0.9,
+
+          category:
+            CONTENT_TYPES.ALERT,
+
+          reason:
+            "HIGH_PRIORITY_SYSTEM_EVENT"
+        }
+      );
+    }
+
+    if (
+      mediumPriorityEvents.includes(
+        name
+      )
+    ) {
+
+      const narration =
+        narrateSystemEvent(
+          event
+        );
+
+      return prepareForBroadcast(
+        narration,
+        {
+          priority:
+            0.65,
+
+          category:
+            CONTENT_TYPES.SYSTEM_INFORMATION,
+
+          reason:
+            "MEDIUM_PRIORITY_SYSTEM_EVENT"
+        }
+      );
+    }
+
+    /*
+     * Low-priority events are retained for later summaries.
+     */
+
+    if (
+      typeof AUDIO.remember ===
+      "function"
+    ) {
+
+      AUDIO.remember(
+        "LOW_PRIORITY_SYSTEM_EVENT",
+        {
+          eventName:
+            name,
+
+          event:
+            event
+        },
+        0.25
+      );
+    }
+
+    return null;
+  }
+
+  LITURGY.respondToSystemEvent =
+    respondToSystemEvent;
+
+  /* ------------------------------------------------------------------------
+     34. SUBSCRIBE TO AUDIO KERNEL EVENTS
+     ------------------------------------------------------------------------ */
+
+  if (
+    typeof AUDIO.on ===
+    "function"
+  ) {
+
+    AUDIO.on(
+      "SYSTEM_EVENT_OBSERVED",
+      event => {
+
+        try {
+
+          respondToSystemEvent(
+            event
+          );
+
+        } catch (error) {
+
+          if (
+            typeof AUDIO.log ===
+            "function"
+          ) {
+
+            AUDIO.log(
+              "ERROR",
+              "LITURGY_EVENT_RESPONSE_FAILED",
+              {
+                error:
+                  String(error)
+              }
+            );
+          }
+        }
+      }
+    );
+
+    AUDIO.on(
+      "BROADCAST_DECISION",
+      event => {
+
+        /*
+         * Broadcast decisions become part of content memory.
+         * This gives later evolution stages evidence about how often
+         * information is being suppressed, queued, spoken or interrupted.
+         */
+
+        if (
+          typeof AUDIO.remember ===
+          "function"
+        ) {
+
+          AUDIO.remember(
+            "BROADCAST_DECISION_HISTORY",
+            event.payload,
+            0.35
+          );
+        }
+      }
+    );
+  }
+
+  /* ------------------------------------------------------------------------
+     35. CONTENT ENGINE STATUS
+     ------------------------------------------------------------------------ */
+
+  LITURGY.getStatus =
+    function() {
+
+      return {
+
+        version:
+          VERSION,
+
+        status:
+          LITURGY.STATUS,
+
+        contentMemory:
+          contentMemory.length,
+
+        supportedLanguages:
+          Object.keys(
+            LANGUAGE_PACKS
+          ),
+
+        traditionModes:
+          Object.keys(
+            TRADITION_MODES
+          ),
+
+        contentTypes:
+          Object.keys(
+            CONTENT_TYPES
+          ).length,
+
+        ritualStages:
+          RITUAL_STAGES.length,
+
+        templates:
+          Object.keys(
+            TEMPLATES
+          ).length,
+
+        bloodlineAvailable:
+          discoverBloodline()
+            .length > 0
+      };
+    };
+
+  /* ------------------------------------------------------------------------
+     36. PUBLIC CONTENT COMMANDS
+     ------------------------------------------------------------------------ */
+
+  LITURGY.commands = {
+
+    prayer:
+      options =>
+        generatePrayer(
+          options
+        ),
+
+    declaration:
+      options =>
+        generateDeclaration(
+          options
+        ),
+
+    gratitude:
+      options =>
+        generateGratitude(
+          options
+        ),
+
+    personPrayer:
+      (person, options) =>
+        generatePersonPrayer(
+          person,
+          options
+        ),
+
+    bloodline:
+      options =>
+        generateBloodlineSession(
+          options
+        ),
+
+    ritual:
+      options =>
+        buildRitualSession(
+          options
+        ),
+
+    daily:
+      options =>
+        generateDailyLiturgy(
+          options
+        ),
+
+    adaptive:
+      options =>
+        generateAdaptiveSession(
+          options
+        ),
+
+    inquiry:
+      question =>
+        answerInquiry(
+          question
+        ),
+
+    watch:
+      options =>
+        generateLivingWatchMessage(
+          options
+        ),
+
+    prepare:
+      (content, options) =>
+        prepareForBroadcast(
+          content,
+          options
+        )
+  };
+
+  /* ------------------------------------------------------------------------
+     37. INITIALISATION
+     ------------------------------------------------------------------------ */
+
+  LITURGY.STATUS =
+    "READY";
+
+  if (
+    typeof AUDIO.remember ===
+    "function"
+  ) {
+
+    AUDIO.remember(
+      "LITURGY_ENGINE_INITIALISED",
+      {
+        version:
+          VERSION,
+
+        languages:
+          Object.keys(
+            LANGUAGE_PACKS
+          ),
+
+        ritualStages:
+          RITUAL_STAGES.length,
+
+        contentTypes:
+          Object.keys(
+            CONTENT_TYPES
+          ).length,
+
+        engine:
+          "INTELLIGENT_CONTENT_COMPOSITION"
+      },
+      0.85
+    );
+  }
+
+  if (
+    typeof AUDIO.emit ===
+    "function"
+  ) {
+
+    AUDIO.emit(
+      "LITURGY_ENGINE_READY",
+      {
+        version:
+          VERSION,
+
+        capabilities: [
+          "DYNAMIC_PRAYER",
+          "PERSON_SPECIFIC_PRAYER",
+          "BLOODLINE_ORCHESTRATION",
+          "RITUAL_COMPOSITION",
+          "NOVELTY_CONTROL",
+          "MULTI_LANGUAGE",
+          "PROVENANCE",
+          "SYSTEM_NARRATION",
+          "INQUIRY_RESPONSE",
+          "ADAPTIVE_SESSIONS"
+        ]
+      }
+    );
+  }
+
+  /*
+   * Make the engine discoverable by the rest of CHIROMBE.
+   */
+
+  root.CHIROMBE_AUDIO_LITURGY_ENGINE =
+    LITURGY;
+
+  AUDIO.LITURGY_ENGINE =
+    LITURGY;
+
+  console.info(
+    "CHIROMBE AUDIO LIVING LITURGY — PART 2 READY",
+    LITURGY.getStatus()
+  );
+
+})();
