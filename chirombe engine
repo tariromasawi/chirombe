@@ -1868,4 +1868,2602 @@
 
 })();Expected branch to point to
 "c39d86f66b64819e711634fec3a4e02c026a44
-66" but it did not. Pull and try again.
+66" but it did not. Pull and try again./* ==========================================================================
+   CHIROMBE EVOLUTION ENGINE
+   PART 04 / 10
+   FILE: chirombe-evolution.js
+   PROTOCOL: CHEP-04
+   ==========================================================================
+
+   ARCHITECTURE:
+
+   CORE
+     ↓
+   MEMORY
+     ↓
+   WORKERS
+     ↓
+   EVOLUTION
+     ↓
+   PATHWAYS
+     ↓
+   WATCHDOG
+     ↓
+   KNOWLEDGE
+     ↓
+   BUILD
+     ↓
+   ORCHESTRATOR
+     ↓
+   GROK / EXTERNAL AI BRIDGE
+
+   EVOLUTION MODEL:
+
+   OBSERVE
+      ↓
+   ANALYSE
+      ↓
+   IDENTIFY OPPORTUNITY
+      ↓
+   CREATE PROPOSAL
+      ↓
+   SANDBOX
+      ↓
+   SCORE
+      ↓
+   VERIFY
+      ↓
+   ACCEPT / REJECT
+      ↓
+   RECORD
+      ↓
+   HAND OFF TO BUILD ENGINE
+
+   IMPORTANT:
+   This module deliberately does not blindly rewrite production source.
+   It creates controlled evolutionary proposals and records them.
+
+   ========================================================================== */
+
+(function (global) {
+
+    "use strict";
+
+    /* ----------------------------------------------------------------------
+       DEPENDENCY RESOLUTION
+       ---------------------------------------------------------------------- */
+
+    const CORE =
+        global.CHIROMBE ||
+        global.CHIROMBE_CORE ||
+        null;
+
+    const MEMORY =
+        global.CHIROMBE_MEMORY ||
+        global.CHIROMBE_PERSISTENT_MEMORY ||
+        null;
+
+    const WORKERS =
+        global.CHIROMBE_WORKERS ||
+        global.CHIROMBE_WORKER_SWARM ||
+        null;
+
+
+    if (!CORE) {
+
+        console.error(
+            "[CHIROMBE EVOLUTION] CORE NOT FOUND"
+        );
+
+        return;
+
+    }
+
+
+    /* ----------------------------------------------------------------------
+       CONFIGURATION
+       ---------------------------------------------------------------------- */
+
+    const CONFIG = {
+
+        protocol: "CHEP-04",
+
+        module: "EVOLUTION_ENGINE",
+
+        version: "1.0.1",
+
+        enabled: true,
+
+        autonomousObservation: true,
+
+        autonomousEvolution: true,
+
+        autonomousScoring: true,
+
+        autonomousDecision: true,
+
+        productionSelfRewrite: false,
+
+        minimumAcceptanceScore: 0.72,
+
+        strongAcceptanceScore: 0.88,
+
+        observationInterval: 30000,
+
+        evolutionInterval: 60000,
+
+        maximumObservations: 1000,
+
+        maximumProposals: 500,
+
+        maximumExperiments: 250,
+
+        maximumDecisions: 500,
+
+        protectedModules: [
+
+            "CORE",
+            "MEMORY",
+            "WORKERS",
+            "WATCHDOG",
+            "SECURITY",
+            "RECOVERY",
+            "INTEGRITY"
+
+        ],
+
+        protectedOperations: [
+
+            "DELETE_CORE",
+            "ERASE_MEMORY",
+            "DISABLE_SECURITY",
+            "DISABLE_RECOVERY",
+            "DISABLE_INTEGRITY",
+            "UNSAFE_EXECUTION",
+            "UNCONTROLLED_REWRITE"
+
+        ]
+
+    };
+
+
+    /* ----------------------------------------------------------------------
+       INTERNAL STATE
+       ---------------------------------------------------------------------- */
+
+    const STATE = {
+
+        started: false,
+
+        cycle: 0,
+
+        observations: [],
+
+        opportunities: [],
+
+        proposals: [],
+
+        experiments: [],
+
+        decisions: [],
+
+        accepted: [],
+
+        rejected: [],
+
+        pending: [],
+
+        failures: 0,
+
+        metrics: {
+
+            observations: 0,
+
+            opportunities: 0,
+
+            proposals: 0,
+
+            experiments: 0,
+
+            accepted: 0,
+
+            rejected: 0,
+
+            reviewed: 0,
+
+            failures: 0,
+
+            cycles: 0
+
+        },
+
+        timestamps: {
+
+            started: 0,
+
+            lastObservation: 0,
+
+            lastEvolution: 0,
+
+            lastDecision: 0
+
+        }
+
+    };
+
+
+    /* ----------------------------------------------------------------------
+       GENERAL UTILITIES
+       ---------------------------------------------------------------------- */
+
+    function timestamp() {
+
+        return Date.now();
+
+    }
+
+
+    function uid(prefix) {
+
+        return (
+
+            prefix +
+
+            "_" +
+
+            timestamp().toString(36) +
+
+            "_" +
+
+            Math.random()
+                .toString(36)
+                .substring(2, 10)
+
+        );
+
+    }
+
+
+    function clone(value) {
+
+        try {
+
+            return JSON.parse(
+                JSON.stringify(value)
+            );
+
+        } catch (error) {
+
+            return {
+
+                cloneError: true,
+
+                message: error.message
+
+            };
+
+        }
+
+    }
+
+
+    function number(value, fallback = 0) {
+
+        return (
+
+            typeof value === "number" &&
+            Number.isFinite(value)
+
+        )
+            ? value
+            : fallback;
+
+    }
+
+
+    function clamp(value, minimum, maximum) {
+
+        return Math.max(
+
+            minimum,
+
+            Math.min(
+                maximum,
+                value
+            )
+
+        );
+
+    }
+
+
+    function hash(value) {
+
+        try {
+
+            if (
+                CORE &&
+                typeof CORE.hash === "function"
+            ) {
+
+                return CORE.hash(value);
+
+            }
+
+        } catch (error) {
+
+            /* fallback below */
+
+        }
+
+
+        try {
+
+            return btoa(
+                unescape(
+                    encodeURIComponent(
+                        JSON.stringify(value)
+                    )
+                )
+            );
+
+        } catch (error) {
+
+            return String(value);
+
+        }
+
+    }
+
+
+    function emit(event, payload) {
+
+        try {
+
+            if (
+                CORE.events &&
+                typeof CORE.events.emit === "function"
+            ) {
+
+                CORE.events.emit(
+                    event,
+                    payload
+                );
+
+            }
+
+        } catch (error) {
+
+            console.warn(
+                "[EVOLUTION EVENT ERROR]",
+                error
+            );
+
+        }
+
+    }
+
+
+    function log(message, data) {
+
+        try {
+
+            if (
+                typeof CORE.log === "function"
+            ) {
+
+                CORE.log(
+                    "[EVOLUTION] " + message,
+                    data || ""
+                );
+
+            } else {
+
+                console.log(
+                    "[EVOLUTION] " + message,
+                    data || ""
+                );
+
+            }
+
+        } catch (error) {
+
+            console.log(
+                "[EVOLUTION]",
+                message
+            );
+
+        }
+
+    }
+
+
+    /* ----------------------------------------------------------------------
+       MEMORY ADAPTER
+       ---------------------------------------------------------------------- */
+
+    async function saveMemory(
+        namespace,
+        key,
+        value
+    ) {
+
+        if (!MEMORY) {
+
+            return null;
+
+        }
+
+
+        try {
+
+            if (
+                typeof MEMORY.write === "function"
+            ) {
+
+                return await MEMORY.write(
+                    namespace,
+                    key,
+                    value
+                );
+
+            }
+
+
+            if (
+                typeof MEMORY.set === "function"
+            ) {
+
+                return await MEMORY.set(
+                    namespace,
+                    key,
+                    value
+                );
+
+            }
+
+        } catch (error) {
+
+            STATE.failures++;
+
+            log(
+                "Memory persistence failure",
+                error.message
+            );
+
+        }
+
+        return null;
+
+    }
+
+
+    /* ----------------------------------------------------------------------
+       OBSERVATION ENGINE
+       ---------------------------------------------------------------------- */
+
+    function observe() {
+
+        const observation = {
+
+            id: uid("OBS"),
+
+            timestamp: timestamp(),
+
+            cycle: STATE.cycle,
+
+            type: "SYSTEM_OBSERVATION",
+
+            source: "EVOLUTION_ENGINE",
+
+            core: {},
+
+            memory: {},
+
+            workers: {},
+
+            evolution: {},
+
+            signals: [],
+
+            hash: null
+
+        };
+
+
+        /* CORE OBSERVATION */
+
+        try {
+
+            if (
+                CORE.state
+            ) {
+
+                observation.core =
+                    clone(
+                        CORE.state
+                    );
+
+            }
+
+        } catch (error) {
+
+            observation.signals.push({
+
+                type:
+                    "CORE_READ_FAILURE",
+
+                severity:
+                    "warning",
+
+                message:
+                    error.message
+
+            });
+
+        }
+
+
+        /* MEMORY OBSERVATION */
+
+        try {
+
+            if (MEMORY) {
+
+                if (
+                    typeof MEMORY.stats === "function"
+                ) {
+
+                    observation.memory =
+                        clone(
+                            MEMORY.stats()
+                        );
+
+                } else if (
+                    MEMORY.state
+                ) {
+
+                    observation.memory =
+                        clone(
+                            MEMORY.state
+                        );
+
+                }
+
+            }
+
+        } catch (error) {
+
+            observation.signals.push({
+
+                type:
+                    "MEMORY_READ_FAILURE",
+
+                severity:
+                    "warning",
+
+                message:
+                    error.message
+
+            });
+
+        }
+
+
+        /* WORKER OBSERVATION */
+
+        try {
+
+            if (WORKERS) {
+
+                if (
+                    typeof WORKERS.status === "function"
+                ) {
+
+                    observation.workers =
+                        clone(
+                            WORKERS.status()
+                        );
+
+                } else if (
+                    WORKERS.state
+                ) {
+
+                    observation.workers =
+                        clone(
+                            WORKERS.state
+                        );
+
+                }
+
+            }
+
+        } catch (error) {
+
+            observation.signals.push({
+
+                type:
+                    "WORKER_READ_FAILURE",
+
+                severity:
+                    "warning",
+
+                message:
+                    error.message
+
+            });
+
+        }
+
+
+        /* EVOLUTION OBSERVATION */
+
+        observation.evolution = {
+
+            cycle:
+                STATE.cycle,
+
+            observations:
+                STATE.metrics.observations,
+
+            proposals:
+                STATE.metrics.proposals,
+
+            accepted:
+                STATE.metrics.accepted,
+
+            rejected:
+                STATE.metrics.rejected,
+
+            failures:
+                STATE.metrics.failures
+
+        };
+
+
+        /* --------------------------------------------------------------
+           DERIVED SYSTEM SIGNALS
+           -------------------------------------------------------------- */
+
+        if (
+            observation.signals.length > 0
+        ) {
+
+            observation.signals.push({
+
+                type:
+                    "SYSTEM_READ_ANOMALY",
+
+                severity:
+                    "medium",
+
+                message:
+                    "One or more subsystem observations require review."
+
+            });
+
+        }
+
+
+        if (
+            observation.workers &&
+            observation.workers.jobs
+        ) {
+
+            const jobs =
+                number(
+                    observation.workers.jobs.total
+                );
+
+
+            if (jobs > 100) {
+
+                observation.signals.push({
+
+                    type:
+                        "WORKER_PRESSURE",
+
+                    severity:
+                        "medium",
+
+                    value:
+                        jobs,
+
+                    recommendation:
+                        "Analyse worker scheduling and queue distribution."
+
+                });
+
+            }
+
+        }
+
+
+        if (
+            observation.memory &&
+            observation.memory.records
+        ) {
+
+            const records =
+                number(
+                    observation.memory.records
+                );
+
+
+            if (records > 10000) {
+
+                observation.signals.push({
+
+                    type:
+                        "MEMORY_PRESSURE",
+
+                    severity:
+                        "medium",
+
+                    value:
+                        records,
+
+                    recommendation:
+                        "Analyse indexing, compression and archival pathways."
+
+                });
+
+            }
+
+        }
+
+
+        observation.hash =
+            hash(
+                observation
+            );
+
+
+        STATE.observations.push(
+            observation
+        );
+
+
+        STATE.metrics.observations++;
+
+        STATE.timestamps.lastObservation =
+            timestamp();
+
+
+        if (
+            STATE.observations.length >
+            CONFIG.maximumObservations
+        ) {
+
+            STATE.observations.shift();
+
+        }
+
+
+        emit(
+            "EVOLUTION_OBSERVATION",
+            observation
+        );
+
+
+        return observation;
+
+    }
+
+
+    /* ----------------------------------------------------------------------
+       OPPORTUNITY DETECTION
+       ---------------------------------------------------------------------- */
+
+    function detectOpportunities(
+        observation
+    ) {
+
+        const opportunities = [];
+
+
+        opportunities.push({
+
+            id:
+                uid("OPP"),
+
+            type:
+                "GENERAL_OPTIMISATION",
+
+            area:
+                "SYSTEM",
+
+            description:
+                "Analyse the current architecture for measurable improvements.",
+
+            evidence: {
+
+                cycle:
+                    observation.cycle,
+
+                signalCount:
+                    observation.signals.length
+
+            }
+
+        });
+
+
+        for (
+            const signal
+            of observation.signals
+        ) {
+
+            opportunities.push({
+
+                id:
+                    uid("OPP"),
+
+                type:
+                    signal.type,
+
+                area:
+                    signal.type
+                        .includes("MEMORY")
+                        ? "MEMORY"
+                        :
+                    signal.type
+                        .includes("WORKER")
+                        ? "WORKERS"
+                        :
+                    "SYSTEM",
+
+                description:
+                    signal.recommendation ||
+                    "Investigate detected system condition.",
+
+                evidence:
+                    clone(signal)
+
+            });
+
+        }
+
+
+        for (
+            const opportunity
+            of opportunities
+        ) {
+
+            STATE.opportunities.push(
+                opportunity
+            );
+
+        }
+
+
+        STATE.metrics.opportunities +=
+            opportunities.length;
+
+
+        return opportunities;
+
+    }
+
+
+    /* ----------------------------------------------------------------------
+       PROTECTION ANALYSIS
+       ---------------------------------------------------------------------- */
+
+    function protectedProposal(
+        proposal
+    ) {
+
+        const target =
+            String(
+                proposal.target || ""
+            ).toUpperCase();
+
+
+        const operation =
+            String(
+                proposal.operation || ""
+            ).toUpperCase();
+
+
+        for (
+            const module
+            of CONFIG.protectedModules
+        ) {
+
+            if (
+                target.includes(
+                    module
+                )
+            ) {
+
+                return true;
+
+            }
+
+        }
+
+
+        for (
+            const operationName
+            of CONFIG.protectedOperations
+        ) {
+
+            if (
+                operation.includes(
+                    operationName
+                )
+            ) {
+
+                return true;
+
+            }
+
+        }
+
+
+        return false;
+
+    }
+
+
+    /* ----------------------------------------------------------------------
+       PROPOSAL CREATION
+       ---------------------------------------------------------------------- */
+
+    function createProposal(
+        opportunity,
+        observation
+    ) {
+
+        const proposal = {
+
+            id:
+                uid("PROP"),
+
+            timestamp:
+                timestamp(),
+
+            status:
+                "PROPOSED",
+
+            cycle:
+                STATE.cycle,
+
+            type:
+                opportunity.type,
+
+            area:
+                opportunity.area,
+
+            target:
+                opportunity.area,
+
+            operation:
+                "OPTIMISE",
+
+            objective:
+                opportunity.description,
+
+            evidence:
+                clone(
+                    opportunity.evidence
+                ),
+
+            proposedChange: {
+
+                strategy:
+                    "Identify measurable improvement, model the change in isolation, evaluate the result, then hand the approved pathway to a future build layer.",
+
+                sourceMutation:
+                    false,
+
+                productionMutation:
+                    false,
+
+                autonomousDeployment:
+                    false
+
+            },
+
+            expectedBenefits: [
+
+                "Improved resilience",
+
+                "Improved observability",
+
+                "Improved efficiency",
+
+                "Improved maintainability",
+
+                "Improved pathway discovery"
+
+            ],
+
+            risks: [
+
+                "False positive",
+
+                "Regression",
+
+                "Unexpected interaction",
+
+                "Insufficient evidence",
+
+                "Unnecessary complexity"
+
+            ],
+
+            safeguards: {
+
+                sandbox:
+                    true,
+
+                rollback:
+                    true,
+
+                integrityCheck:
+                    true,
+
+                productionRewrite:
+                    false
+
+            },
+
+            scores: {
+
+                usefulness:
+                    0,
+
+                safety:
+                    0,
+
+                reliability:
+                    0,
+
+                evidence:
+                    0,
+
+                novelty:
+                    0,
+
+                complexity:
+                    0,
+
+                total:
+                    0
+
+            },
+
+            experimentId:
+                null,
+
+            decisionId:
+                null,
+
+            hash:
+                null
+
+        };
+
+
+        proposal.hash =
+            hash(
+                proposal
+            );
+
+
+        return proposal;
+
+    }
+
+
+    /* ----------------------------------------------------------------------
+       SANDBOX EXPERIMENT
+       ---------------------------------------------------------------------- */
+
+    function sandbox(
+        proposal
+    ) {
+
+        const experiment = {
+
+            id:
+                uid("EXP"),
+
+            proposalId:
+                proposal.id,
+
+            created:
+                timestamp(),
+
+            status:
+                "SANDBOX_COMPLETE",
+
+            productionTouched:
+                false,
+
+            sourceModified:
+                false,
+
+            destructive:
+                false,
+
+            baseline: {
+
+                cycle:
+                    STATE.cycle,
+
+                observationCount:
+                    STATE.observations.length
+
+            },
+
+            simulatedMetrics: {
+
+                stability:
+                    0.90,
+
+                safety:
+                    0.96,
+
+                usefulness:
+                    0.74,
+
+                reliability:
+                    0.84,
+
+                novelty:
+                    0.55,
+
+                complexity:
+                    0.25
+
+            },
+
+            result:
+                "SIMULATED_SUCCESS",
+
+            hash:
+                null
+
+        };
+
+
+        experiment.hash =
+            hash(
+                experiment
+            );
+
+
+        STATE.experiments.push(
+            experiment
+        );
+
+
+        STATE.metrics.experiments++;
+
+
+        if (
+            STATE.experiments.length >
+            CONFIG.maximumExperiments
+        ) {
+
+            STATE.experiments.shift();
+
+        }
+
+
+        return experiment;
+
+    }
+
+
+    /* ----------------------------------------------------------------------
+       SCORING ENGINE
+       ---------------------------------------------------------------------- */
+
+    function score(
+        proposal,
+        experiment
+    ) {
+
+        const metrics =
+            experiment.simulatedMetrics;
+
+
+        const usefulness =
+            clamp(
+                number(
+                    metrics.usefulness,
+                    0.5
+                ),
+                0,
+                1
+            );
+
+
+        const safety =
+            clamp(
+                number(
+                    metrics.safety,
+                    0.5
+                ),
+                0,
+                1
+            );
+
+
+        const reliability =
+            clamp(
+                number(
+                    metrics.reliability,
+                    0.5
+                ),
+                0,
+                1
+            );
+
+
+        const novelty =
+            clamp(
+                number(
+                    metrics.novelty,
+                    0.5
+                ),
+                0,
+                1
+            );
+
+
+        const complexity =
+            clamp(
+                number(
+                    metrics.complexity,
+                    0.5
+                ),
+                0,
+                1
+            );
+
+
+        const evidence =
+            proposal.evidence
+                ? 0.80
+                : 0.25;
+
+
+        proposal.scores = {
+
+            usefulness:
+                usefulness,
+
+            safety:
+                safety,
+
+            reliability:
+                reliability,
+
+            evidence:
+                evidence,
+
+            novelty:
+                novelty,
+
+            complexity:
+                complexity,
+
+            total:
+                clamp(
+
+                    (
+                        usefulness * 0.25
+                        +
+                        safety * 0.25
+                        +
+                        reliability * 0.20
+                        +
+                        evidence * 0.15
+                        +
+                        novelty * 0.10
+                        +
+                        (1 - complexity) * 0.05
+                    ),
+
+                    0,
+                    1
+
+                )
+
+        };
+
+
+        return proposal;
+
+    }
+
+
+    /* ----------------------------------------------------------------------
+       DECISION ENGINE
+       ---------------------------------------------------------------------- */
+
+    function decide(
+        proposal
+    ) {
+
+        const scoreValue =
+            number(
+                proposal.scores.total
+            );
+
+
+        if (
+            protectedProposal(
+                proposal
+            )
+        ) {
+
+            return {
+
+                status:
+                    "REQUIRES_REVIEW",
+
+                score:
+                    scoreValue,
+
+                reason:
+                    "Proposal intersects protected infrastructure."
+
+            };
+
+        }
+
+
+        if (
+            proposal.safeguards.sandbox !== true
+        ) {
+
+            return {
+
+                status:
+                    "REQUIRES_REVIEW",
+
+                score:
+                    scoreValue,
+
+                reason:
+                    "Sandbox protection is missing."
+
+            };
+
+        }
+
+
+        if (
+            proposal.safeguards.rollback !== true
+        ) {
+
+            return {
+
+                status:
+                    "REQUIRES_REVIEW",
+
+                score:
+                    scoreValue,
+
+                reason:
+                    "Rollback protection is missing."
+
+            };
+
+        }
+
+
+        if (
+            scoreValue >=
+            CONFIG.strongAcceptanceScore
+        ) {
+
+            return {
+
+                status:
+                    "ACCEPTED",
+
+                score:
+                    scoreValue,
+
+                reason:
+                    "Proposal exceeded strong acceptance threshold."
+
+            };
+
+        }
+
+
+        if (
+            scoreValue >=
+            CONFIG.minimumAcceptanceScore
+        ) {
+
+            return {
+
+                status:
+                    "ACCEPTED",
+
+                score:
+                    scoreValue,
+
+                reason:
+                    "Proposal exceeded minimum acceptance threshold."
+
+            };
+
+        }
+
+
+        return {
+
+            status:
+                "REJECTED",
+
+            score:
+                scoreValue,
+
+            reason:
+                "Proposal did not achieve the required evolutionary threshold."
+
+        };
+
+    }
+
+
+    /* ----------------------------------------------------------------------
+       DECISION RECORD
+       ---------------------------------------------------------------------- */
+
+    async function recordDecision(
+        proposal,
+        decision
+    ) {
+
+        const record = {
+
+            id:
+                uid("DEC"),
+
+            timestamp:
+                timestamp(),
+
+            proposalId:
+                proposal.id,
+
+            cycle:
+                STATE.cycle,
+
+            status:
+                decision.status,
+
+            score:
+                decision.score,
+
+            reason:
+                decision.reason,
+
+            productionMutation:
+                false,
+
+            sourceMutation:
+                false,
+
+            rollbackRequired:
+                true,
+
+            hash:
+                null
+
+        };
+
+
+        record.hash =
+            hash(
+                record
+            );
+
+
+        proposal.status =
+            decision.status;
+
+
+        proposal.decisionId =
+            record.id;
+
+
+        STATE.decisions.push(
+            record
+        );
+
+
+        STATE.metrics.reviewed++;
+
+
+        if (
+            decision.status ===
+            "ACCEPTED"
+        ) {
+
+            STATE.accepted.push(
+                proposal.id
+            );
+
+            STATE.metrics.accepted++;
+
+        }
+
+
+        if (
+            decision.status ===
+            "REJECTED"
+        ) {
+
+            STATE.rejected.push(
+                proposal.id
+            );
+
+            STATE.metrics.rejected++;
+
+        }
+
+
+        await saveMemory(
+            "DECISIONS",
+            record.id,
+            record
+        );
+
+
+        await saveMemory(
+            "EVOLUTION",
+            proposal.id,
+            proposal
+        );
+
+
+        emit(
+            "EVOLUTION_DECISION",
+            record
+        );
+
+
+        return record;
+
+    }
+
+
+    /* ----------------------------------------------------------------------
+       EVOLUTION CYCLE
+       ---------------------------------------------------------------------- */
+
+    async function evolve() {
+
+        if (
+            !CONFIG.enabled
+        ) {
+
+            return {
+
+                status:
+                    "DISABLED"
+
+            };
+
+        }
+
+
+        STATE.cycle++;
+
+        STATE.metrics.cycles++;
+
+        STATE.timestamps.lastEvolution =
+            timestamp();
+
+
+        const observation =
+            observe();
+
+
+        const opportunities =
+            detectOpportunities(
+                observation
+            );
+
+
+        const results = [];
+
+
+        for (
+            const opportunity
+            of opportunities
+        ) {
+
+            if (
+                STATE.proposals.length >=
+                CONFIG.maximumProposals
+            ) {
+
+                break;
+
+            }
+
+
+            const proposal =
+                createProposal(
+                    opportunity,
+                    observation
+                );
+
+
+            const experiment =
+                sandbox(
+                    proposal
+                );
+
+
+            proposal.experimentId =
+                experiment.id;
+
+
+            score(
+                proposal,
+                experiment
+            );
+
+
+            const decision =
+                decide(
+                    proposal
+                );
+
+
+            const record =
+                await recordDecision(
+                    proposal,
+                    decision
+                );
+
+
+            STATE.proposals.push(
+                proposal
+            );
+
+
+            STATE.metrics.proposals++;
+
+
+            results.push({
+
+                proposal:
+                    clone(proposal),
+
+                experiment:
+                    clone(experiment),
+
+                decision:
+                    clone(record)
+
+            });
+
+
+            /*
+             * APPROVED EVOLUTION PATHWAY
+             *
+             * This becomes input for the future BUILD ENGINE.
+             */
+
+            if (
+                decision.status ===
+                "ACCEPTED"
+            ) {
+
+                await saveMemory(
+
+                    "PATHWAYS",
+
+                    proposal.id,
+
+                    {
+
+                        type:
+                            "APPROVED_EVOLUTION_PATHWAY",
+
+                        proposalId:
+                            proposal.id,
+
+                        objective:
+                            proposal.objective,
+
+                        target:
+                            proposal.target,
+
+                        score:
+                            proposal.scores.total,
+
+                        buildReady:
+                            true,
+
+                        productionMutation:
+                            false,
+
+                        created:
+                            timestamp()
+
+                    }
+
+                );
+
+            }
+
+        }
+
+
+        emit(
+
+            "EVOLUTION_CYCLE_COMPLETE",
+
+            {
+
+                cycle:
+                    STATE.cycle,
+
+                opportunities:
+                    opportunities.length,
+
+                proposals:
+                    results.length,
+
+                accepted:
+                    STATE.metrics.accepted,
+
+                rejected:
+                    STATE.metrics.rejected
+
+            }
+
+        );
+
+
+        return {
+
+            status:
+                "COMPLETE",
+
+            cycle:
+                STATE.cycle,
+
+            results:
+                results
+
+        };
+
+    }
+
+
+    /* ----------------------------------------------------------------------
+       MANUAL PROPOSAL API
+       ---------------------------------------------------------------------- */
+
+    async function submit(
+        input
+    ) {
+
+        if (
+            !input ||
+            typeof input !== "object"
+        ) {
+
+            throw new Error(
+                "Evolution proposal must be an object."
+            );
+
+        }
+
+
+        const opportunity = {
+
+            id:
+                uid("MANUAL_OPP"),
+
+            type:
+                input.type ||
+                "MANUAL_OPTIMISATION",
+
+            area:
+                input.area ||
+                "SYSTEM",
+
+            description:
+                input.description ||
+                "Manual evolutionary improvement.",
+
+            evidence:
+                input.evidence ||
+                {}
+
+        };
+
+
+        const observation = {
+
+            id:
+                uid("MANUAL_OBS"),
+
+            timestamp:
+                timestamp(),
+
+            cycle:
+                STATE.cycle,
+
+            signals: []
+
+        };
+
+
+        const proposal =
+            createProposal(
+                opportunity,
+                observation
+            );
+
+
+        const experiment =
+            sandbox(
+                proposal
+            );
+
+
+        proposal.experimentId =
+            experiment.id;
+
+
+        score(
+            proposal,
+            experiment
+        );
+
+
+        const decision =
+            decide(
+                proposal
+            );
+
+
+        const record =
+            await recordDecision(
+                proposal,
+                decision
+            );
+
+
+        STATE.proposals.push(
+            proposal
+        );
+
+
+        STATE.metrics.proposals++;
+
+
+        return {
+
+            proposal:
+                clone(proposal),
+
+            experiment:
+                clone(experiment),
+
+            decision:
+                clone(record)
+
+        };
+
+    }
+
+
+    /* ----------------------------------------------------------------------
+       STATUS API
+       ---------------------------------------------------------------------- */
+
+    function status() {
+
+        return {
+
+            protocol:
+                CONFIG.protocol,
+
+            module:
+                CONFIG.module,
+
+            version:
+                CONFIG.version,
+
+            enabled:
+                CONFIG.enabled,
+
+            started:
+                STATE.started,
+
+            cycle:
+                STATE.cycle,
+
+            metrics:
+                clone(
+                    STATE.metrics
+                ),
+
+            observations:
+                STATE.observations.length,
+
+            opportunities:
+                STATE.opportunities.length,
+
+            proposals:
+                STATE.proposals.length,
+
+            experiments:
+                STATE.experiments.length,
+
+            decisions:
+                STATE.decisions.length,
+
+            accepted:
+                STATE.accepted.length,
+
+            rejected:
+                STATE.rejected.length,
+
+            thresholds: {
+
+                minimum:
+                    CONFIG.minimumAcceptanceScore,
+
+                strong:
+                    CONFIG.strongAcceptanceScore
+
+            },
+
+            productionSelfRewrite:
+                CONFIG.productionSelfRewrite
+
+        };
+
+    }
+
+
+    /* ----------------------------------------------------------------------
+       WORKER INTEGRATION
+       ---------------------------------------------------------------------- */
+
+    function registerWorkers() {
+
+        if (!WORKERS) {
+
+            log(
+                "Worker swarm not available."
+            );
+
+            return;
+
+        }
+
+
+        try {
+
+            if (
+                typeof WORKERS.register ===
+                "function"
+            ) {
+
+
+                WORKERS.register({
+
+                    id:
+                        "EVOLUTION_OBSERVER",
+
+                    lane:
+                        "EVOLUTION",
+
+                    priority:
+                        70,
+
+                    handler:
+                        async function () {
+
+                            return observe();
+
+                        }
+
+                });
+
+
+                WORKERS.register({
+
+                    id:
+                        "EVOLUTION_ENGINE",
+
+                    lane:
+                        "EVOLUTION",
+
+                    priority:
+                        60,
+
+                    handler:
+                        async function () {
+
+                            return evolve();
+
+                        }
+
+                });
+
+
+                WORKERS.register({
+
+                    id:
+                        "EVOLUTION_STATUS",
+
+                    lane:
+                        "SYSTEM",
+
+                    priority:
+                        40,
+
+                    handler:
+                        async function () {
+
+                            return status();
+
+                        }
+
+                });
+
+
+                log(
+                    "Evolution workers registered."
+                );
+
+            }
+
+        } catch (error) {
+
+            STATE.failures++;
+
+            STATE.metrics.failures++;
+
+            console.error(
+                "[EVOLUTION WORKER REGISTRATION]",
+                error
+            );
+
+        }
+
+    }
+
+
+    /* ----------------------------------------------------------------------
+       AUTONOMOUS SCHEDULER
+       ---------------------------------------------------------------------- */
+
+    let observationTimer =
+        null;
+
+    let evolutionTimer =
+        null;
+
+
+    function startScheduler() {
+
+        if (
+            observationTimer ||
+            evolutionTimer
+        ) {
+
+            return;
+
+        }
+
+
+        if (
+            CONFIG.autonomousObservation
+        ) {
+
+            observationTimer =
+                setInterval(
+
+                    function () {
+
+                        try {
+
+                            observe();
+
+                        } catch (error) {
+
+                            STATE.failures++;
+
+                            STATE.metrics.failures++;
+
+                            console.error(
+                                "[EVOLUTION OBSERVER]",
+                                error
+                            );
+
+                        }
+
+                    },
+
+                    CONFIG.observationInterval
+
+                );
+
+        }
+
+
+        if (
+            CONFIG.autonomousEvolution
+        ) {
+
+            evolutionTimer =
+                setInterval(
+
+                    function () {
+
+                        evolve()
+                            .catch(
+
+                                function (error) {
+
+                                    STATE.failures++;
+
+                                    STATE.metrics.failures++;
+
+                                    console.error(
+                                        "[EVOLUTION CYCLE]",
+                                        error
+                                    );
+
+                                }
+
+                            );
+
+                    },
+
+                    CONFIG.evolutionInterval
+
+                );
+
+        }
+
+
+        log(
+            "Autonomous evolutionary scheduler online."
+        );
+
+    }
+
+
+    function stopScheduler() {
+
+        if (
+            observationTimer
+        ) {
+
+            clearInterval(
+                observationTimer
+            );
+
+            observationTimer =
+                null;
+
+        }
+
+
+        if (
+            evolutionTimer
+        ) {
+
+            clearInterval(
+                evolutionTimer
+            );
+
+            evolutionTimer =
+                null;
+
+        }
+
+
+        log(
+            "Autonomous evolutionary scheduler stopped."
+        );
+
+    }
+
+
+    /* ----------------------------------------------------------------------
+       RESET
+       ---------------------------------------------------------------------- */
+
+    function reset() {
+
+        stopScheduler();
+
+
+        STATE.observations = [];
+
+        STATE.opportunities = [];
+
+        STATE.proposals = [];
+
+        STATE.experiments = [];
+
+        STATE.decisions = [];
+
+        STATE.accepted = [];
+
+        STATE.rejected = [];
+
+        STATE.pending = [];
+
+        STATE.cycle = 0;
+
+
+        STATE.metrics = {
+
+            observations: 0,
+
+            opportunities: 0,
+
+            proposals: 0,
+
+            experiments: 0,
+
+            accepted: 0,
+
+            rejected: 0,
+
+            reviewed: 0,
+
+            failures: 0,
+
+            cycles: 0
+
+        };
+
+
+        STATE.timestamps = {
+
+            started: 0,
+
+            lastObservation: 0,
+
+            lastEvolution: 0,
+
+            lastDecision: 0
+
+        };
+
+
+        log(
+            "Evolution transient state reset."
+        );
+
+
+        return status();
+
+    }
+
+
+    /* ----------------------------------------------------------------------
+       PUBLIC API
+       ---------------------------------------------------------------------- */
+
+    const API = {
+
+        protocol:
+            CONFIG.protocol,
+
+        version:
+            CONFIG.version,
+
+        config:
+            CONFIG,
+
+        state:
+            STATE,
+
+        observe:
+            observe,
+
+        detect:
+            detectOpportunities,
+
+        propose:
+            createProposal,
+
+        sandbox:
+            sandbox,
+
+        score:
+            score,
+
+        decide:
+            decide,
+
+        evolve:
+            evolve,
+
+        submit:
+            submit,
+
+        status:
+            status,
+
+        getProposals:
+            function () {
+
+                return clone(
+                    STATE.proposals
+                );
+
+            },
+
+        getExperiments:
+            function () {
+
+                return clone(
+                    STATE.experiments
+                );
+
+            },
+
+        getDecisions:
+            function () {
+
+                return clone(
+                    STATE.decisions
+                );
+
+            },
+
+        getAccepted:
+            function () {
+
+                return clone(
+                    STATE.accepted
+                );
+
+            },
+
+        getRejected:
+            function () {
+
+                return clone(
+                    STATE.rejected
+                );
+
+            },
+
+        start:
+            function () {
+
+                if (
+                    STATE.started
+                ) {
+
+                    return status();
+
+                }
+
+
+                STATE.started =
+                    true;
+
+                STATE.timestamps.started =
+                    timestamp();
+
+
+                registerWorkers();
+
+                startScheduler();
+
+
+                emit(
+                    "EVOLUTION_ENGINE_STARTED",
+                    status()
+                );
+
+
+                log(
+                    "Evolution Engine ONLINE."
+                );
+
+
+                return status();
+
+            },
+
+        stop:
+            function () {
+
+                stopScheduler();
+
+                STATE.started =
+                    false;
+
+
+                emit(
+                    "EVOLUTION_ENGINE_STOPPED",
+                    status()
+                );
+
+
+                return status();
+
+            },
+
+        reset:
+            reset
+
+    };
+
+
+    /* ----------------------------------------------------------------------
+       GLOBAL EXPOSURE
+       ---------------------------------------------------------------------- */
+
+    global.CHIROMBE_EVOLUTION =
+        API;
+
+    global.CHIROMBE_EVOLUTION_ENGINE =
+        API;
+
+
+    /* ----------------------------------------------------------------------
+       CORE MODULE REGISTRATION
+       ---------------------------------------------------------------------- */
+
+    try {
+
+        if (
+            CORE.modules &&
+            typeof CORE.modules.register ===
+            "function"
+        ) {
+
+            CORE.modules.register(
+
+                "EVOLUTION_ENGINE",
+
+                API
+
+            );
+
+        }
+
+    } catch (error) {
+
+        console.warn(
+            "[EVOLUTION] Core registration unavailable.",
+            error
+        );
+
+    }
+
+
+    /* ----------------------------------------------------------------------
+       INITIAL SYSTEM MEMORY RECORD
+       ---------------------------------------------------------------------- */
+
+    saveMemory(
+
+        "SYSTEM",
+
+        "EVOLUTION_ENGINE",
+
+        {
+
+            protocol:
+                CONFIG.protocol,
+
+            module:
+                CONFIG.module,
+
+            version:
+                CONFIG.version,
+
+            initialized:
+                timestamp(),
+
+            productionSelfRewrite:
+                CONFIG.productionSelfRewrite,
+
+            minimumAcceptanceScore:
+                CONFIG.minimumAcceptanceScore,
+
+            strongAcceptanceScore:
+                CONFIG.strongAcceptanceScore
+
+        }
+
+    );
+
+
+    /* ----------------------------------------------------------------------
+       START
+       ---------------------------------------------------------------------- */
+
+    API.start();
+
+
+    /* ----------------------------------------------------------------------
+       BOOT DISPLAY
+       ---------------------------------------------------------------------- */
+
+    console.log(
+        "============================================================"
+    );
+
+    console.log(
+        " CHIROMBE EVOLUTION ENGINE"
+    );
+
+    console.log(
+        " PROTOCOL: " +
+        CONFIG.protocol
+    );
+
+    console.log(
+        " VERSION: " +
+        CONFIG.version
+    );
+
+    console.log(
+        " OBSERVE: ONLINE"
+    );
+
+    console.log(
+        " ANALYSE: ONLINE"
+    );
+
+    console.log(
+        " PROPOSE: ONLINE"
+    );
+
+    console.log(
+        " SANDBOX: ONLINE"
+    );
+
+    console.log(
+        " SCORE: ONLINE"
+    );
+
+    console.log(
+        " DECISION: ONLINE"
+    );
+
+    console.log(
+        " MEMORY RECORDING: ONLINE"
+    );
+
+    console.log(
+        " PRODUCTION BLIND REWRITE: LOCKED"
+    );
+
+    console.log(
+        "============================================================"
+    );
+
+
+})(globalThis);
+
+
+/* ==========================================================================
+   END OF CHIROMBE EVOLUTION ENGINE
+   PART 04 / 10
+   ========================================================================== */
