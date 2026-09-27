@@ -25155,4 +25155,35 @@
 
   initialise();
 
-})();
+})();(function (window) {
+    "use strict";
+
+    window.CHIROMBE_AUDIO = window.CHIROMBE_AUDIO || {};
+
+    const API = {
+        VERSION: "9.0.1",
+        NAME: "CHIROMBE_AUDIO_EVOLUTION",
+
+        status: "READY",
+
+        getStatus: function () {
+            return {
+                name: "CHIROMBE_AUDIO_EVOLUTION",
+                version: "9.0.1",
+                status: "READY",
+                loaded: true,
+                timestamp: Date.now()
+            };
+        }
+    };
+
+    window.CHIROMBE_AUDIO_EVOLUTION = API;
+    window.CHIROMBE_AUDIO_EVOLUTION_ENGINE = API;
+    window.CHIROMBE_AUDIO.Evolution = API;
+
+    console.log(
+        "[CHIROMBE] Audio Evolution 9A loaded",
+        API.getStatus()
+    );
+
+})(window);
