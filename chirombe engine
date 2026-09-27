@@ -19883,4 +19883,2658 @@
 
 })(typeof globalThis !== "undefined"
     ? globalThis
+    : window);/* =====================================================================
+   CHIROMBE BACKEND / PERSISTENCE / SYNCHRONISATION BRIDGE
+   =====================================================================
+
+   File:
+       chirombe-backend.js
+
+   Protocol:
+       CHEP-10
+
+   Version:
+       1.0.0
+
+   PURPOSE
+   -------
+   This is the boundary between the Chirombe browser intelligence
+   environment and a real persistent backend.
+
+   ARCHITECTURE
+
+       CHIROMBE CORE
+             |
+          MEMORY
+             |
+          WORKERS
+             |
+        EVOLUTION
+             |
+         PATHWAYS
+             |
+         WATCHDOG
+             |
+        KNOWLEDGE
+             |
+          BUILD
+             |
+      ORCHESTRATOR
+             |
+       ----------------
+       |              |
+   LOCAL STORE     BACKEND API
+                       |
+                 PERSISTENT DB
+                       |
+                     WORKERS
+                       |
+                  GIT / VERSIONING
+                       |
+                 EXTERNAL AI BRIDGE
+
+   IMPORTANT
+   ---------
+   GitHub Pages is a static hosting environment.
+
+   This module therefore provides:
+       - local persistence
+       - remote API contract
+       - queued synchronisation
+       - event forwarding
+       - snapshot transport
+       - backend health monitoring
+       - job submission
+       - job polling
+       - recovery
+       - external-AI handoff preparation
+       - version information
+       - future backend compatibility
+
+   It does NOT pretend that a browser page can independently run a
+   permanent 24/7 server process.
+
+   A real backend endpoint can later be connected by changing:
+
+       API_BASE_URL
+
+   No production code is automatically overwritten.
+   No arbitrary remote code is executed.
+   ===================================================================== */
+
+(function (global) {
+
+    "use strict";
+
+    /* -----------------------------------------------------------------
+       DEPENDENCIES
+       ----------------------------------------------------------------- */
+
+    const CORE =
+        global.CHIROMBE ||
+        global.CHIROMBE_CORE;
+
+    const MEMORY =
+        global.CHIROMBE_MEMORY;
+
+    const WORKERS =
+        global.CHIROMBE_WORKERS;
+
+    const EVOLUTION =
+        global.CHIROMBE_EVOLUTION ||
+        global.CHIROMBE_EVOLUTION_ENGINE;
+
+    const PATHWAYS =
+        global.CHIROMBE_PATHWAYS ||
+        global.CHIROMBE_PATHWAY_ENGINE;
+
+    const WATCHDOG =
+        global.CHIROMBE_WATCHDOG ||
+        global.CHIROMBE_WATCHDOG_ENGINE;
+
+    const KNOWLEDGE =
+        global.CHIROMBE_KNOWLEDGE ||
+        global.CHIROMBE_KNOWLEDGE_ENGINE;
+
+    const BUILD =
+        global.CHIROMBE_BUILD ||
+        global.CHIROMBE_BUILD_ENGINE;
+
+    const ORCHESTRATOR =
+        global.CHIROMBE_ORCHESTRATOR ||
+        global.CHIROMBE_ORCHESTRATION_ENGINE;
+
+
+    /* -----------------------------------------------------------------
+       CONFIGURATION
+       ----------------------------------------------------------------- */
+
+    const CONFIG = {
+
+        protocol:
+            "CHEP-10",
+
+        version:
+            "1.0.0",
+
+        system:
+            "CHIROMBE PERSISTENCE AND BACKEND BRIDGE",
+
+        instanceId:
+            createId("INSTANCE"),
+
+        /*
+         * Keep this empty until a real backend exists.
+         *
+         * Example future value:
+         *
+         * https://your-backend.example/api
+         */
+
+        API_BASE_URL:
+            "",
+
+        endpoints: {
+
+            health:
+                "/health",
+
+            state:
+                "/state",
+
+            snapshot:
+                "/snapshot",
+
+            events:
+                "/events",
+
+            jobs:
+                "/jobs",
+
+            job:
+                "/jobs/{id}",
+
+            memory:
+                "/memory",
+
+            knowledge:
+                "/knowledge",
+
+            evolution:
+                "/evolution",
+
+            build:
+                "/build",
+
+            orchestration:
+                "/orchestration",
+
+            externalAI:
+                "/external-ai"
+
+        },
+
+        requestTimeout:
+            20000,
+
+        heartbeatInterval:
+            60000,
+
+        syncInterval:
+            30000,
+
+        maxQueue:
+            5000,
+
+        maxSnapshots:
+            250,
+
+        maxEvents:
+            5000,
+
+        retryLimit:
+            5,
+
+        automaticSync:
+            true,
+
+        automaticHeartbeat:
+            true,
+
+        automaticRemoteExecution:
+            false,
+
+        allowRemoteCodeExecution:
+            false,
+
+        allowRemoteProductionDeployment:
+            false,
+
+        localStoragePrefix:
+            "CHIROMBE_CHEP10_",
+
+        /*
+         * These files remain protected from remote instructions.
+         */
+
+        protectedModules: [
+
+            "chirombe-core.js",
+            "chirombe-memory.js",
+            "chirombe-workers.js",
+            "chirombe-evolution.js",
+            "chirombe-pathways.js",
+            "chirombe-watchdog.js",
+            "chirombe-knowledge.js",
+            "chirombe-build.js",
+            "chirombe-orchestrator.js",
+            "chirombe-backend.js"
+
+        ]
+
+    };
+
+
+    /* -----------------------------------------------------------------
+       STATE
+       ----------------------------------------------------------------- */
+
+    const STATE = {
+
+        booted:
+            false,
+
+        online:
+            false,
+
+        backendConfigured:
+            false,
+
+        lastHeartbeat:
+            null,
+
+        lastSync:
+            null,
+
+        lastError:
+            null,
+
+        queue:
+            [],
+
+        snapshots:
+            [],
+
+        remoteJobs:
+            {},
+
+        events:
+            [],
+
+        syncHistory:
+            [],
+
+        metrics: {
+
+            requests:
+                0,
+
+            successfulRequests:
+                0,
+
+            failedRequests:
+                0,
+
+            queued:
+                0,
+
+            synced:
+                0,
+
+            snapshots:
+                0,
+
+            heartbeats:
+                0,
+
+            jobsSubmitted:
+                0,
+
+            jobsCompleted:
+                0,
+
+            jobsFailed:
+                0
+
+        },
+
+        timers: {
+
+            heartbeat:
+                null,
+
+            sync:
+                null
+
+        }
+
+    };
+
+
+    /* -----------------------------------------------------------------
+       BASIC UTILITIES
+       ----------------------------------------------------------------- */
+
+    function createId(prefix) {
+
+        return (
+            String(prefix || "ID") +
+            "_" +
+            Date.now().toString(36) +
+            "_" +
+            Math.random()
+                .toString(36)
+                .slice(2, 10)
+        ).toUpperCase();
+
+    }
+
+
+    function now() {
+
+        return new Date().toISOString();
+
+    }
+
+
+    function clone(value) {
+
+        try {
+
+            return JSON.parse(
+                JSON.stringify(value)
+            );
+
+        } catch (error) {
+
+            return value;
+
+        }
+
+    }
+
+
+    function emit(event, payload) {
+
+        const record = {
+
+            id:
+                createId("EVENT"),
+
+            event:
+                event,
+
+            timestamp:
+                now(),
+
+            payload:
+                clone(payload || {})
+
+        };
+
+        STATE.events.unshift(
+            record
+        );
+
+        if (
+            STATE.events.length >
+            CONFIG.maxEvents
+        ) {
+
+            STATE.events.length =
+                CONFIG.maxEvents;
+
+        }
+
+        try {
+
+            if (
+                CORE &&
+                typeof CORE.emit ===
+                "function"
+            ) {
+
+                CORE.emit(
+                    event,
+                    payload
+                );
+
+            }
+
+        } catch (error) {}
+
+        return record;
+
+    }
+
+
+    function log(message, data) {
+
+        try {
+
+            if (
+                CORE &&
+                typeof CORE.log ===
+                "function"
+            ) {
+
+                CORE.log(
+                    "[BACKEND] " +
+                    message,
+                    data
+                );
+
+                return;
+
+            }
+
+        } catch (error) {}
+
+        console.log(
+            "[CHIROMBE BACKEND]",
+            message,
+            data || ""
+        );
+
+    }
+
+
+    /* -----------------------------------------------------------------
+       LOCAL STORAGE
+       ----------------------------------------------------------------- */
+
+    function storageKey(key) {
+
+        return (
+            CONFIG.localStoragePrefix +
+            key
+        );
+
+    }
+
+
+    function localSave(
+        key,
+        value
+    ) {
+
+        try {
+
+            localStorage.setItem(
+                storageKey(key),
+                JSON.stringify(value)
+            );
+
+            return true;
+
+        } catch (error) {
+
+            STATE.lastError =
+                error.message ||
+                String(error);
+
+            return false;
+
+        }
+
+    }
+
+
+    function localLoad(
+        key,
+        fallback
+    ) {
+
+        try {
+
+            const raw =
+                localStorage.getItem(
+                    storageKey(key)
+                );
+
+            if (!raw) {
+
+                return fallback;
+
+            }
+
+            return JSON.parse(raw);
+
+        } catch (error) {
+
+            return fallback;
+
+        }
+
+    }
+
+
+    function localDelete(key) {
+
+        try {
+
+            localStorage.removeItem(
+                storageKey(key)
+            );
+
+            return true;
+
+        } catch (error) {
+
+            return false;
+
+        }
+
+    }
+
+
+    /* -----------------------------------------------------------------
+       CONFIGURATION
+       ----------------------------------------------------------------- */
+
+    function configure(options) {
+
+        options =
+            options || {};
+
+        if (
+            typeof options.apiBaseUrl ===
+            "string"
+        ) {
+
+            CONFIG.API_BASE_URL =
+                options.apiBaseUrl
+                    .trim()
+                    .replace(/\/+$/, "");
+
+        }
+
+        if (
+            typeof options.automaticSync ===
+            "boolean"
+        ) {
+
+            CONFIG.automaticSync =
+                options.automaticSync;
+
+        }
+
+        if (
+            typeof options.automaticHeartbeat ===
+            "boolean"
+        ) {
+
+            CONFIG.automaticHeartbeat =
+                options.automaticHeartbeat;
+
+        }
+
+        if (
+            typeof options.automaticRemoteExecution ===
+            "boolean"
+        ) {
+
+            CONFIG.automaticRemoteExecution =
+                options.automaticRemoteExecution;
+
+        }
+
+        STATE.backendConfigured =
+            CONFIG.API_BASE_URL.length > 0;
+
+        localSave(
+            "CONFIG",
+            {
+                apiBaseUrl:
+                    CONFIG.API_BASE_URL,
+
+                automaticSync:
+                    CONFIG.automaticSync,
+
+                automaticHeartbeat:
+                    CONFIG.automaticHeartbeat
+            }
+        );
+
+        emit(
+            "BACKEND_CONFIGURED",
+            {
+                configured:
+                    STATE.backendConfigured
+            }
+        );
+
+        return status();
+
+    }
+
+
+    /* -----------------------------------------------------------------
+       RESTORE CONFIGURATION
+       ----------------------------------------------------------------- */
+
+    function restoreConfiguration() {
+
+        const saved =
+            localLoad(
+                "CONFIG",
+                null
+            );
+
+        if (!saved) {
+
+            return;
+
+        }
+
+        if (
+            typeof saved.apiBaseUrl ===
+            "string"
+        ) {
+
+            CONFIG.API_BASE_URL =
+                saved.apiBaseUrl;
+
+        }
+
+        if (
+            typeof saved.automaticSync ===
+            "boolean"
+        ) {
+
+            CONFIG.automaticSync =
+                saved.automaticSync;
+
+        }
+
+        if (
+            typeof saved.automaticHeartbeat ===
+            "boolean"
+        ) {
+
+            CONFIG.automaticHeartbeat =
+                saved.automaticHeartbeat;
+
+        }
+
+        STATE.backendConfigured =
+            CONFIG.API_BASE_URL.length > 0;
+
+    }
+
+
+    /* -----------------------------------------------------------------
+       ENDPOINT BUILDER
+       ----------------------------------------------------------------- */
+
+    function endpoint(
+        name,
+        id
+    ) {
+
+        if (
+            !CONFIG.API_BASE_URL
+        ) {
+
+            return null;
+
+        }
+
+        let path =
+            CONFIG.endpoints[name];
+
+        if (!path) {
+
+            return null;
+
+        }
+
+        if (id) {
+
+            path =
+                path.replace(
+                    "{id}",
+                    encodeURIComponent(id)
+                );
+
+        }
+
+        return (
+            CONFIG.API_BASE_URL +
+            path
+        );
+
+    }
+
+
+    /* -----------------------------------------------------------------
+       REQUEST ENGINE
+       ----------------------------------------------------------------- */
+
+    async function request(
+        method,
+        url,
+        body,
+        options
+    ) {
+
+        options =
+            options || {};
+
+        if (!url) {
+
+            throw new Error(
+                "BACKEND_ENDPOINT_NOT_CONFIGURED"
+            );
+
+        }
+
+        STATE.metrics.requests++;
+
+        const controller =
+            typeof AbortController !==
+            "undefined"
+                ? new AbortController()
+                : null;
+
+        let timeoutId =
+            null;
+
+        if (controller) {
+
+            timeoutId =
+                setTimeout(
+                    () =>
+                        controller.abort(),
+                    options.timeout ||
+                    CONFIG.requestTimeout
+                );
+
+        }
+
+        try {
+
+            const headers = {
+
+                "Content-Type":
+                    "application/json",
+
+                "X-Chirombe-Protocol":
+                    CONFIG.protocol,
+
+                "X-Chirombe-Version":
+                    CONFIG.version,
+
+                "X-Chirombe-Instance":
+                    CONFIG.instanceId
+
+            };
+
+            if (
+                options.headers
+            ) {
+
+                Object.assign(
+                    headers,
+                    options.headers
+                );
+
+            }
+
+            const response =
+                await fetch(
+                    url,
+                    {
+
+                        method:
+                            method || "GET",
+
+                        headers,
+
+                        body:
+                            body == null
+                                ? undefined
+                                : JSON.stringify(
+                                    body
+                                ),
+
+                        signal:
+                            controller
+                                ? controller.signal
+                                : undefined
+                    }
+                );
+
+            if (timeoutId) {
+
+                clearTimeout(
+                    timeoutId
+                );
+
+            }
+
+            if (!response.ok) {
+
+                throw new Error(
+                    "HTTP_" +
+                    response.status
+                );
+
+            }
+
+            let data =
+                null;
+
+            const contentType =
+                response.headers.get(
+                    "content-type"
+                ) || "";
+
+            if (
+                contentType.includes(
+                    "application/json"
+                )
+            ) {
+
+                data =
+                    await response.json();
+
+            } else {
+
+                data =
+                    await response.text();
+
+            }
+
+            STATE.metrics.successfulRequests++;
+
+            STATE.online = true;
+
+            STATE.lastError =
+                null;
+
+            return data;
+
+        } catch (error) {
+
+            if (timeoutId) {
+
+                clearTimeout(
+                    timeoutId
+                );
+
+            }
+
+            STATE.metrics.failedRequests++;
+
+            STATE.online = false;
+
+            STATE.lastError =
+                error.message ||
+                String(error);
+
+            throw error;
+
+        }
+
+    }
+
+
+    /* -----------------------------------------------------------------
+       HEALTH CHECK
+       ----------------------------------------------------------------- */
+
+    async function heartbeat() {
+
+        STATE.metrics.heartbeats++;
+
+        STATE.lastHeartbeat =
+            now();
+
+        if (
+            !CONFIG.API_BASE_URL
+        ) {
+
+            STATE.online = false;
+
+            return {
+
+                online:
+                    false,
+
+                configured:
+                    false,
+
+                reason:
+                    "BACKEND_URL_NOT_CONFIGURED",
+
+                timestamp:
+                    now()
+
+            };
+
+        }
+
+        try {
+
+            const result =
+                await request(
+                    "GET",
+                    endpoint(
+                        "health"
+                    )
+                );
+
+            STATE.online = true;
+
+            emit(
+                "BACKEND_HEARTBEAT_OK",
+                result
+            );
+
+            return {
+
+                online:
+                    true,
+
+                configured:
+                    true,
+
+                response:
+                    clone(result),
+
+                timestamp:
+                    now()
+
+            };
+
+        } catch (error) {
+
+            STATE.online = false;
+
+            emit(
+                "BACKEND_HEARTBEAT_FAILED",
+                {
+                    error:
+                        error.message
+                }
+            );
+
+            return {
+
+                online:
+                    false,
+
+                configured:
+                    true,
+
+                error:
+                    error.message,
+
+                timestamp:
+                    now()
+
+            };
+
+        }
+
+    }
+
+
+    /* -----------------------------------------------------------------
+       EVENT QUEUE
+       ----------------------------------------------------------------- */
+
+    function queueEvent(
+        event,
+        payload
+    ) {
+
+        const item = {
+
+            id:
+                createId("QUEUE"),
+
+            event:
+                event,
+
+            payload:
+                clone(payload || {}),
+
+            timestamp:
+                now(),
+
+            attempts:
+                0,
+
+            status:
+                "QUEUED"
+
+        };
+
+        STATE.queue.push(
+            item
+        );
+
+        STATE.metrics.queued++;
+
+        if (
+            STATE.queue.length >
+            CONFIG.maxQueue
+        ) {
+
+            STATE.queue.shift();
+
+        }
+
+        localSave(
+            "QUEUE",
+            STATE.queue
+        );
+
+        emit(
+            "BACKEND_EVENT_QUEUED",
+            item
+        );
+
+        return clone(item);
+
+    }
+
+
+    /* -----------------------------------------------------------------
+       SYNCHRONISE EVENTS
+       ----------------------------------------------------------------- */
+
+    async function syncEvents() {
+
+        if (
+            !STATE.queue.length
+        ) {
+
+            return {
+
+                synced:
+                    0,
+
+                remaining:
+                    0
+
+            };
+
+        }
+
+        if (
+            !CONFIG.API_BASE_URL
+        ) {
+
+            return {
+
+                synced:
+                    0,
+
+                remaining:
+                    STATE.queue.length,
+
+                offline:
+                    true
+
+            };
+
+        }
+
+        const batch =
+            STATE.queue.slice(
+                0,
+                100
+            );
+
+        batch.forEach(
+            item =>
+                item.attempts++
+        );
+
+        try {
+
+            const response =
+                await request(
+                    "POST",
+                    endpoint(
+                        "events"
+                    ),
+                    {
+                        protocol:
+                            CONFIG.protocol,
+
+                        version:
+                            CONFIG.version,
+
+                        instance:
+                            CONFIG.instanceId,
+
+                        events:
+                            batch
+                    }
+                );
+
+            const ids =
+                new Set(
+                    batch.map(
+                        item =>
+                            item.id
+                    )
+                );
+
+            STATE.queue =
+                STATE.queue.filter(
+                    item =>
+                        !ids.has(
+                            item.id
+                        )
+                );
+
+            STATE.metrics.synced +=
+                batch.length;
+
+            STATE.lastSync =
+                now();
+
+            localSave(
+                "QUEUE",
+                STATE.queue
+            );
+
+            STATE.syncHistory.unshift({
+
+                timestamp:
+                    now(),
+
+                count:
+                    batch.length,
+
+                response:
+                    clone(response)
+
+            });
+
+            emit(
+                "BACKEND_SYNC_COMPLETE",
+                {
+                    count:
+                        batch.length
+                }
+            );
+
+            return {
+
+                synced:
+                    batch.length,
+
+                remaining:
+                    STATE.queue.length,
+
+                response:
+                    clone(response)
+
+            };
+
+        } catch (error) {
+
+            batch.forEach(
+                item => {
+
+                    item.status =
+                        "RETRY";
+
+                }
+            );
+
+            localSave(
+                "QUEUE",
+                STATE.queue
+            );
+
+            return {
+
+                synced:
+                    0,
+
+                remaining:
+                    STATE.queue.length,
+
+                error:
+                    error.message
+
+            };
+
+        }
+
+    }
+
+
+    /* -----------------------------------------------------------------
+       SNAPSHOT ENGINE
+       ----------------------------------------------------------------- */
+
+    function collectSystemState() {
+
+        const result = {
+
+            protocol:
+                CONFIG.protocol,
+
+            version:
+                CONFIG.version,
+
+            instance:
+                CONFIG.instanceId,
+
+            timestamp:
+                now(),
+
+            core:
+                safeStatus(
+                    CORE
+                ),
+
+            memory:
+                safeStatus(
+                    MEMORY
+                ),
+
+            workers:
+                safeStatus(
+                    WORKERS
+                ),
+
+            evolution:
+                safeStatus(
+                    EVOLUTION
+                ),
+
+            pathways:
+                safeStatus(
+                    PATHWAYS
+                ),
+
+            watchdog:
+                safeStatus(
+                    WATCHDOG
+                ),
+
+            knowledge:
+                safeStatus(
+                    KNOWLEDGE
+                ),
+
+            build:
+                safeStatus(
+                    BUILD
+                ),
+
+            orchestrator:
+                safeStatus(
+                    ORCHESTRATOR
+                )
+
+        };
+
+        return result;
+
+    }
+
+
+    function safeStatus(
+        module
+    ) {
+
+        if (!module) {
+
+            return {
+
+                available:
+                    false
+
+            };
+
+        }
+
+        try {
+
+            if (
+                typeof module.status ===
+                "function"
+            ) {
+
+                return {
+
+                    available:
+                        true,
+
+                    status:
+                        clone(
+                            module.status()
+                        )
+
+                };
+
+            }
+
+        } catch (error) {
+
+            return {
+
+                available:
+                    true,
+
+                error:
+                    error.message
+
+            };
+
+        }
+
+        return {
+
+            available:
+                true
+
+        };
+
+    }
+
+
+    function createSnapshot(
+        label
+    ) {
+
+        const snapshot = {
+
+            id:
+                createId("SNAPSHOT"),
+
+            label:
+                label ||
+                "Chirombe System Snapshot",
+
+            timestamp:
+                now(),
+
+            system:
+                collectSystemState(),
+
+            metrics:
+                clone(
+                    STATE.metrics
+                )
+
+        };
+
+        STATE.snapshots.unshift(
+            snapshot
+        );
+
+        if (
+            STATE.snapshots.length >
+            CONFIG.maxSnapshots
+        ) {
+
+            STATE.snapshots.length =
+                CONFIG.maxSnapshots;
+
+        }
+
+        STATE.metrics.snapshots++;
+
+        localSave(
+            "SNAPSHOTS",
+            STATE.snapshots
+        );
+
+        emit(
+            "BACKEND_SNAPSHOT_CREATED",
+            {
+                id:
+                    snapshot.id
+            }
+        );
+
+        return clone(snapshot);
+
+    }
+
+
+    async function uploadSnapshot(
+        snapshot
+    ) {
+
+        snapshot =
+            snapshot ||
+            createSnapshot();
+
+        if (
+            !CONFIG.API_BASE_URL
+        ) {
+
+            return {
+
+                uploaded:
+                    false,
+
+                offline:
+                    true,
+
+                snapshotId:
+                    snapshot.id
+
+            };
+
+        }
+
+        try {
+
+            const response =
+                await request(
+                    "POST",
+                    endpoint(
+                        "snapshot"
+                    ),
+                    snapshot
+                );
+
+            emit(
+                "BACKEND_SNAPSHOT_UPLOADED",
+                {
+                    snapshotId:
+                        snapshot.id
+                }
+            );
+
+            return {
+
+                uploaded:
+                    true,
+
+                response:
+                    clone(response)
+
+            };
+
+        } catch (error) {
+
+            return {
+
+                uploaded:
+                    false,
+
+                error:
+                    error.message
+
+            };
+
+        }
+
+    }
+
+
+    /* -----------------------------------------------------------------
+       REMOTE JOB SUBMISSION
+       ----------------------------------------------------------------- */
+
+    async function submitJob(
+        job
+    ) {
+
+        job =
+            Object.assign(
+                {
+
+                    id:
+                        createId("JOB"),
+
+                    protocol:
+                        CONFIG.protocol,
+
+                    version:
+                        CONFIG.version,
+
+                    instance:
+                        CONFIG.instanceId,
+
+                    createdAt:
+                        now(),
+
+                    status:
+                        "QUEUED"
+
+                },
+
+                clone(job || {})
+            );
+
+        /*
+         * Never permit a remotely supplied job to become an
+         * unrestricted production rewrite.
+         */
+
+        job.safety =
+            Object.assign(
+                {
+
+                    allowCodeExecution:
+                        false,
+
+                    allowProductionDeployment:
+                        false,
+
+                    allowProtectedModification:
+                        false
+
+                },
+
+                job.safety || {}
+            );
+
+        if (
+            job.safety.allowCodeExecution !==
+            false
+        ) {
+
+            job.safety.allowCodeExecution =
+                false;
+
+        }
+
+        if (
+            job.safety.allowProductionDeployment !==
+            false
+        ) {
+
+            job.safety.allowProductionDeployment =
+                false;
+
+        }
+
+        if (
+            job.safety.allowProtectedModification !==
+            false
+        ) {
+
+            job.safety.allowProtectedModification =
+                false;
+
+        }
+
+        STATE.remoteJobs[job.id] =
+            job;
+
+        STATE.metrics.jobsSubmitted++;
+
+        if (
+            !CONFIG.API_BASE_URL
+        ) {
+
+            queueEvent(
+                "REMOTE_JOB_REQUEST",
+                job
+            );
+
+            return {
+
+                submitted:
+                    false,
+
+                queued:
+                    true,
+
+                job:
+                    clone(job)
+
+            };
+
+        }
+
+        try {
+
+            const response =
+                await request(
+                    "POST",
+                    endpoint(
+                        "jobs"
+                    ),
+                    job
+                );
+
+            if (
+                response &&
+                response.id
+            ) {
+
+                STATE.remoteJobs[
+                    response.id
+                ] =
+                    Object.assign(
+                        {},
+                        job,
+                        response
+                    );
+
+            }
+
+            emit(
+                "BACKEND_JOB_SUBMITTED",
+                {
+                    jobId:
+                        job.id
+                }
+            );
+
+            return {
+
+                submitted:
+                    true,
+
+                response:
+                    clone(response)
+
+            };
+
+        } catch (error) {
+
+            queueEvent(
+                "REMOTE_JOB_REQUEST",
+                job
+            );
+
+            return {
+
+                submitted:
+                    false,
+
+                queued:
+                    true,
+
+                error:
+                    error.message,
+
+                job:
+                    clone(job)
+
+            };
+
+        }
+
+    }
+
+
+    /* -----------------------------------------------------------------
+       REMOTE JOB STATUS
+       ----------------------------------------------------------------- */
+
+    async function getJob(
+        jobId
+    ) {
+
+        if (!jobId) {
+
+            return null;
+
+        }
+
+        if (
+            !CONFIG.API_BASE_URL
+        ) {
+
+            return (
+                STATE.remoteJobs[jobId] ||
+                null
+            );
+
+        }
+
+        try {
+
+            const result =
+                await request(
+                    "GET",
+                    endpoint(
+                        "job",
+                        jobId
+                    )
+                );
+
+            STATE.remoteJobs[jobId] =
+                Object.assign(
+                    {},
+                    STATE.remoteJobs[jobId] ||
+                    {},
+                    result
+                );
+
+            if (
+                result.status ===
+                "COMPLETE"
+            ) {
+
+                STATE.metrics.jobsCompleted++;
+
+            }
+
+            if (
+                result.status ===
+                "FAILED"
+            ) {
+
+                STATE.metrics.jobsFailed++;
+
+            }
+
+            return clone(result);
+
+        } catch (error) {
+
+            return {
+
+                id:
+                    jobId,
+
+                status:
+                    "UNKNOWN",
+
+                error:
+                    error.message
+
+            };
+
+        }
+
+    }
+
+
+    /* -----------------------------------------------------------------
+       PERSIST SYSTEM STATE
+       ----------------------------------------------------------------- */
+
+    async function persistState() {
+
+        const snapshot =
+            createSnapshot(
+                "Automatic Persistence Snapshot"
+            );
+
+        localSave(
+            "LAST_STATE",
+            snapshot
+        );
+
+        /*
+         * Send only when a real backend has been configured.
+         */
+
+        if (
+            STATE.backendConfigured
+        ) {
+
+            return uploadSnapshot(
+                snapshot
+            );
+
+        }
+
+        return {
+
+            persisted:
+                true,
+
+            local:
+                true,
+
+            remote:
+                false,
+
+            snapshotId:
+                snapshot.id
+
+        };
+
+    }
+
+
+    /* -----------------------------------------------------------------
+       EXTERNAL AI CONTEXT PACKAGE
+       ----------------------------------------------------------------- */
+
+    function createAIContext(
+        instruction
+    ) {
+
+        const context = {
+
+            protocol:
+                "CHEP-10-AI-CONTEXT",
+
+            timestamp:
+                now(),
+
+            instruction:
+                String(
+                    instruction || ""
+                ),
+
+            system:
+                collectSystemState(),
+
+            orchestration:
+                safeStatus(
+                    ORCHESTRATOR
+                ),
+
+            evolution:
+                safeStatus(
+                    EVOLUTION
+                ),
+
+            pathways:
+                safeStatus(
+                    PATHWAYS
+                ),
+
+            knowledge:
+                safeStatus(
+                    KNOWLEDGE
+                ),
+
+            build:
+                safeStatus(
+                    BUILD
+                ),
+
+            safety: {
+
+                productionDeployment:
+                    false,
+
+                unrestrictedRewrite:
+                    false,
+
+                protectedModules:
+                    clone(
+                        CONFIG.protectedModules
+                    )
+
+            }
+
+        };
+
+        return context;
+
+    }
+
+
+    async function externalAIHandoff(
+        instruction,
+        provider
+    ) {
+
+        const packageData =
+            createAIContext(
+                instruction
+            );
+
+        packageData.provider =
+            provider ||
+            "EXTERNAL_AI";
+
+        packageData.status =
+            "READY_FOR_EXTERNAL_BRIDGE";
+
+        /*
+         * The backend receives the context.
+         * The browser never directly executes arbitrary AI-generated
+         * JavaScript.
+         */
+
+        if (
+            !CONFIG.API_BASE_URL
+        ) {
+
+            queueEvent(
+                "EXTERNAL_AI_HANDOFF",
+                packageData
+            );
+
+            return {
+
+                submitted:
+                    false,
+
+                queued:
+                    true,
+
+                context:
+                    packageData
+
+            };
+
+        }
+
+        try {
+
+            const result =
+                await request(
+                    "POST",
+                    endpoint(
+                        "externalAI"
+                    ),
+                    packageData
+                );
+
+            emit(
+                "BACKEND_EXTERNAL_AI_HANDOFF",
+                {
+                    provider:
+                        packageData.provider
+                }
+            );
+
+            return {
+
+                submitted:
+                    true,
+
+                response:
+                    clone(result)
+
+            };
+
+        } catch (error) {
+
+            queueEvent(
+                "EXTERNAL_AI_HANDOFF",
+                packageData
+            );
+
+            return {
+
+                submitted:
+                    false,
+
+                queued:
+                    true,
+
+                error:
+                    error.message
+
+            };
+
+        }
+
+    }
+
+
+    /* -----------------------------------------------------------------
+       BACKEND COMMAND
+       ----------------------------------------------------------------- */
+
+    async function command(
+        type,
+        payload
+    ) {
+
+        const commandType =
+            String(type || "")
+                .toUpperCase();
+
+        switch (
+            commandType
+        ) {
+
+            case "HEALTH":
+
+                return heartbeat();
+
+
+            case "SNAPSHOT":
+
+                return createSnapshot(
+                    payload &&
+                    payload.label
+                );
+
+
+            case "PERSIST":
+
+                return persistState();
+
+
+            case "SYNC":
+
+                return syncEvents();
+
+
+            case "JOB":
+
+                return submitJob(
+                    payload
+                );
+
+
+            case "JOB_STATUS":
+
+                return getJob(
+                    payload &&
+                    payload.jobId
+                );
+
+
+            case "AI":
+
+                return externalAIHandoff(
+                    payload &&
+                    payload.instruction,
+
+                    payload &&
+                    payload.provider
+                );
+
+
+            case "STATUS":
+
+                return status();
+
+
+            case "CONFIGURE":
+
+                return configure(
+                    payload
+                );
+
+
+            default:
+
+                return {
+
+                    ok:
+                        false,
+
+                    error:
+                        "UNKNOWN_BACKEND_COMMAND",
+
+                    command:
+                        commandType
+
+                };
+
+        }
+
+    }
+
+
+    /* -----------------------------------------------------------------
+       EVENT CAPTURE
+       ----------------------------------------------------------------- */
+
+    function attachEventListeners() {
+
+        if (
+            !CORE ||
+            typeof CORE.on !==
+            "function"
+        ) {
+
+            return;
+
+        }
+
+        const events = [
+
+            "ORCHESTRATOR_OBJECTIVE_CREATED",
+            "ORCHESTRATOR_TASK_CREATED",
+            "ORCHESTRATOR_TASK_COMPLETE",
+            "ORCHESTRATOR_TASK_FAILED",
+            "ORCHESTRATOR_OBJECTIVE_COMPLETE",
+            "ORCHESTRATOR_EXTERNAL_AI_HANDOFF",
+            "WATCHDOG_INCIDENT",
+            "WATCHDOG_RECOVERY_REQUIRED",
+            "EVOLUTION_DECISION",
+            "BUILD_PROPOSAL_CREATED",
+            "BUILD_VALIDATION_COMPLETE",
+            "PATHWAY_ANALYSIS_COMPLETE",
+            "SYSTEM_ERROR"
+
+        ];
+
+        events.forEach(
+            eventName => {
+
+                try {
+
+                    CORE.on(
+                        eventName,
+                        payload => {
+
+                            queueEvent(
+                                eventName,
+                                payload
+                            );
+
+                        }
+                    );
+
+                } catch (error) {}
+
+            }
+        );
+
+    }
+
+
+    /* -----------------------------------------------------------------
+       LOAD LOCAL QUEUE
+       ----------------------------------------------------------------- */
+
+    function restoreLocalState() {
+
+        const queue =
+            localLoad(
+                "QUEUE",
+                []
+            );
+
+        if (
+            Array.isArray(queue)
+        ) {
+
+            STATE.queue =
+                queue;
+
+        }
+
+        const snapshots =
+            localLoad(
+                "SNAPSHOTS",
+                []
+            );
+
+        if (
+            Array.isArray(snapshots)
+        ) {
+
+            STATE.snapshots =
+                snapshots;
+
+        }
+
+    }
+
+
+    /* -----------------------------------------------------------------
+       AUTOMATIC LOOP
+       ----------------------------------------------------------------- */
+
+    function startLoops() {
+
+        if (
+            CONFIG.automaticHeartbeat &&
+            !STATE.timers.heartbeat
+        ) {
+
+            STATE.timers.heartbeat =
+                setInterval(
+                    () => {
+
+                        heartbeat()
+                            .catch(
+                                () => {}
+                            );
+
+                    },
+                    CONFIG.heartbeatInterval
+                );
+
+        }
+
+        if (
+            CONFIG.automaticSync &&
+            !STATE.timers.sync
+        ) {
+
+            STATE.timers.sync =
+                setInterval(
+                    () => {
+
+                        syncEvents()
+                            .catch(
+                                () => {}
+                            );
+
+                    },
+                    CONFIG.syncInterval
+                );
+
+        }
+
+    }
+
+
+    function stopLoops() {
+
+        if (
+            STATE.timers.heartbeat
+        ) {
+
+            clearInterval(
+                STATE.timers.heartbeat
+            );
+
+            STATE.timers.heartbeat =
+                null;
+
+        }
+
+        if (
+            STATE.timers.sync
+        ) {
+
+            clearInterval(
+                STATE.timers.sync
+            );
+
+            STATE.timers.sync =
+                null;
+
+        }
+
+    }
+
+
+    /* -----------------------------------------------------------------
+       STATUS
+       ----------------------------------------------------------------- */
+
+    function status() {
+
+        return {
+
+            protocol:
+                CONFIG.protocol,
+
+            version:
+                CONFIG.version,
+
+            system:
+                CONFIG.system,
+
+            instanceId:
+                CONFIG.instanceId,
+
+            booted:
+                STATE.booted,
+
+            online:
+                STATE.online,
+
+            backendConfigured:
+                STATE.backendConfigured,
+
+            apiConfigured:
+                !!CONFIG.API_BASE_URL,
+
+            lastHeartbeat:
+                STATE.lastHeartbeat,
+
+            lastSync:
+                STATE.lastSync,
+
+            lastError:
+                STATE.lastError,
+
+            queue:
+
+                STATE.queue.length,
+
+            snapshots:
+
+                STATE.snapshots.length,
+
+            remoteJobs:
+
+                Object.keys(
+                    STATE.remoteJobs
+                ).length,
+
+            metrics:
+                clone(
+                    STATE.metrics
+                ),
+
+            modules: {
+
+                core:
+                    !!CORE,
+
+                memory:
+                    !!MEMORY,
+
+                workers:
+                    !!WORKERS,
+
+                evolution:
+                    !!EVOLUTION,
+
+                pathways:
+                    !!PATHWAYS,
+
+                watchdog:
+                    !!WATCHDOG,
+
+                knowledge:
+                    !!KNOWLEDGE,
+
+                build:
+                    !!BUILD,
+
+                orchestrator:
+                    !!ORCHESTRATOR
+
+            },
+
+            capabilities: {
+
+                localPersistence:
+                    true,
+
+                offlineQueue:
+                    true,
+
+                remoteAPI:
+                    !!CONFIG.API_BASE_URL,
+
+                snapshots:
+                    true,
+
+                eventSync:
+                    true,
+
+                remoteJobs:
+                    !!CONFIG.API_BASE_URL,
+
+                externalAIHandoff:
+                    true,
+
+                unrestrictedRemoteCode:
+                    false,
+
+                automaticProductionDeployment:
+                    false
+
+            }
+
+        };
+
+    }
+
+
+    /* -----------------------------------------------------------------
+       EXPORT
+       ----------------------------------------------------------------- */
+
+    function exportState() {
+
+        return {
+
+            protocol:
+                CONFIG.protocol,
+
+            version:
+                CONFIG.version,
+
+            exportedAt:
+                now(),
+
+            instance:
+                CONFIG.instanceId,
+
+            configuration: {
+
+                backendConfigured:
+                    STATE.backendConfigured,
+
+                apiBaseUrlConfigured:
+                    !!CONFIG.API_BASE_URL,
+
+                automaticSync:
+                    CONFIG.automaticSync,
+
+                automaticHeartbeat:
+                    CONFIG.automaticHeartbeat
+
+            },
+
+            state: {
+
+                queue:
+                    clone(
+                        STATE.queue
+                    ),
+
+                snapshots:
+                    clone(
+                        STATE.snapshots
+                    ),
+
+                remoteJobs:
+                    clone(
+                        STATE.remoteJobs
+                    ),
+
+                events:
+                    clone(
+                        STATE.events
+                    ),
+
+                syncHistory:
+                    clone(
+                        STATE.syncHistory
+                    ),
+
+                metrics:
+                    clone(
+                        STATE.metrics
+                    )
+
+            }
+
+        };
+
+    }
+
+
+    /* -----------------------------------------------------------------
+       BOOT
+       ----------------------------------------------------------------- */
+
+    async function boot() {
+
+        if (
+            STATE.booted
+        ) {
+
+            return status();
+
+        }
+
+        log(
+            "Booting CHEP-10 Backend Bridge..."
+        );
+
+        restoreConfiguration();
+
+        restoreLocalState();
+
+        attachEventListeners();
+
+        STATE.booted =
+            true;
+
+        emit(
+            "BACKEND_BRIDGE_BOOT",
+            {
+                protocol:
+                    CONFIG.protocol,
+
+                version:
+                    CONFIG.version,
+
+                backendConfigured:
+                    STATE.backendConfigured
+            }
+        );
+
+        /*
+         * Create an initial local snapshot.
+         */
+
+        createSnapshot(
+            "CHEP-10 Boot Snapshot"
+        );
+
+        /*
+         * Start background browser timers.
+         *
+         * These timers operate while the page/runtime remains alive.
+         * They are NOT a replacement for a backend worker.
+         */
+
+        startLoops();
+
+        /*
+         * If a backend has already been configured,
+         * perform an initial heartbeat.
+         */
+
+        if (
+            STATE.backendConfigured
+        ) {
+
+            await heartbeat();
+
+        }
+
+        log(
+            "CHEP-10 Backend Bridge online."
+        );
+
+        return status();
+
+    }
+
+
+    /* -----------------------------------------------------------------
+       PUBLIC API
+       ----------------------------------------------------------------- */
+
+    const API = {
+
+        protocol:
+            CONFIG.protocol,
+
+        version:
+            CONFIG.version,
+
+        config:
+            CONFIG,
+
+        boot,
+
+        status,
+
+        configure,
+
+        heartbeat,
+
+        request,
+
+        queueEvent,
+
+        sync:
+            syncEvents,
+
+        createSnapshot,
+
+        uploadSnapshot,
+
+        persist:
+            persistState,
+
+        submitJob,
+
+        getJob,
+
+        createAIContext,
+
+        externalAIHandoff,
+
+        collectSystemState,
+
+        command,
+
+        export:
+            exportState,
+
+        startLoops,
+
+        stopLoops
+
+    };
+
+
+    /* -----------------------------------------------------------------
+       GLOBAL REGISTRATION
+       ----------------------------------------------------------------- */
+
+    global.CHIROMBE_BACKEND =
+        API;
+
+    global.CHIROMBE_PERSISTENCE =
+        API;
+
+    global.CHIROMBE_BACKEND_BRIDGE =
+        API;
+
+
+    /* -----------------------------------------------------------------
+       BOOT
+       ----------------------------------------------------------------- */
+
+    boot()
+        .catch(
+            error => {
+
+                console.error(
+                    "[CHIROMBE BACKEND] Boot failure:",
+                    error
+                );
+
+            }
+        );
+
+
+})(typeof globalThis !== "undefined"
+    ? globalThis
     : window);
+
+
+/* =====================================================================
+   END CHEP-10
+   ===================================================================== */
