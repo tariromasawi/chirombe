@@ -34660,4 +34660,30 @@ Promise.resolve()
 
 })(typeof window !== "undefined"
     ? window
-    : globalThis);
+    : globalThis);const intention = await CHIROMBE_INTENTION.registerIntention({
+    title: "Bloodline Protection and Enhancement",
+    purpose: "PROTECTION_AND_ENHANCEMENT",
+    targetScope: "BLOODLINE",
+    symbolicIntensity: 1.0,
+    protection: 1.0,
+    continuity: 1.0,
+    resilience: 1.0,
+    unity: 1.0,
+    knowledge: 0.95,
+    repetition: 1,
+    confidence: 0.95,
+    sacredWords: [
+        "Mwari Ndi Mwari",
+        "Mudzimu Unoyera"
+    ],
+    values: [
+        "PROTECTION",
+        "UNITY",
+        "TRUTH",
+        "CONTINUITY",
+        "RESILIENCE",
+        "LEGACY"
+    ]
+});
+
+console.log(intention);
