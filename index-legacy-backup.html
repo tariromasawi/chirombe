@@ -10482,3 +10482,1666 @@ Waiting for audit records…
 
 })();
 </script>
+<!-- ============================================================
+     CHIROMBE UNIFIED COMMAND CORE
+     BLOCK 7 — FINAL COORDINATOR / BOOT SEQUENCE
+     
+     PURPOSE:
+     - Connect Blocks 1–6
+     - Correct registry paths to the REAL repository files
+     - Load the surviving live engines in dependency order
+     - Never execute the historical "chirombe engine" artifact
+     - Never call ZCCA.command during boot
+     - Preserve existing engines and globals
+     - Verify health before declaring READY
+     ============================================================ -->
+
+<script>
+(function () {
+  "use strict";
+
+  /* ------------------------------------------------------------
+     0. SAFETY / FOUNDATION CHECK
+     ------------------------------------------------------------ */
+
+  const system = window.CHIROMBE_UNIFIED;
+
+  if (!system) {
+    console.error("[CHIROMBE BLOCK 7] CHIROMBE_UNIFIED missing.");
+    return;
+  }
+
+  system.version = system.version || "7.0.0";
+  system.phase = "FINAL_COORDINATOR";
+  system.runtime = system.runtime || {};
+  system.registry = system.registry || {};
+  system.engines = system.engines || {};
+  system.dependencies = system.dependencies || {};
+  system.events = system.events || [];
+  system.errors = system.errors || [];
+  system.capabilities = system.capabilities || {};
+
+  const startedAt = Date.now();
+
+  function log(message, type = "INFO", data = null) {
+    const event = {
+      time: new Date().toISOString(),
+      type,
+      message,
+      data
+    };
+
+    system.events.push(event);
+
+    if (system.events.length > 500) {
+      system.events.shift();
+    }
+
+    try {
+      if (typeof system.foundation?.log === "function") {
+        system.foundation.log(message, type);
+      }
+    } catch (_) {}
+
+    console.log("[CHIROMBE]", message, data || "");
+  }
+
+  function fail(message, error = null) {
+    const item = {
+      time: new Date().toISOString(),
+      message,
+      error: error
+        ? String(error.message || error)
+        : null
+    };
+
+    system.errors.push(item);
+
+    if (system.errors.length > 200) {
+      system.errors.shift();
+    }
+
+    log(message, "ERROR", item);
+  }
+
+  function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  /* ------------------------------------------------------------
+     1. AUTHORITATIVE LIVE ENGINE MAP
+     
+     These are the actual filenames documented by the repository.
+     ------------------------------------------------------------ */
+
+  const LIVE_ENGINE_MAP = [
+
+    {
+      id: "CHIROMBE_BOOT",
+      path: "js/boot.js",
+      globals: ["ChirombeSystem"],
+      required: true,
+      mode: "LIVE",
+      dependsOn: []
+    },
+
+    {
+      id: "CHIROMBE_BUS",
+      path: "js/command-bus.js",
+      globals: ["ChirombeBus"],
+      required: true,
+      mode: "LIVE",
+      dependsOn: ["CHIROMBE_BOOT"]
+    },
+
+    {
+      id: "CHIROMBE_STATE",
+      path: "js/state-store.js",
+      globals: ["ChirombeState"],
+      required: true,
+      mode: "LIVE",
+      dependsOn: ["CHIROMBE_BOOT"]
+    },
+
+    {
+      id: "CHIROMBE_AUDIT",
+      path: "js/audit-chain.js",
+      globals: ["ChirombeAudit"],
+      required: true,
+      mode: "LIVE",
+      dependsOn: ["CHIROMBE_STATE"]
+    },
+
+    {
+      id: "CHIROMBE_HEALTH",
+      path: "js/health.js",
+      globals: ["ChirombeHealth"],
+      required: true,
+      mode: "LIVE",
+      dependsOn: ["CHIROMBE_BOOT"]
+    },
+
+    {
+      id: "CHIROMBE_WATCHDOG",
+      path: "js/watchdog.js",
+      globals: ["ChirombeWatchdog"],
+      required: true,
+      mode: "LIVE",
+      dependsOn: ["CHIROMBE_HEALTH"]
+    },
+
+    {
+      id: "CHIROMBE_PROTECTION",
+      path: "js/zion-protection-core.js",
+      globals: ["ZionProtect", "ZionProtectionCore"],
+      required: false,
+      mode: "LIVE",
+      dependsOn: ["CHIROMBE_AUDIT"]
+    },
+
+    {
+      id: "CHIROMBE_ZCCA",
+      path: "js/zcca.js",
+      globals: ["ZCCA"],
+      required: false,
+      mode: "LIVE",
+      dependsOn: [
+        "CHIROMBE_BUS",
+        "CHIROMBE_STATE"
+      ]
+    },
+
+    {
+      id: "CHIROMBE_CORE",
+      path: "js/chirombe-core.js",
+      globals: ["ChirombeCore"],
+      required: false,
+      mode: "LIVE",
+      dependsOn: [
+        "CHIROMBE_STATE",
+        "CHIROMBE_AUDIT"
+      ]
+    },
+
+    {
+      id: "CHIROMBE_BRIDGE",
+      path: "js/chirombe.js",
+      globals: ["Chirombe"],
+      required: false,
+      mode: "LIVE",
+      dependsOn: ["CHIROMBE_CORE"]
+    },
+
+    {
+      id: "CHIROMBE_COVENANT",
+      path: "js/mwarindimwari-covenant.js",
+      globals: ["MwarindiCovenant"],
+      required: false,
+      mode: "LIVE",
+      dependsOn: ["CHIROMBE_STATE"]
+    },
+
+    {
+      id: "CHIROMBE_RESONANCE",
+      path: "js/resonance-engine.js",
+      globals: ["ChirombeResonance"],
+      required: false,
+      mode: "LIVE",
+      dependsOn: ["CHIROMBE_STATE"]
+    },
+
+    {
+      id: "CHIROMBE_GUARDIAN",
+      path: "js/guardian-matrix.js",
+      globals: ["CHIROMBE_GUARDIAN"],
+      required: false,
+      mode: "LIVE",
+      dependsOn: ["CHIROMBE_STATE"]
+    },
+
+    {
+      id: "CHIROMBE_LITURGY",
+      path: "js/liturgy-matrix.js",
+      globals: ["CHIROMBE_LITURGY"],
+      required: false,
+      mode: "LIVE",
+      dependsOn: ["CHIROMBE_CORE"]
+    },
+
+    {
+      id: "CHIROMBE_PIONEER",
+      path: "js/pioneer-brain.js",
+      globals: ["CHIROMBE_PIONEER_BRAIN"],
+      required: false,
+      mode: "LIVE",
+      dependsOn: ["CHIROMBE_STATE"]
+    },
+
+    {
+      id: "CHIROMBE_AUTOSTART",
+      path: "js/chirombe-autostart.js",
+      globals: ["CHIROMBE_AUTOSTART"],
+      required: false,
+      mode: "LIVE",
+      dependsOn: [
+        "CHIROMBE_ZCCA",
+        "CHIROMBE_GUARDIAN",
+        "CHIROMBE_PIONEER",
+        "CHIROMBE_LITURGY",
+        "CHIROMBE_PROTECTION"
+      ]
+    },
+
+    /* --------------------------------------------------------
+       ENGINE INTEGRATION LAYER
+       These are adapters/readers, not replacements for the
+       native engines.
+       -------------------------------------------------------- */
+
+    {
+      id: "ENGINE_POLICY",
+      path: "js/engine/policy.js",
+      globals: [],
+      required: false,
+      mode: "ADAPTER",
+      dependsOn: ["CHIROMBE_BOOT"]
+    },
+
+    {
+      id: "ENGINE_ADAPTERS",
+      path: "js/engine/adapters.js",
+      globals: [],
+      required: false,
+      mode: "ADAPTER",
+      dependsOn: ["ENGINE_POLICY"]
+    },
+
+    {
+      id: "ENGINE_GRAPH",
+      path: "js/engine/chirombe-engine.js",
+      globals: [],
+      required: false,
+      mode: "ADAPTER",
+      dependsOn: ["ENGINE_ADAPTERS"]
+    }
+  ];
+
+  /* ------------------------------------------------------------
+     2. HISTORICAL ARTIFACT — EXPLICITLY NON-EXECUTABLE
+     ------------------------------------------------------------ */
+
+  const HISTORICAL_ARTIFACT = {
+    id: "CHIROMBE_HISTORICAL_ARTIFACT",
+    path: "chirombe engine",
+    mode: "ARCHIVE",
+    executable: false,
+    reason:
+      "Historical preserved artifact. It is not the live kernel and must never be executed."
+  };
+
+  /* ------------------------------------------------------------
+     3. INSTALL AUTHORITATIVE REGISTRY
+     ------------------------------------------------------------ */
+
+  function installAuthoritativeRegistry() {
+
+    system.registry.authoritative = true;
+
+    system.registry.engines =
+      system.registry.engines || {};
+
+    for (const engine of LIVE_ENGINE_MAP) {
+
+      const existing =
+        system.registry.engines[engine.id] || {};
+
+      system.registry.engines[engine.id] = {
+        ...existing,
+        ...engine,
+        status: existing.status || "DISCOVERED",
+        authoritativePath: engine.path,
+        executable: true
+      };
+    }
+
+    system.registry.engines[
+      HISTORICAL_ARTIFACT.id
+    ] = {
+      ...HISTORICAL_ARTIFACT,
+      status: "ARCHIVED"
+    };
+
+    system.registry.historicalArtifact =
+      HISTORICAL_ARTIFACT;
+
+    log(
+      "Authoritative live-engine registry installed.",
+      "READY",
+      {
+        liveEngines: LIVE_ENGINE_MAP.length,
+        historicalArtifact:
+          HISTORICAL_ARTIFACT.path
+      }
+    );
+  }
+
+  /* ------------------------------------------------------------
+     4. PATH SAFETY
+     ------------------------------------------------------------ */
+
+  function isSafeEnginePath(path) {
+
+    if (!path || typeof path !== "string") {
+      return false;
+    }
+
+    if (path === "chirombe engine") {
+      return false;
+    }
+
+    if (path.includes("..")) {
+      return false;
+    }
+
+    if (!path.endsWith(".js")) {
+      return false;
+    }
+
+    return true;
+  }
+
+  /* ------------------------------------------------------------
+     5. GLOBAL CHECK
+     ------------------------------------------------------------ */
+
+  function globalsPresent(engine) {
+
+    if (!engine.globals || engine.globals.length === 0) {
+      return true;
+    }
+
+    return engine.globals.some(
+      name => typeof window[name] !== "undefined"
+    );
+  }
+
+  function allRequiredGlobalsPresent(engine) {
+
+    if (!engine.globals || engine.globals.length === 0) {
+      return true;
+    }
+
+    return engine.globals.every(
+      name => typeof window[name] !== "undefined"
+    );
+  }
+
+  /* ------------------------------------------------------------
+     6. SCRIPT LOADING
+     
+     Only loads files explicitly listed in the authoritative map.
+     Duplicate script insertion is prevented.
+     ------------------------------------------------------------ */
+
+  const loadedPaths = new Set();
+
+  function alreadyLoaded(path) {
+
+    if (loadedPaths.has(path)) {
+      return true;
+    }
+
+    const scripts =
+      document.querySelectorAll(
+        'script[data-chirombe-path]'
+      );
+
+    for (const script of scripts) {
+
+      if (
+        script.dataset.chirombePath === path
+      ) {
+        loadedPaths.add(path);
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  function loadScript(engine) {
+
+    return new Promise((resolve, reject) => {
+
+      if (!isSafeEnginePath(engine.path)) {
+        reject(
+          new Error(
+            "Unsafe or non-executable engine path: " +
+            engine.path
+          )
+        );
+        return;
+      }
+
+      if (alreadyLoaded(engine.path)) {
+        resolve({
+          engine,
+          status: "ALREADY_LOADED"
+        });
+        return;
+      }
+
+      const script =
+        document.createElement("script");
+
+      script.src = engine.path;
+      script.async = false;
+      script.dataset.chirombePath =
+        engine.path;
+      script.dataset.chirombeEngine =
+        engine.id;
+
+      script.onload = () => {
+
+        loadedPaths.add(engine.path);
+
+        resolve({
+          engine,
+          status: "LOADED"
+        });
+      };
+
+      script.onerror = () => {
+
+        reject(
+          new Error(
+            "Failed to load " +
+            engine.path
+          )
+        );
+      };
+
+      document.head.appendChild(script);
+    });
+  }
+
+  /* ------------------------------------------------------------
+     7. DEPENDENCY ORDER
+     ------------------------------------------------------------ */
+
+  function dependencySort(engines) {
+
+    const map = new Map(
+      engines.map(engine => [
+        engine.id,
+        engine
+      ])
+    );
+
+    const result = [];
+    const visiting = new Set();
+    const visited = new Set();
+
+    function visit(id) {
+
+      if (visited.has(id)) {
+        return;
+      }
+
+      if (visiting.has(id)) {
+
+        throw new Error(
+          "Dependency cycle detected at " + id
+        );
+      }
+
+      const engine = map.get(id);
+
+      if (!engine) {
+        throw new Error(
+          "Missing dependency definition: " + id
+        );
+      }
+
+      visiting.add(id);
+
+      for (const dependency of
+        engine.dependsOn || []) {
+
+        visit(dependency);
+      }
+
+      visiting.delete(id);
+      visited.add(id);
+
+      result.push(engine);
+    }
+
+    for (const engine of engines) {
+      visit(engine.id);
+    }
+
+    return result;
+  }
+
+  /* ------------------------------------------------------------
+     8. ENGINE BOOT
+     ------------------------------------------------------------ */
+
+  async function bootEngines() {
+
+    const ordered =
+      dependencySort(LIVE_ENGINE_MAP);
+
+    log(
+      "Dependency graph resolved.",
+      "INFO",
+      {
+        count: ordered.length
+      }
+    );
+
+    const results = [];
+
+    for (const engine of ordered) {
+
+      const registryEntry =
+        system.registry.engines[
+          engine.id
+        ];
+
+      if (registryEntry) {
+        registryEntry.status = "LOADING";
+      }
+
+      /* ---------------------------------------------
+         Check dependencies before loading.
+         --------------------------------------------- */
+
+      const blockedDependency =
+        (engine.dependsOn || []).find(
+          dependency => {
+
+            const entry =
+              system.registry.engines[
+                dependency
+              ];
+
+            return (
+              entry &&
+              [
+                "FAILED",
+                "BLOCKED"
+              ].includes(entry.status)
+            );
+          }
+        );
+
+      if (blockedDependency) {
+
+        if (registryEntry) {
+          registryEntry.status = "BLOCKED";
+        }
+
+        results.push({
+          id: engine.id,
+          status: "BLOCKED",
+          dependency: blockedDependency
+        });
+
+        log(
+          engine.id +
+          " blocked by " +
+          blockedDependency,
+          "WARN"
+        );
+
+        continue;
+      }
+
+      try {
+
+        /* -------------------------------------------------
+           If the required global already exists, preserve it.
+           This is important because app.html or another loader
+           may already have loaded the native engine.
+           ------------------------------------------------- */
+
+        if (allRequiredGlobalsPresent(engine)) {
+
+          if (registryEntry) {
+            registryEntry.status =
+              "INITIALISED";
+          }
+
+          results.push({
+            id: engine.id,
+            status: "ALREADY_INITIALISED"
+          });
+
+          log(
+            engine.id +
+            " already initialised; existing runtime preserved.",
+            "INFO"
+          );
+
+          continue;
+        }
+
+        const loaded =
+          await loadScript(engine);
+
+        await sleep(0);
+
+        const present =
+          globalsPresent(engine);
+
+        if (
+          engine.globals.length &&
+          !present
+        ) {
+
+          if (registryEntry) {
+            registryEntry.status =
+              engine.required
+                ? "FAILED"
+                : "DEGRADED";
+          }
+
+          results.push({
+            id: engine.id,
+            status:
+              engine.required
+                ? "FAILED"
+                : "DEGRADED",
+            reason:
+              "Script loaded but expected global was not detected."
+          });
+
+          log(
+            engine.id +
+            " loaded but expected global was not detected.",
+            engine.required
+              ? "ERROR"
+              : "WARN"
+          );
+
+          continue;
+        }
+
+        if (registryEntry) {
+          registryEntry.status = "INITIALISED";
+        }
+
+        results.push({
+          id: engine.id,
+          status: loaded.status
+        });
+
+        log(
+          engine.id + " initialised.",
+          "READY"
+        );
+
+      } catch (error) {
+
+        if (registryEntry) {
+          registryEntry.status =
+            engine.required
+              ? "FAILED"
+              : "DEGRADED";
+        }
+
+        results.push({
+          id: engine.id,
+          status:
+            engine.required
+              ? "FAILED"
+              : "DEGRADED",
+          error:
+            String(
+              error.message || error
+            )
+        });
+
+        if (engine.required) {
+          fail(
+            engine.id +
+            " failed during boot.",
+            error
+          );
+        } else {
+          log(
+            engine.id +
+            " unavailable/degraded; continuing.",
+            "WARN",
+            error.message
+          );
+        }
+      }
+    }
+
+    return results;
+  }
+
+  /* ------------------------------------------------------------
+     9. ENGINE STATUS FINALISATION
+     ------------------------------------------------------------ */
+
+  function finaliseEngineStatuses() {
+
+    let ready = 0;
+    let degraded = 0;
+    let failed = 0;
+    let unavailable = 0;
+
+    for (const engine of LIVE_ENGINE_MAP) {
+
+      const entry =
+        system.registry.engines[
+          engine.id
+        ];
+
+      if (!entry) {
+        continue;
+      }
+
+      const present =
+        globalsPresent(engine);
+
+      if (
+        present &&
+        entry.status !== "FAILED"
+      ) {
+
+        entry.status = "READY";
+        ready++;
+        continue;
+      }
+
+      if (entry.status === "FAILED") {
+        failed++;
+        continue;
+      }
+
+      if (
+        entry.status === "DEGRADED" ||
+        entry.status === "BLOCKED"
+      ) {
+        degraded++;
+        continue;
+      }
+
+      entry.status = "UNAVAILABLE";
+      unavailable++;
+    }
+
+    system.registry.statistics = {
+      total: LIVE_ENGINE_MAP.length,
+      ready,
+      degraded,
+      failed,
+      unavailable,
+      archived: 1,
+      updatedAt:
+        new Date().toISOString()
+    };
+
+    return {
+      total: LIVE_ENGINE_MAP.length,
+      ready,
+      degraded,
+      failed,
+      unavailable
+    };
+  }
+
+  /* ------------------------------------------------------------
+     10. CORE API VERIFICATION
+     ------------------------------------------------------------ */
+
+  function verifyCoreAPIs() {
+
+    const checks = [];
+
+    function check(
+      name,
+      objectName,
+      methods
+    ) {
+
+      const object =
+        window[objectName];
+
+      if (!object) {
+
+        checks.push({
+          name,
+          status: "NOT_AVAILABLE"
+        });
+
+        return;
+      }
+
+      const missing =
+        methods.filter(
+          method =>
+            typeof object[method] !== "function"
+        );
+
+      checks.push({
+        name,
+        status:
+          missing.length
+            ? "DEGRADED"
+            : "PASS",
+        missing
+      });
+    }
+
+    check(
+      "Command Bus",
+      "ChirombeBus",
+      [
+        "registerCommand",
+        "executeCommand",
+        "listCommands"
+      ]
+    );
+
+    check(
+      "State",
+      "ChirombeState",
+      [
+        "load",
+        "save"
+      ]
+    );
+
+    check(
+      "Audit",
+      "ChirombeAudit",
+      [
+        "head",
+        "append",
+        "verify",
+        "export"
+      ]
+    );
+
+    check(
+      "Health",
+      "ChirombeHealth",
+      [
+        "snapshot",
+        "capabilities"
+      ]
+    );
+
+    check(
+      "Core",
+      "ChirombeCore",
+      [
+        "pray",
+        "evolve"
+      ]
+    );
+
+    check(
+      "ZCCA",
+      "ZCCA",
+      [
+        "command",
+        "activate",
+        "protect",
+        "getFamily",
+        "status"
+      ]
+    );
+
+    check(
+      "Covenant",
+      "MwarindiCovenant",
+      [
+        "status",
+        "remind",
+        "seal"
+      ]
+    );
+
+    check(
+      "Resonance",
+      "ChirombeResonance",
+      [
+        "status",
+        "measure",
+        "activate"
+      ]
+    );
+
+    system.runtime.apiChecks = checks;
+
+    return checks;
+  }
+
+  /* ------------------------------------------------------------
+     11. PROTECTED AUTOSTART RULE
+     
+     We deliberately DO NOT call:
+     
+       ZCCA.command(...)
+     
+     during boot.
+     
+     Existing autostart remains responsible for its own startup
+     behaviour.
+     ------------------------------------------------------------ */
+
+  function verifyAutostartSafety() {
+
+    system.runtime.autostartPolicy = {
+      engineCoordinatorCallsZCCACommand: false,
+      engineCoordinatorCallsCovenantSeal: false,
+      engineCoordinatorArmsResonance: false,
+      historicalArtifactExecuted: false,
+      sourceFilesModifiedByCoordinator: false
+    };
+
+    log(
+      "Protected boot policy confirmed.",
+      "READY",
+      system.runtime.autostartPolicy
+    );
+  }
+
+  /* ------------------------------------------------------------
+     12. HISTORICAL ARTIFACT GUARD
+     ------------------------------------------------------------ */
+
+  function verifyHistoricalArtifactGuard() {
+
+    const artifact =
+      system.registry.engines[
+        HISTORICAL_ARTIFACT.id
+      ];
+
+    if (!artifact) {
+      throw new Error(
+        "Historical artifact guard missing."
+      );
+    }
+
+    artifact.executable = false;
+    artifact.status = "ARCHIVED";
+
+    if (
+      loadedPaths.has(
+        HISTORICAL_ARTIFACT.path
+      )
+    ) {
+
+      throw new Error(
+        "SECURITY FAILURE: historical artifact was loaded."
+      );
+    }
+
+    const scripts =
+      document.querySelectorAll(
+        'script[src]'
+      );
+
+    for (const script of scripts) {
+
+      const src =
+        script.getAttribute("src") || "";
+
+      if (
+        src.includes("chirombe%20engine") ||
+        src.endsWith("/chirombe engine")
+      ) {
+
+        throw new Error(
+          "SECURITY FAILURE: historical artifact script detected."
+        );
+      }
+    }
+
+    log(
+      "Historical artifact confirmed preserved and non-executable.",
+      "READY"
+    );
+
+    return true;
+  }
+
+  /* ------------------------------------------------------------
+     13. AUDIT HANDOFF
+     ------------------------------------------------------------ */
+
+  function auditBoot() {
+
+    try {
+
+      if (
+        window.ChirombeAudit &&
+        typeof window.ChirombeAudit.append ===
+          "function"
+      ) {
+
+        window.ChirombeAudit.append({
+          type: "CHIROMBE_UNIFIED_BOOT",
+          version: system.version,
+          timestamp:
+            new Date().toISOString(),
+          coordinator: "BLOCK_7",
+          historicalArtifact:
+            "PRESERVED_NON_EXECUTABLE",
+          engines:
+            LIVE_ENGINE_MAP.map(
+              engine => ({
+                id: engine.id,
+                path: engine.path
+              })
+            )
+        });
+
+        log(
+          "Boot event appended to ChirombeAudit.",
+          "READY"
+        );
+
+        return true;
+      }
+
+    } catch (error) {
+
+      fail(
+        "ChirombeAudit boot handoff failed.",
+        error
+      );
+    }
+
+    return false;
+  }
+
+  /* ------------------------------------------------------------
+     14. HEALTH HANDOFF
+     ------------------------------------------------------------ */
+
+  function healthSnapshot() {
+
+    try {
+
+      if (
+        window.ChirombeHealth &&
+        typeof window.ChirombeHealth.snapshot ===
+          "function"
+      ) {
+
+        const snapshot =
+          window.ChirombeHealth.snapshot();
+
+        system.runtime.nativeHealth =
+          snapshot;
+
+        return snapshot;
+      }
+
+    } catch (error) {
+
+      fail(
+        "Native health snapshot failed.",
+        error
+      );
+    }
+
+    return null;
+  }
+
+  /* ------------------------------------------------------------
+     15. FINAL READINESS DECISION
+     ------------------------------------------------------------ */
+
+  function determineReadiness(
+    engineStats,
+    apiChecks
+  ) {
+
+    const requiredEngines =
+      LIVE_ENGINE_MAP.filter(
+        engine => engine.required
+      );
+
+    const requiredFailures =
+      requiredEngines.filter(
+        engine => {
+
+          const entry =
+            system.registry.engines[
+              engine.id
+            ];
+
+          return (
+            !entry ||
+            entry.status !== "READY"
+          );
+        }
+      );
+
+    const apiFailures =
+      apiChecks.filter(
+        check =>
+          check.name === "Command Bus" &&
+          check.status !== "PASS"
+      );
+
+    const historicalGuard =
+      system.registry.engines[
+        HISTORICAL_ARTIFACT.id
+      ];
+
+    const artifactSafe =
+      historicalGuard &&
+      historicalGuard.executable === false &&
+      historicalGuard.status === "ARCHIVED";
+
+    let status = "READY";
+
+    if (
+      requiredFailures.length ||
+      apiFailures.length ||
+      !artifactSafe
+    ) {
+
+      status = "DEGRADED";
+    }
+
+    if (
+      requiredFailures.some(
+        engine => {
+          const entry =
+            system.registry.engines[
+              engine.id
+            ];
+
+          return entry &&
+            entry.status === "FAILED";
+        }
+      )
+    ) {
+
+      status = "FAILED";
+    }
+
+    return {
+      status,
+      requiredFailures:
+        requiredFailures.map(
+          engine => engine.id
+        ),
+      apiFailures:
+        apiFailures.map(
+          check => check.name
+        ),
+      artifactSafe,
+      engineStats
+    };
+  }
+
+  /* ------------------------------------------------------------
+     16. UI UPDATE
+     ------------------------------------------------------------ */
+
+  function updateUI(
+    readiness
+  ) {
+
+    const statusElement =
+      document.getElementById(
+        "chirombe-system-status"
+      );
+
+    if (statusElement) {
+
+      statusElement.textContent =
+        readiness.status;
+
+      statusElement.dataset.status =
+        readiness.status;
+    }
+
+    const readyElement =
+      document.getElementById(
+        "chirombe-ready-count"
+      );
+
+    if (readyElement) {
+      readyElement.textContent =
+        readiness.engineStats.ready;
+    }
+
+    const degradedElement =
+      document.getElementById(
+        "chirombe-degraded-count"
+      );
+
+    if (degradedElement) {
+      degradedElement.textContent =
+        readiness.engineStats.degraded;
+    }
+
+    const failedElement =
+      document.getElementById(
+        "chirombe-failed-count"
+      );
+
+    if (failedElement) {
+      failedElement.textContent =
+        readiness.engineStats.failed;
+    }
+
+    const engineElement =
+      document.getElementById(
+        "chirombe-engine-count"
+      );
+
+    if (engineElement) {
+      engineElement.textContent =
+        readiness.engineStats.total;
+    }
+
+    if (
+      typeof system.foundation?.setStatus ===
+      "function"
+    ) {
+
+      system.foundation.setStatus(
+        readiness.status
+      );
+    }
+  }
+
+  /* ------------------------------------------------------------
+     17. PUBLIC COORDINATOR API
+     ------------------------------------------------------------ */
+
+  const coordinatorAPI = {
+
+    version: system.version,
+
+    async boot() {
+      return boot();
+    },
+
+    status() {
+
+      return {
+        phase: system.phase,
+        status: system.status,
+        uptime:
+          Date.now() - startedAt,
+        registry:
+          system.registry.statistics,
+        runtime:
+          system.runtime,
+        errors:
+          system.errors.slice(-20)
+      };
+    },
+
+    engines() {
+
+      return {
+        ...system.registry.engines
+      };
+    },
+
+    verify() {
+
+      const engineStats =
+        finaliseEngineStatuses();
+
+      const apiChecks =
+        verifyCoreAPIs();
+
+      return determineReadiness(
+        engineStats,
+        apiChecks
+      );
+    },
+
+    artifact() {
+
+      return {
+        ...HISTORICAL_ARTIFACT
+      };
+    }
+  };
+
+  system.coordinator =
+    coordinatorAPI;
+
+  window.CHIROMBE_COORDINATOR =
+    coordinatorAPI;
+
+  /* ------------------------------------------------------------
+     18. FINAL BOOT FUNCTION
+     ------------------------------------------------------------ */
+
+  async function boot() {
+
+    if (system.runtime.block7Booted) {
+
+      log(
+        "Block 7 boot already completed; duplicate boot prevented.",
+        "WARN"
+      );
+
+      return coordinatorAPI.status();
+    }
+
+    system.runtime.block7Booted = true;
+    system.phase = "BOOTING";
+    system.status = "BOOT";
+
+    log(
+      "CHIROMBE BLOCK 7 FINAL COORDINATOR STARTING.",
+      "INFO"
+    );
+
+    try {
+
+      /* A. Authoritative registry */
+      installAuthoritativeRegistry();
+
+      /* B. Safety policy */
+      verifyAutostartSafety();
+
+      /* C. Historical artifact guard */
+      verifyHistoricalArtifactGuard();
+
+      /* D. Load live engines */
+      const bootResults =
+        await bootEngines();
+
+      system.runtime.bootResults =
+        bootResults;
+
+      /* E. Final engine statuses */
+      const engineStats =
+        finaliseEngineStatuses();
+
+      /* F. Core API verification */
+      const apiChecks =
+        verifyCoreAPIs();
+
+      /* G. Native health */
+      healthSnapshot();
+
+      /* H. Audit */
+      auditBoot();
+
+      /* I. Final artifact verification */
+      verifyHistoricalArtifactGuard();
+
+      /* J. Determine actual readiness */
+      const readiness =
+        determineReadiness(
+          engineStats,
+          apiChecks
+        );
+
+      system.runtime.readiness =
+        readiness;
+
+      system.runtime.completedAt =
+        new Date().toISOString();
+
+      system.runtime.bootDurationMs =
+        Date.now() - startedAt;
+
+      system.status =
+        readiness.status;
+
+      system.phase =
+        readiness.status === "READY"
+          ? "READY"
+          : readiness.status === "FAILED"
+            ? "FAILED"
+            : "DEGRADED";
+
+      updateUI(readiness);
+
+      if (readiness.status === "READY") {
+
+        log(
+          "CHIROMBE UNIFIED COMMAND CORE IS READY.",
+          "READY",
+          {
+            engines:
+              engineStats.ready,
+            total:
+              engineStats.total,
+            bootMs:
+              system.runtime.bootDurationMs
+          }
+        );
+
+      } else {
+
+        log(
+          "CHIROMBE boot completed with review-required conditions.",
+          readiness.status === "FAILED"
+            ? "ERROR"
+            : "WARN",
+          readiness
+        );
+      }
+
+      /* ----------------------------------------------
+         Optional Block 6 health refresh
+         ---------------------------------------------- */
+
+      try {
+
+        if (
+          system.healthAPI &&
+          typeof system.healthAPI.refreshHealthSummary ===
+            "function"
+        ) {
+
+          system.healthAPI.refreshHealthSummary();
+        }
+
+      } catch (_) {}
+
+      return coordinatorAPI.status();
+
+    } catch (error) {
+
+      system.status = "FAILED";
+      system.phase = "FAILED";
+
+      fail(
+        "FINAL COORDINATOR BOOT FAILURE.",
+        error
+      );
+
+      updateUI({
+        status: "FAILED",
+        engineStats:
+          system.registry.statistics ||
+          {
+            total: 0,
+            ready: 0,
+            degraded: 0,
+            failed: 1,
+            unavailable: 0
+          }
+      });
+
+      return coordinatorAPI.status();
+    }
+  }
+
+  /* ------------------------------------------------------------
+     19. COMMAND BUS INTEGRATION
+     
+     Do not overwrite existing commands.
+     ------------------------------------------------------------ */
+
+  function registerCoordinatorCommands() {
+
+    const bus =
+      window.ChirombeBus;
+
+    if (
+      !bus ||
+      typeof bus.registerCommand !== "function"
+    ) {
+      return;
+    }
+
+    const commands = {
+
+      "SYSTEM.COORDINATOR_STATUS":
+        () => coordinatorAPI.status(),
+
+      "SYSTEM.ENGINE_REGISTRY":
+        () => coordinatorAPI.engines(),
+
+      "SYSTEM.COORDINATOR_VERIFY":
+        () => coordinatorAPI.verify(),
+
+      "SYSTEM.HISTORICAL_ARTIFACT":
+        () => coordinatorAPI.artifact()
+    };
+
+    for (
+      const [name, handler]
+      of Object.entries(commands)
+    ) {
+
+      try {
+
+        const existing =
+          typeof bus.listCommands ===
+          "function"
+            ? bus.listCommands()
+            : [];
+
+        const alreadyExists =
+          Array.isArray(existing) &&
+          existing.includes(name);
+
+        if (!alreadyExists) {
+
+          bus.registerCommand(
+            name,
+            handler
+          );
+
+          log(
+            "Registered " + name,
+            "READY"
+          );
+
+        } else {
+
+          log(
+            "Preserved existing command " + name,
+            "INFO"
+          );
+        }
+
+      } catch (error) {
+
+        log(
+          "Could not register " + name,
+          "WARN",
+          error.message
+        );
+      }
+    }
+  }
+
+  /* ------------------------------------------------------------
+     20. START AFTER CURRENT DOCUMENT SCRIPTS
+     ------------------------------------------------------------ */
+
+  function scheduleBoot() {
+
+    registerCoordinatorCommands();
+
+    if (
+      document.readyState ===
+      "loading"
+    ) {
+
+      document.addEventListener(
+        "DOMContentLoaded",
+        () => {
+
+          setTimeout(
+            () => boot(),
+            0
+          );
+
+        },
+        {
+          once: true
+        }
+      );
+
+    } else {
+
+      setTimeout(
+        () => boot(),
+        0
+      );
+    }
+  }
+
+  /* ------------------------------------------------------------
+     21. GLOBAL ERROR BRIDGE
+     ------------------------------------------------------------ */
+
+  window.addEventListener(
+    "error",
+    event => {
+
+      if (!event.error) {
+        return;
+      }
+
+      fail(
+        "Runtime error detected.",
+        event.error
+      );
+    }
+  );
+
+  window.addEventListener(
+    "unhandledrejection",
+    event => {
+
+      fail(
+        "Unhandled promise rejection detected.",
+        event.reason
+      );
+    }
+  );
+
+  /* ------------------------------------------------------------
+     22. FINAL DECLARATION
+     ------------------------------------------------------------ */
+
+  log(
+    "Block 7 installed. Waiting for final boot.",
+    "READY"
+  );
+
+  scheduleBoot();
+
+})();
+</script>
