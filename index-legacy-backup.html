@@ -2175,3 +2175,1895 @@
 
 })();
 </script>
+<!-- ============================================================
+     CHIROMBE UNIFIED INDEX
+     BLOCK 3 — ENGINE REGISTRY
+     ============================================================
+
+     PURPOSE
+     -------
+     This block creates the authoritative runtime inventory
+     for the CHIROMBE system.
+
+     IMPORTANT:
+     - Existing engines are NOT replaced here.
+     - No historical engine is executed automatically here.
+     - No mock engine is created.
+     - ARCHIVE entries remain preserved but are not executed.
+     - LIVE entries can be connected by later loader blocks.
+     - ADAPTER entries require a controlled bridge.
+     
+     STATUS MODEL
+     -------------
+       DISCOVERED
+       LOADING
+       LOADED
+       INITIALISED
+       READY
+       DEGRADED
+       FAILED
+       RECOVERED
+       ARCHIVED
+       UNAVAILABLE
+
+     ============================================================ -->
+
+<script>
+(function CHIROMBE_ENGINE_REGISTRY() {
+
+  "use strict";
+
+  /* ------------------------------------------------------------
+     REQUIRE FOUNDATION
+     ------------------------------------------------------------ */
+
+  const system = window.CHIROMBE_UNIFIED;
+
+  if (!system) {
+    console.error(
+      "[CHIROMBE] Foundation missing. " +
+      "Block 3 cannot initialise."
+    );
+    return;
+  }
+
+
+  /* ------------------------------------------------------------
+     REGISTRY VERSION
+     ------------------------------------------------------------ */
+
+  const REGISTRY_VERSION = "1.0.0-registry";
+
+
+  /* ------------------------------------------------------------
+     REGISTRY OBJECT
+     ------------------------------------------------------------ */
+
+  const registry = {
+
+    version: REGISTRY_VERSION,
+
+    createdAt:
+      new Date().toISOString(),
+
+    status:
+      "DISCOVERED",
+
+    engines: {},
+
+    aliases: {},
+
+    groups: {},
+
+    paths: {},
+
+    dependencies: {},
+
+    capabilities: {},
+
+    statistics: {
+
+      total: 0,
+
+      live: 0,
+
+      adapter: 0,
+
+      archive: 0,
+
+      optional: 0,
+
+      required: 0,
+
+      discovered: 0,
+
+      loaded: 0,
+
+      ready: 0,
+
+      degraded: 0,
+
+      failed: 0,
+
+      archived: 0,
+
+      unavailable: 0
+
+    }
+
+  };
+
+
+  /* ------------------------------------------------------------
+     ENGINE STATUS CONSTANTS
+     ------------------------------------------------------------ */
+
+  const STATUS = Object.freeze({
+
+    DISCOVERED:
+      "DISCOVERED",
+
+    LOADING:
+      "LOADING",
+
+    LOADED:
+      "LOADED",
+
+    INITIALISED:
+      "INITIALISED",
+
+    READY:
+      "READY",
+
+    DEGRADED:
+      "DEGRADED",
+
+    FAILED:
+      "FAILED",
+
+    RECOVERED:
+      "RECOVERED",
+
+    ARCHIVED:
+      "ARCHIVED",
+
+    UNAVAILABLE:
+      "UNAVAILABLE"
+
+  });
+
+
+  /* ------------------------------------------------------------
+     EXECUTION MODES
+     ------------------------------------------------------------ */
+
+  const MODE = Object.freeze({
+
+    LIVE:
+      "LIVE",
+
+    ADAPTER:
+      "ADAPTER",
+
+    ARCHIVE:
+      "ARCHIVE",
+
+    OPTIONAL:
+      "OPTIONAL"
+
+  });
+
+
+  /* ------------------------------------------------------------
+     REGISTER ENGINE
+     ------------------------------------------------------------ */
+
+  function registerEngine(definition) {
+
+    if (!definition) {
+      throw new Error(
+        "Engine definition is required."
+      );
+    }
+
+    if (
+      typeof definition.id !== "string" ||
+      !definition.id.trim()
+    ) {
+      throw new Error(
+        "Every engine requires a unique id."
+      );
+    }
+
+    const id =
+      definition.id.trim();
+
+    if (registry.engines[id]) {
+
+      system.foundation.log(
+        "Duplicate engine registration rejected: " +
+        id,
+        "warn"
+      );
+
+      return false;
+    }
+
+
+    const engine = {
+
+      id,
+
+      name:
+        definition.name ||
+        id,
+
+      description:
+        definition.description ||
+        "",
+
+      version:
+        definition.version ||
+        "repository",
+
+      mode:
+        definition.mode ||
+        MODE.LIVE,
+
+      required:
+        definition.required !== false,
+
+      optional:
+        definition.optional === true,
+
+      entry:
+        definition.entry ||
+        null,
+
+      files:
+        Array.isArray(definition.files)
+          ? [...definition.files]
+          : [],
+
+      dependencies:
+        Array.isArray(definition.dependencies)
+          ? [...definition.dependencies]
+          : [],
+
+      optionalDependencies:
+        Array.isArray(
+          definition.optionalDependencies
+        )
+          ? [...definition.optionalDependencies]
+          : [],
+
+      provides:
+        Array.isArray(definition.provides)
+          ? [...definition.provides]
+          : [],
+
+      globals:
+        Array.isArray(definition.globals)
+          ? [...definition.globals]
+          : [],
+
+      interfaces:
+        Array.isArray(definition.interfaces)
+          ? [...definition.interfaces]
+          : [],
+
+      group:
+        definition.group ||
+        "CORE",
+
+      phase:
+        definition.phase ||
+        0,
+
+      status:
+        definition.status ||
+        STATUS.DISCOVERED,
+
+      source:
+        definition.source ||
+        "repository",
+
+      integrity:
+        definition.integrity ||
+        "UNVERIFIED",
+
+      executable:
+        definition.executable !== false,
+
+      autostart:
+        definition.autostart === true,
+
+      loaded:
+        false,
+
+      initialised:
+        false,
+
+      ready:
+        false,
+
+      error:
+        null,
+
+      lastChecked:
+        null,
+
+      metadata:
+        definition.metadata ||
+        {}
+
+    };
+
+
+    registry.engines[id] =
+      engine;
+
+
+    registry.statistics.total++;
+
+
+    if (engine.mode === MODE.LIVE) {
+      registry.statistics.live++;
+    }
+
+    if (engine.mode === MODE.ADAPTER) {
+      registry.statistics.adapter++;
+    }
+
+    if (engine.mode === MODE.ARCHIVE) {
+      registry.statistics.archive++;
+    }
+
+    if (engine.optional) {
+      registry.statistics.optional++;
+    }
+
+    if (engine.required) {
+      registry.statistics.required++;
+    }
+
+    registry.statistics.discovered++;
+
+
+    /*
+     * Index the engine by path.
+     */
+
+    for (
+      const file of engine.files
+    ) {
+
+      if (
+        !registry.paths[file]
+      ) {
+        registry.paths[file] = [];
+      }
+
+      registry.paths[file].push(
+        id
+      );
+    }
+
+
+    /*
+     * Index the engine by capability.
+     */
+
+    for (
+      const capability
+      of engine.provides
+    ) {
+
+      if (
+        !registry.capabilities[
+          capability
+        ]
+      ) {
+        registry.capabilities[
+          capability
+        ] = [];
+      }
+
+      registry.capabilities[
+        capability
+      ].push(id);
+    }
+
+
+    /*
+     * Index aliases.
+     */
+
+    for (
+      const alias
+      of (
+        definition.aliases || []
+      )
+    ) {
+
+      registry.aliases[
+        alias
+      ] = id;
+
+    }
+
+
+    /*
+     * Index groups.
+     */
+
+    if (
+      !registry.groups[
+        engine.group
+      ]
+    ) {
+
+      registry.groups[
+        engine.group
+      ] = [];
+
+    }
+
+    registry.groups[
+      engine.group
+    ].push(id);
+
+
+    /*
+     * Store dependency information.
+     */
+
+    registry.dependencies[
+      id
+    ] = {
+
+      required:
+        [...engine.dependencies],
+
+      optional:
+        [...engine.optionalDependencies]
+
+    };
+
+
+    system.foundation.log(
+      "Engine registered: " +
+      id +
+      " [" +
+      engine.mode +
+      "]",
+      "ok"
+    );
+
+
+    return true;
+  }
+
+
+  /* ------------------------------------------------------------
+     REGISTER ALIAS
+     ------------------------------------------------------------ */
+
+  function registerAlias(
+    alias,
+    engineId
+  ) {
+
+    if (
+      !alias ||
+      !engineId
+    ) {
+      return false;
+    }
+
+    if (
+      !registry.engines[
+        engineId
+      ]
+    ) {
+      return false;
+    }
+
+    registry.aliases[
+      alias
+    ] = engineId;
+
+    return true;
+  }
+
+
+  /* ------------------------------------------------------------
+     GET ENGINE
+     ------------------------------------------------------------ */
+
+  function getEngine(
+    id
+  ) {
+
+    if (
+      registry.engines[id]
+    ) {
+      return registry.engines[id];
+    }
+
+    const resolved =
+      registry.aliases[id];
+
+    if (
+      resolved &&
+      registry.engines[
+        resolved
+      ]
+    ) {
+      return registry.engines[
+        resolved
+      ];
+    }
+
+    return null;
+  }
+
+
+  /* ------------------------------------------------------------
+     UPDATE ENGINE STATUS
+     ------------------------------------------------------------ */
+
+  function setEngineStatus(
+    id,
+    status,
+    error = null
+  ) {
+
+    const engine =
+      getEngine(id);
+
+    if (!engine) {
+      return false;
+    }
+
+    const previous =
+      engine.status;
+
+    engine.status =
+      status;
+
+    engine.lastChecked =
+      new Date().toISOString();
+
+    engine.error =
+      error
+        ? String(error)
+        : null;
+
+
+    engine.loaded =
+      (
+        status === STATUS.LOADED ||
+        status === STATUS.INITIALISED ||
+        status === STATUS.READY ||
+        status === STATUS.RECOVERED
+      );
+
+
+    engine.initialised =
+      (
+        status === STATUS.INITIALISED ||
+        status === STATUS.READY ||
+        status === STATUS.RECOVERED
+      );
+
+
+    engine.ready =
+      (
+        status === STATUS.READY ||
+        status === STATUS.RECOVERED
+      );
+
+
+    system.foundation.log(
+      id +
+      ": " +
+      previous +
+      " → " +
+      status,
+      status === STATUS.FAILED
+        ? "error"
+        : status === STATUS.DEGRADED
+          ? "warn"
+          : "ok"
+    );
+
+
+    refreshStatistics();
+
+    return true;
+  }
+
+
+  /* ------------------------------------------------------------
+     REFRESH STATISTICS
+     ------------------------------------------------------------ */
+
+  function refreshStatistics() {
+
+    const stats =
+      registry.statistics;
+
+    stats.loaded = 0;
+    stats.ready = 0;
+    stats.degraded = 0;
+    stats.failed = 0;
+    stats.archived = 0;
+    stats.unavailable = 0;
+
+
+    for (
+      const engine
+      of Object.values(
+        registry.engines
+      )
+    ) {
+
+      if (engine.loaded) {
+        stats.loaded++;
+      }
+
+      if (engine.ready) {
+        stats.ready++;
+      }
+
+      if (
+        engine.status ===
+        STATUS.DEGRADED
+      ) {
+        stats.degraded++;
+      }
+
+      if (
+        engine.status ===
+        STATUS.FAILED
+      ) {
+        stats.failed++;
+      }
+
+      if (
+        engine.status ===
+        STATUS.ARCHIVED
+      ) {
+        stats.archived++;
+      }
+
+      if (
+        engine.status ===
+        STATUS.UNAVAILABLE
+      ) {
+        stats.unavailable++;
+      }
+
+    }
+
+
+    /*
+     * Update Block 1 metrics if present.
+     */
+
+    const total =
+      document.getElementById(
+        "chirombe-metric-engines"
+      );
+
+    const ready =
+      document.getElementById(
+        "chirombe-metric-ready"
+      );
+
+    const degraded =
+      document.getElementById(
+        "chirombe-metric-degraded"
+      );
+
+    const failed =
+      document.getElementById(
+        "chirombe-metric-failed"
+      );
+
+
+    if (total) {
+      total.textContent =
+        String(stats.total);
+    }
+
+    if (ready) {
+      ready.textContent =
+        String(stats.ready);
+    }
+
+    if (degraded) {
+      degraded.textContent =
+        String(stats.degraded);
+    }
+
+    if (failed) {
+      failed.textContent =
+        String(stats.failed);
+    }
+
+  }
+
+
+  /* ============================================================
+     CORE ENGINE DEFINITIONS
+     ============================================================
+
+     These definitions describe the EXISTING architecture.
+
+     They do NOT implement replacement engines.
+
+     Paths are deliberately kept explicit so Block 4 can
+     validate them before execution.
+
+     ============================================================ */
+
+
+  /* ------------------------------------------------------------
+     CORE
+     ------------------------------------------------------------ */
+
+  registerEngine({
+
+    id:
+      "CHIROMBE_CORE",
+
+    name:
+      "Chirombe Core",
+
+    description:
+      "Primary CHIROMBE system core.",
+
+    mode:
+      MODE.LIVE,
+
+    group:
+      "CORE",
+
+    phase:
+      10,
+
+    files: [
+      "js/chirombe.js"
+    ],
+
+    globals: [
+      "ChirombeSystem",
+      "ChirombeCore"
+    ],
+
+    provides: [
+      "CORE",
+      "SYSTEM",
+      "RUNTIME"
+    ],
+
+    interfaces: [
+      "core"
+    ],
+
+    autostart:
+      false
+
+  });
+
+
+  /* ------------------------------------------------------------
+     COMMAND BUS
+     ------------------------------------------------------------ */
+
+  registerEngine({
+
+    id:
+      "CHIROMBE_BUS",
+
+    name:
+      "Chirombe Command Bus",
+
+    description:
+      "Central command and event transport layer.",
+
+    mode:
+      MODE.LIVE,
+
+    group:
+      "CORE",
+
+    phase:
+      20,
+
+    files: [
+      "js/chirombe-bus.js"
+    ],
+
+    globals: [
+      "ChirombeBus"
+    ],
+
+    provides: [
+      "COMMAND_BUS",
+      "EVENT_BUS"
+    ],
+
+    interfaces: [
+      "command",
+      "event"
+    ],
+
+    dependencies: [
+      "CHIROMBE_CORE"
+    ]
+
+  });
+
+
+  /* ------------------------------------------------------------
+     STATE
+     ------------------------------------------------------------ */
+
+  registerEngine({
+
+    id:
+      "CHIROMBE_STATE",
+
+    name:
+      "Chirombe State",
+
+    description:
+      "Shared system state and runtime state management.",
+
+    mode:
+      MODE.LIVE,
+
+    group:
+      "STATE",
+
+    phase:
+      30,
+
+    files: [
+      "js/chirombe-state.js"
+    ],
+
+    globals: [
+      "ChirombeState"
+    ],
+
+    provides: [
+      "STATE",
+      "MODEL_STATE"
+    ],
+
+    interfaces: [
+      "state"
+    ],
+
+    dependencies: [
+      "CHIROMBE_CORE",
+      "CHIROMBE_BUS"
+    ]
+
+  });
+
+
+  /* ------------------------------------------------------------
+     AUDIT
+     ------------------------------------------------------------ */
+
+  registerEngine({
+
+    id:
+      "CHIROMBE_AUDIT",
+
+    name:
+      "Chirombe Audit",
+
+    description:
+      "Audit chain, verification and event history.",
+
+    mode:
+      MODE.LIVE,
+
+    group:
+      "SECURITY",
+
+    phase:
+      40,
+
+    files: [
+      "js/chirombe-audit.js"
+    ],
+
+    globals: [
+      "ChirombeAudit"
+    ],
+
+    provides: [
+      "AUDIT",
+      "INTEGRITY",
+      "EVENT_HISTORY"
+    ],
+
+    interfaces: [
+      "audit",
+      "verify"
+    ],
+
+    dependencies: [
+      "CHIROMBE_CORE",
+      "CHIROMBE_STATE"
+    ]
+
+  });
+
+
+  /* ------------------------------------------------------------
+     HEALTH
+     ------------------------------------------------------------ */
+
+  registerEngine({
+
+    id:
+      "CHIROMBE_HEALTH",
+
+    name:
+      "Chirombe Health",
+
+    description:
+      "Runtime health monitoring and diagnostics.",
+
+    mode:
+      MODE.LIVE,
+
+    group:
+      "SECURITY",
+
+    phase:
+      50,
+
+    files: [
+      "js/chirombe-health.js"
+    ],
+
+    globals: [
+      "ChirombeHealth"
+    ],
+
+    provides: [
+      "HEALTH",
+      "DIAGNOSTICS"
+    ],
+
+    interfaces: [
+      "health"
+    ],
+
+    dependencies: [
+      "CHIROMBE_CORE",
+      "CHIROMBE_STATE"
+    ]
+
+  });
+
+
+  /* ------------------------------------------------------------
+     WATCHDOG
+     ------------------------------------------------------------ */
+
+  registerEngine({
+
+    id:
+      "CHIROMBE_WATCHDOG",
+
+    name:
+      "Chirombe Watchdog",
+
+    description:
+      "Runtime supervision and failure detection.",
+
+    mode:
+      MODE.LIVE,
+
+    group:
+      "SECURITY",
+
+    phase:
+      60,
+
+    files: [
+      "js/chirombe-watchdog.js"
+    ],
+
+    globals: [
+      "ChirombeWatchdog"
+    ],
+
+    provides: [
+      "WATCHDOG",
+      "FAILURE_DETECTION"
+    ],
+
+    interfaces: [
+      "watchdog"
+    ],
+
+    dependencies: [
+      "CHIROMBE_CORE",
+      "CHIROMBE_BUS",
+      "CHIROMBE_HEALTH"
+    ]
+
+  });
+
+
+  /* ------------------------------------------------------------
+     PROTECTION
+     ------------------------------------------------------------ */
+
+  registerEngine({
+
+    id:
+      "CHIROMBE_PROTECTION",
+
+    name:
+      "Chirombe Protection Core",
+
+    description:
+      "Existing protection-state and protection orchestration layer.",
+
+    mode:
+      MODE.LIVE,
+
+    group:
+      "PROTECTION",
+
+    phase:
+      100,
+
+    files: [
+      "js/chirombe-protection-core.js"
+    ],
+
+    globals: [
+      "ZionProtectionCore",
+      "ZionProtect"
+    ],
+
+    provides: [
+      "PROTECTION",
+      "PROTECTION_STATE",
+      "RESILIENCE"
+    ],
+
+    interfaces: [
+      "protection"
+    ],
+
+    dependencies: [
+      "CHIROMBE_CORE",
+      "CHIROMBE_STATE",
+      "CHIROMBE_AUDIT"
+    ]
+
+  });
+
+
+  /* ------------------------------------------------------------
+     COVENANT
+     ------------------------------------------------------------ */
+
+  registerEngine({
+
+    id:
+      "CHIROMBE_COVENANT",
+
+    name:
+      "Mwarindi Covenant",
+
+    description:
+      "Existing covenant and policy interface.",
+
+    mode:
+      MODE.LIVE,
+
+    group:
+      "POLICY",
+
+    phase:
+      110,
+
+    files: [
+      "js/mwarindi-covenant.js"
+    ],
+
+    globals: [
+      "MwarindiCovenant"
+    ],
+
+    provides: [
+      "COVENANT",
+      "POLICY"
+    ],
+
+    interfaces: [
+      "policy"
+    ],
+
+    dependencies: [
+      "CHIROMBE_CORE",
+      "CHIROMBE_STATE"
+    ]
+
+  });
+
+
+  /* ------------------------------------------------------------
+     RESONANCE
+     ------------------------------------------------------------ */
+
+  registerEngine({
+
+    id:
+      "CHIROMBE_RESONANCE",
+
+    name:
+      "Chirombe Resonance",
+
+    description:
+      "Existing resonance and symbolic signal interface.",
+
+    mode:
+      MODE.LIVE,
+
+    group:
+      "RESONANCE",
+
+    phase:
+      120,
+
+    files: [
+      "js/chirombe-resonance.js"
+    ],
+
+    globals: [
+      "ChirombeResonance"
+    ],
+
+    provides: [
+      "RESONANCE",
+      "SIGNAL"
+    ],
+
+    interfaces: [
+      "resonance"
+    ],
+
+    dependencies: [
+      "CHIROMBE_CORE",
+      "CHIROMBE_STATE"
+    ]
+
+  });
+
+
+  /* ------------------------------------------------------------
+     LITURGY / AUDIO
+     ------------------------------------------------------------ */
+
+  registerEngine({
+
+    id:
+      "CHIROMBE_LITURGY",
+
+    name:
+      "Chirombe Liturgy / Audio",
+
+    description:
+      "Existing audio and liturgy subsystem.",
+
+    mode:
+      MODE.LIVE,
+
+    group:
+      "AUDIO",
+
+    phase:
+      130,
+
+    files: [
+      "js/chirombe-liturgy.js"
+    ],
+
+    globals: [
+      "CHIROMBE_LITURGY"
+    ],
+
+    provides: [
+      "AUDIO",
+      "LITURGY",
+      "RESONANCE_AUDIO"
+    ],
+
+    interfaces: [
+      "audio"
+    ],
+
+    dependencies: [
+      "CHIROMBE_CORE"
+    ],
+
+    optional:
+      true
+
+  });
+
+
+  /* ------------------------------------------------------------
+     AUTOSTART
+     ------------------------------------------------------------ */
+
+  registerEngine({
+
+    id:
+      "CHIROMBE_AUTOSTART",
+
+    name:
+      "Chirombe Autostart",
+
+    description:
+      "Existing controlled system startup integration.",
+
+    mode:
+      MODE.ADAPTER,
+
+    group:
+      "BOOT",
+
+    phase:
+      140,
+
+    files: [
+      "js/chirombe-autostart.js"
+    ],
+
+    globals: [
+      "CHIROMBE_AUTOSTART"
+    ],
+
+    provides: [
+      "AUTOSTART",
+      "BOOT"
+    ],
+
+    interfaces: [
+      "boot"
+    ],
+
+    dependencies: [
+      "CHIROMBE_CORE",
+      "CHIROMBE_BUS",
+      "CHIROMBE_HEALTH"
+    ],
+
+    autostart:
+      false
+
+  });
+
+
+  /* ------------------------------------------------------------
+     GUARDIAN
+     ------------------------------------------------------------ */
+
+  registerEngine({
+
+    id:
+      "CHIROMBE_GUARDIAN",
+
+    name:
+      "Chirombe Guardian",
+
+    description:
+      "Existing guardian/watch layer.",
+
+    mode:
+      MODE.ADAPTER,
+
+    group:
+      "SECURITY",
+
+    phase:
+      150,
+
+    files: [
+      "js/chirombe-guardian.js"
+    ],
+
+    globals: [
+      "CHIROMBE_GUARDIAN"
+    ],
+
+    provides: [
+      "GUARDIAN",
+      "PROTECTION_WATCH"
+    ],
+
+    interfaces: [
+      "guardian"
+    ],
+
+    dependencies: [
+      "CHIROMBE_CORE",
+      "CHIROMBE_WATCHDOG"
+    ]
+
+  });
+
+
+  /* ------------------------------------------------------------
+     ZCCA
+     ------------------------------------------------------------ */
+
+  registerEngine({
+
+    id:
+      "CHIROMBE_ZCCA",
+
+    name:
+      "ZCCA Command Interface",
+
+    description:
+      "Existing ZCCA command/control integration.",
+
+    mode:
+      MODE.ADAPTER,
+
+    group:
+      "COMMAND",
+
+    phase:
+      200,
+
+    files: [
+      "js/zcca.js"
+    ],
+
+    globals: [
+      "ZCCA"
+    ],
+
+    provides: [
+      "COMMAND",
+      "CONTROL"
+    ],
+
+    interfaces: [
+      "zcca"
+    ],
+
+    dependencies: [
+      "CHIROMBE_CORE",
+      "CHIROMBE_BUS",
+      "CHIROMBE_STATE"
+    ]
+
+  });
+
+
+  /* ------------------------------------------------------------
+     PIONEER
+     ------------------------------------------------------------ */
+
+  registerEngine({
+
+    id:
+      "CHIROMBE_PIONEER",
+
+    name:
+      "Chirombe Pioneer Brain",
+
+    description:
+      "Existing pioneer/hypothesis subsystem.",
+
+    mode:
+      MODE.ADAPTER,
+
+    group:
+      "INTELLIGENCE",
+
+    phase:
+      300,
+
+    files: [
+      "js/chirombe-pioneer.js"
+    ],
+
+    globals: [
+      "CHIROMBE_PIONEER_BRAIN"
+    ],
+
+    provides: [
+      "PIONEER",
+      "HYPOTHESIS",
+      "LEARNING"
+    ],
+
+    interfaces: [
+      "pioneer"
+    ],
+
+    dependencies: [
+      "CHIROMBE_CORE",
+      "CHIROMBE_STATE",
+      "CHIROMBE_AUDIT"
+    ],
+
+    optional:
+      true
+
+  });
+
+
+  /* ============================================================
+     HISTORICAL ENGINE ARTIFACT
+     ============================================================
+
+     IMPORTANT:
+
+     The repository contains a large historical
+     "chirombe engine" artifact.
+
+     It is intentionally registered as ARCHIVE.
+
+     We DO NOT execute it directly.
+
+     A later integrity/adapter stage can inspect it,
+     extract valid modules and connect them safely.
+
+     ============================================================ */
+
+  registerEngine({
+
+    id:
+      "CHIROMBE_HISTORICAL_ENGINE",
+
+    name:
+      "Chirombe Historical Engine Archive",
+
+    description:
+      "Preserved historical engine artifact. Requires validation and controlled extraction before execution.",
+
+    mode:
+      MODE.ARCHIVE,
+
+    group:
+      "ARCHIVE",
+
+    phase:
+      900,
+
+    files: [
+      "chirombe engine"
+    ],
+
+    provides: [
+      "HISTORICAL_ENGINE",
+      "LEGACY_ENGINE"
+    ],
+
+    interfaces: [
+      "archive"
+    ],
+
+    executable:
+      false,
+
+    autostart:
+      false,
+
+    status:
+      STATUS.ARCHIVED,
+
+    integrity:
+      "REQUIRES_VALIDATION"
+
+  });
+
+
+  /* ------------------------------------------------------------
+     LEGACY INDEX
+     ------------------------------------------------------------ */
+
+  registerEngine({
+
+    id:
+      "CHIROMBE_LEGACY_INDEX",
+
+    name:
+      "Legacy Chirombe Index",
+
+    description:
+      "Historical frontend retained for reference and recovery.",
+
+    mode:
+      MODE.ARCHIVE,
+
+    group:
+      "ARCHIVE",
+
+    phase:
+      910,
+
+    files: [
+      "index.html"
+    ],
+
+    provides: [
+      "LEGACY_FRONTEND"
+    ],
+
+    interfaces: [
+      "archive"
+    ],
+
+    executable:
+      false,
+
+    autostart:
+      false,
+
+    status:
+      STATUS.ARCHIVED,
+
+    integrity:
+      "REQUIRES_VALIDATION"
+
+  });
+
+
+  /* ============================================================
+     ALIASES
+     ============================================================ */
+
+  registerAlias(
+    "CORE",
+    "CHIROMBE_CORE"
+  );
+
+  registerAlias(
+    "BUS",
+    "CHIROMBE_BUS"
+  );
+
+  registerAlias(
+    "STATE",
+    "CHIROMBE_STATE"
+  );
+
+  registerAlias(
+    "AUDIT",
+    "CHIROMBE_AUDIT"
+  );
+
+  registerAlias(
+    "HEALTH",
+    "CHIROMBE_HEALTH"
+  );
+
+  registerAlias(
+    "WATCHDOG",
+    "CHIROMBE_WATCHDOG"
+  );
+
+  registerAlias(
+    "PROTECTION",
+    "CHIROMBE_PROTECTION"
+  );
+
+  registerAlias(
+    "COVENANT",
+    "CHIROMBE_COVENANT"
+  );
+
+  registerAlias(
+    "RESONANCE",
+    "CHIROMBE_RESONANCE"
+  );
+
+  registerAlias(
+    "PIONEER",
+    "CHIROMBE_PIONEER"
+  );
+
+
+  /* ============================================================
+     PUBLIC REGISTRY API
+     ============================================================ */
+
+  system.registry = registry;
+
+  system.registryAPI = {
+
+    version:
+      REGISTRY_VERSION,
+
+    STATUS,
+
+    MODE,
+
+    registerEngine,
+
+    registerAlias,
+
+    getEngine,
+
+    setEngineStatus,
+
+    refreshStatistics,
+
+    getAll() {
+
+      return {
+        ...registry.engines
+      };
+
+    },
+
+    getRequired() {
+
+      return Object.values(
+        registry.engines
+      ).filter(
+        engine =>
+          engine.required
+      );
+
+    },
+
+    getOptional() {
+
+      return Object.values(
+        registry.engines
+      ).filter(
+        engine =>
+          engine.optional
+      );
+
+    },
+
+    getLive() {
+
+      return Object.values(
+        registry.engines
+      ).filter(
+        engine =>
+          engine.mode === MODE.LIVE
+      );
+
+    },
+
+    getAdapters() {
+
+      return Object.values(
+        registry.engines
+      ).filter(
+        engine =>
+          engine.mode === MODE.ADAPTER
+      );
+
+    },
+
+    getArchives() {
+
+      return Object.values(
+        registry.engines
+      ).filter(
+        engine =>
+          engine.mode === MODE.ARCHIVE
+      );
+
+    },
+
+    getByGroup(
+      group
+    ) {
+
+      return (
+        registry.groups[group] ||
+        []
+      ).map(
+        id =>
+          registry.engines[id]
+      );
+
+    },
+
+    getByCapability(
+      capability
+    ) {
+
+      return (
+        registry.capabilities[
+          capability
+        ] || []
+      ).map(
+        id =>
+          registry.engines[id]
+      );
+
+    },
+
+    getStatistics() {
+
+      return {
+        ...registry.statistics
+      };
+
+    },
+
+    exportManifest() {
+
+      return {
+
+        registryVersion:
+          REGISTRY_VERSION,
+
+        generatedAt:
+          new Date().toISOString(),
+
+        engines:
+          Object.values(
+            registry.engines
+          ).map(
+            engine => ({
+              id:
+                engine.id,
+
+              name:
+                engine.name,
+
+              mode:
+                engine.mode,
+
+              group:
+                engine.group,
+
+              phase:
+                engine.phase,
+
+              files:
+                [...engine.files],
+
+              dependencies:
+                [...engine.dependencies],
+
+              optionalDependencies:
+                [
+                  ...engine.optionalDependencies
+                ],
+
+              provides:
+                [...engine.provides],
+
+              status:
+                engine.status,
+
+              integrity:
+                engine.integrity
+            })
+          )
+
+      };
+
+    }
+
+  };
+
+
+  /* ============================================================
+     UPDATE FOUNDATION METRICS
+     ============================================================ */
+
+  registry.refresh =
+    refreshStatistics;
+
+
+  /* ============================================================
+     INITIAL REGISTRY STATE
+     ============================================================ */
+
+  refreshStatistics();
+
+
+  system.foundation.log(
+    "Engine registry created.",
+    "ok"
+  );
+
+  system.foundation.log(
+    "Registered engines: " +
+    registry.statistics.total,
+    "ok"
+  );
+
+  system.foundation.log(
+    "Live engines: " +
+    registry.statistics.live,
+    "ok"
+  );
+
+  system.foundation.log(
+    "Adapter engines: " +
+    registry.statistics.adapter,
+    "ok"
+  );
+
+  system.foundation.log(
+    "Archive engines: " +
+    registry.statistics.archive,
+    "ok"
+  );
+
+  system.foundation.log(
+    "Historical engine execution: BLOCKED until validation.",
+    "warn"
+  );
+
+
+  /* ------------------------------------------------------------
+     REGISTRY STATUS
+     ------------------------------------------------------------ */
+
+  registry.status =
+    "DISCOVERED";
+
+
+  /*
+   * Do NOT set the whole CHIROMBE system to READY.
+   *
+   * The next stages must still:
+   *
+   *   DISCOVER
+   *      ↓
+   *   CONNECT
+   *      ↓
+   *   VERIFY
+   *      ↓
+   *   MEMORY
+   *      ↓
+   *   SELF-TEST
+   *      ↓
+   *   READY
+   *
+   */
+
+  system.phase =
+    "REGISTRY";
+
+  system.status =
+    "DISCOVERED";
+
+
+  /* ------------------------------------------------------------
+     FINAL REGISTRY EVENT
+     ------------------------------------------------------------ */
+
+  system.foundation.log(
+    "Registry phase complete. Awaiting controlled loader.",
+    "ok"
+  );
+
+
+})();
+</script>
