@@ -1,0 +1,1413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, viewport-fit=cover"
+  >
+
+  <meta
+    name="theme-color"
+    content="#02050a"
+  >
+
+  <meta
+    name="description"
+    content="CHIROMBE Unified Command and Engine Orchestration System"
+  >
+
+  <meta
+    name="application-name"
+    content="CHIROMBE"
+  >
+
+  <meta
+    name="mobile-web-app-capable"
+    content="yes"
+  >
+
+  <meta
+    name="apple-mobile-web-app-capable"
+    content="yes"
+  >
+
+  <meta
+    name="apple-mobile-web-app-status-bar-style"
+    content="black-translucent"
+  >
+
+  <title>CHIROMBE · Unified Command Core</title>
+
+  <!--
+    ============================================================
+    CHIROMBE UNIFIED INDEX
+    ============================================================
+
+    ARCHITECTURE
+
+      INDEX
+        |
+        +-- ENGINE REGISTRY
+        |
+        +-- DEPENDENCY GRAPH
+        |
+        +-- COMMAND BUS
+        |
+        +-- STATE
+        |
+        +-- AUDIT
+        |
+        +-- HEALTH
+        |
+        +-- WATCHDOG
+        |
+        +-- ENGINE ADAPTERS
+        |
+        +-- KERNEL BRIDGE
+        |
+        +-- EXISTING CHIROMBE MODULES
+        |
+        +-- USER INTERFACE
+
+    IMPORTANT
+
+    This file is the orchestration layer.
+
+    It does NOT replace the existing engines.
+    It does NOT recreate engines from descriptions.
+    It does NOT execute the preserved historical
+    "chirombe engine" artifact directly.
+
+    Later blocks will connect the existing repository
+    modules through controlled interfaces.
+
+    ENGINE STATUS STATES:
+
+      DISCOVERED
+      LOADING
+      LOADED
+      INITIALISED
+      READY
+      DEGRADED
+      FAILED
+      RECOVERED
+      ARCHIVED
+
+    ============================================================
+  -->
+
+  <style>
+    /* ==========================================================
+       GLOBAL RESET
+       ========================================================== */
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    html {
+      width: 100%;
+      min-height: 100%;
+      background: #02050a;
+      color-scheme: dark;
+    }
+
+    body {
+      width: 100%;
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+
+      background:
+        radial-gradient(
+          circle at 50% 0%,
+          rgba(0, 170, 255, 0.10),
+          transparent 42%
+        ),
+        radial-gradient(
+          circle at 15% 80%,
+          rgba(130, 70, 255, 0.08),
+          transparent 36%
+        ),
+        #02050a;
+
+      color: #d9f8ff;
+
+      font-family:
+        Inter,
+        ui-sans-serif,
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+
+      overflow-x: hidden;
+    }
+
+    button,
+    input,
+    textarea,
+    select {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    a {
+      color: inherit;
+    }
+
+    /* ==========================================================
+       APPLICATION ROOT
+       ========================================================== */
+
+    #chirombe-app {
+      position: relative;
+      width: 100%;
+      min-height: 100vh;
+      isolation: isolate;
+    }
+
+    /*
+      The background grid is purely visual.
+      It does not represent real-world measurements.
+    */
+
+    #chirombe-app::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+
+      pointer-events: none;
+
+      opacity: 0.16;
+
+      background-image:
+        linear-gradient(
+          rgba(120, 210, 255, 0.055) 1px,
+          transparent 1px
+        ),
+        linear-gradient(
+          90deg,
+          rgba(120, 210, 255, 0.055) 1px,
+          transparent 1px
+        );
+
+      background-size: 32px 32px;
+
+      mask-image:
+        linear-gradient(
+          to bottom,
+          black,
+          transparent 88%
+        );
+
+      z-index: -1;
+    }
+
+    /* ==========================================================
+       TOP COMMAND HEADER
+       ========================================================== */
+
+    .chirombe-header {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+
+      width: 100%;
+
+      border-bottom:
+        1px solid rgba(130, 220, 255, 0.16);
+
+      background:
+        rgba(2, 5, 10, 0.88);
+
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+
+    .chirombe-header-inner {
+      width: min(1500px, 100%);
+      margin: 0 auto;
+
+      min-height: 72px;
+
+      padding:
+        12px
+        clamp(14px, 3vw, 32px);
+
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .chirombe-brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+
+      min-width: 0;
+    }
+
+    .chirombe-brand-mark {
+      width: 42px;
+      height: 42px;
+
+      flex: 0 0 42px;
+
+      border:
+        1px solid rgba(150, 230, 255, 0.42);
+
+      border-radius: 12px;
+
+      display: grid;
+      place-items: center;
+
+      background:
+        radial-gradient(
+          circle,
+          rgba(80, 210, 255, 0.22),
+          rgba(10, 30, 50, 0.70)
+        );
+
+      box-shadow:
+        0 0 28px rgba(0, 170, 255, 0.16);
+
+      color: #dffaff;
+
+      font-weight: 900;
+      letter-spacing: 0.08em;
+    }
+
+    .chirombe-brand-copy {
+      min-width: 0;
+    }
+
+    .chirombe-brand-title {
+      margin: 0;
+
+      font-size: clamp(0.95rem, 2vw, 1.2rem);
+
+      font-weight: 900;
+
+      letter-spacing: 0.16em;
+
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .chirombe-brand-subtitle {
+      margin-top: 3px;
+
+      color: #79a9b8;
+
+      font-size: 0.68rem;
+
+      letter-spacing: 0.13em;
+
+      text-transform: uppercase;
+    }
+
+    /* ==========================================================
+       MASTER SYSTEM STATUS
+       ========================================================== */
+
+    .chirombe-system-status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+
+      flex-shrink: 0;
+    }
+
+    .chirombe-status-light {
+      width: 9px;
+      height: 9px;
+
+      border-radius: 50%;
+
+      background: #65717a;
+
+      box-shadow:
+        0 0 0 4px rgba(101, 113, 122, 0.08);
+    }
+
+    .chirombe-status-light.booting {
+      background: #ffd166;
+
+      box-shadow:
+        0 0 14px rgba(255, 209, 102, 0.55);
+    }
+
+    .chirombe-status-light.ready {
+      background: #46f5a4;
+
+      box-shadow:
+        0 0 16px rgba(70, 245, 164, 0.65);
+    }
+
+    .chirombe-status-light.degraded {
+      background: #ffb347;
+
+      box-shadow:
+        0 0 16px rgba(255, 179, 71, 0.55);
+    }
+
+    .chirombe-status-light.failed {
+      background: #ff5c70;
+
+      box-shadow:
+        0 0 16px rgba(255, 92, 112, 0.55);
+    }
+
+    #chirombe-system-status-text {
+      color: #a9d4df;
+
+      font-size: 0.70rem;
+
+      font-weight: 800;
+
+      letter-spacing: 0.13em;
+
+      white-space: nowrap;
+    }
+
+    /* ==========================================================
+       MAIN APPLICATION
+       ========================================================== */
+
+    .chirombe-main {
+      width: min(1500px, 100%);
+
+      margin: 0 auto;
+
+      padding:
+        clamp(18px, 3vw, 36px);
+
+      display: grid;
+
+      grid-template-columns:
+        minmax(0, 1fr);
+
+      gap: 20px;
+    }
+
+    /* ==========================================================
+       BOOT / SYSTEM BANNER
+       ========================================================== */
+
+    .chirombe-boot-banner {
+      position: relative;
+
+      padding:
+        clamp(22px, 4vw, 42px);
+
+      border:
+        1px solid rgba(120, 210, 255, 0.18);
+
+      border-radius: 22px;
+
+      background:
+        linear-gradient(
+          135deg,
+          rgba(9, 24, 39, 0.92),
+          rgba(4, 9, 17, 0.92)
+        );
+
+      box-shadow:
+        0 20px 80px rgba(0, 0, 0, 0.30);
+
+      overflow: hidden;
+    }
+
+    .chirombe-boot-banner::after {
+      content: "";
+
+      position: absolute;
+
+      width: 280px;
+      height: 280px;
+
+      right: -110px;
+      top: -120px;
+
+      border-radius: 50%;
+
+      border:
+        1px solid rgba(90, 210, 255, 0.12);
+
+      box-shadow:
+        0 0 80px rgba(40, 180, 255, 0.08);
+
+      pointer-events: none;
+    }
+
+    .chirombe-eyebrow {
+      margin-bottom: 10px;
+
+      color: #65c9e7;
+
+      font-size: 0.68rem;
+
+      font-weight: 900;
+
+      letter-spacing: 0.22em;
+
+      text-transform: uppercase;
+    }
+
+    .chirombe-boot-title {
+      margin: 0;
+
+      font-size:
+        clamp(
+          1.65rem,
+          5vw,
+          3.25rem
+        );
+
+      line-height: 1.05;
+
+      letter-spacing: 0.05em;
+
+      font-weight: 950;
+    }
+
+    .chirombe-boot-description {
+      max-width: 850px;
+
+      margin:
+        16px
+        0
+        0;
+
+      color: #88aebb;
+
+      font-size: 0.94rem;
+
+      line-height: 1.65;
+    }
+
+    /* ==========================================================
+       SYSTEM METRICS
+       ========================================================== */
+
+    .chirombe-metrics {
+      display: grid;
+
+      grid-template-columns:
+        repeat(
+          auto-fit,
+          minmax(150px, 1fr)
+        );
+
+      gap: 12px;
+    }
+
+    .chirombe-metric {
+      min-height: 100px;
+
+      padding: 18px;
+
+      border:
+        1px solid rgba(130, 210, 240, 0.13);
+
+      border-radius: 16px;
+
+      background:
+        rgba(7, 15, 25, 0.76);
+    }
+
+    .chirombe-metric-label {
+      display: block;
+
+      margin-bottom: 9px;
+
+      color: #6d95a3;
+
+      font-size: 0.62rem;
+
+      font-weight: 900;
+
+      letter-spacing: 0.15em;
+
+      text-transform: uppercase;
+    }
+
+    .chirombe-metric-value {
+      display: block;
+
+      color: #dffaff;
+
+      font-size: 1.15rem;
+
+      font-weight: 900;
+
+      letter-spacing: 0.04em;
+    }
+
+    /* ==========================================================
+       ENGINE CONTAINER
+       ========================================================== */
+
+    #chirombe-engine-space {
+      min-height: 280px;
+
+      padding: 20px;
+
+      border:
+        1px dashed rgba(120, 210, 255, 0.18);
+
+      border-radius: 20px;
+
+      background:
+        rgba(3, 8, 14, 0.72);
+    }
+
+    .chirombe-placeholder {
+      min-height: 240px;
+
+      display: grid;
+      place-items: center;
+
+      text-align: center;
+    }
+
+    .chirombe-placeholder-inner {
+      max-width: 620px;
+    }
+
+    .chirombe-placeholder-title {
+      margin: 0 0 8px;
+
+      color: #dffaff;
+
+      font-size: 1rem;
+
+      font-weight: 900;
+
+      letter-spacing: 0.12em;
+    }
+
+    .chirombe-placeholder-text {
+      margin: 0;
+
+      color: #668795;
+
+      font-size: 0.82rem;
+
+      line-height: 1.6;
+    }
+
+    /* ==========================================================
+       GLOBAL EVENT / BOOT LOG
+       ========================================================== */
+
+    #chirombe-event-log {
+      min-height: 150px;
+      max-height: 360px;
+
+      overflow: auto;
+
+      padding: 16px;
+
+      border:
+        1px solid rgba(130, 210, 240, 0.12);
+
+      border-radius: 16px;
+
+      background: #010407;
+
+      font-family:
+        ui-monospace,
+        SFMono-Regular,
+        Menlo,
+        Monaco,
+        Consolas,
+        monospace;
+
+      font-size: 0.72rem;
+
+      line-height: 1.65;
+    }
+
+    .chirombe-log-line {
+      padding: 3px 0;
+
+      color: #7193a0;
+
+      border-bottom:
+        1px solid rgba(255, 255, 255, 0.025);
+    }
+
+    .chirombe-log-line:last-child {
+      border-bottom: 0;
+    }
+
+    .chirombe-log-time {
+      color: #41606c;
+    }
+
+    .chirombe-log-ok {
+      color: #63e8a3;
+    }
+
+    .chirombe-log-warn {
+      color: #ffd166;
+    }
+
+    .chirombe-log-error {
+      color: #ff7385;
+    }
+
+    /* ==========================================================
+       FOOTER
+       ========================================================== */
+
+    .chirombe-footer {
+      width: min(1500px, 100%);
+
+      margin: 0 auto;
+
+      padding:
+        20px
+        clamp(18px, 3vw, 36px)
+        36px;
+
+      color: #4f6b75;
+
+      font-size: 0.65rem;
+
+      letter-spacing: 0.08em;
+
+      text-align: center;
+
+      text-transform: uppercase;
+    }
+
+    /* ==========================================================
+       ACCESSIBILITY
+       ========================================================== */
+
+    :focus-visible {
+      outline:
+        2px solid #72dcff;
+
+      outline-offset: 3px;
+    }
+
+    @media (max-width: 680px) {
+
+      .chirombe-header-inner {
+        min-height: 62px;
+      }
+
+      .chirombe-brand-mark {
+        width: 36px;
+        height: 36px;
+        flex-basis: 36px;
+      }
+
+      .chirombe-brand-subtitle {
+        display: none;
+      }
+
+      .chirombe-system-status-text {
+        display: none;
+      }
+
+      .chirombe-main {
+        padding: 14px;
+      }
+
+      .chirombe-boot-banner {
+        border-radius: 17px;
+      }
+
+      .chirombe-metrics {
+        grid-template-columns:
+          repeat(2, minmax(0, 1fr));
+      }
+
+      #chirombe-engine-space {
+        padding: 12px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ==========================================================
+       CHIROMBE APPLICATION ROOT
+       ========================================================== -->
+
+  <div id="chirombe-app">
+
+    <!-- ========================================================
+         HEADER
+         ======================================================== -->
+
+    <header
+      id="chirombe-header"
+      class="chirombe-header"
+    >
+
+      <div class="chirombe-header-inner">
+
+        <div class="chirombe-brand">
+
+          <div
+            class="chirombe-brand-mark"
+            aria-hidden="true"
+          >
+            C
+          </div>
+
+          <div class="chirombe-brand-copy">
+
+            <h1 class="chirombe-brand-title">
+              CHIROMBE
+            </h1>
+
+            <div class="chirombe-brand-subtitle">
+              Unified Command · Engine Orchestration
+            </div>
+
+          </div>
+
+        </div>
+
+        <div
+          class="chirombe-system-status"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+
+          <span
+            id="chirombe-status-light"
+            class="chirombe-status-light booting"
+          ></span>
+
+          <span id="chirombe-system-status-text">
+            BOOTING
+          </span>
+
+        </div>
+
+      </div>
+
+    </header>
+
+
+    <!-- ========================================================
+         MAIN
+         ======================================================== -->
+
+    <main
+      id="chirombe-main"
+      class="chirombe-main"
+    >
+
+      <!-- ======================================================
+           SYSTEM INTRODUCTION
+           ====================================================== -->
+
+      <section
+        id="chirombe-boot-banner"
+        class="chirombe-boot-banner"
+        aria-labelledby="chirombe-boot-title"
+      >
+
+        <div class="chirombe-eyebrow">
+          Unified System Foundation
+        </div>
+
+        <h2
+          id="chirombe-boot-title"
+          class="chirombe-boot-title"
+        >
+          CHIROMBE COMMAND CORE
+        </h2>
+
+        <p class="chirombe-boot-description">
+          Central orchestration layer for the existing CHIROMBE
+          engines, services, workers, state, audit, health,
+          recovery and interface systems.
+        </p>
+
+      </section>
+
+
+      <!-- ======================================================
+           MASTER METRICS
+           ====================================================== -->
+
+      <section
+        id="chirombe-metrics"
+        class="chirombe-metrics"
+        aria-label="CHIROMBE system metrics"
+      >
+
+        <div class="chirombe-metric">
+
+          <span class="chirombe-metric-label">
+            System
+          </span>
+
+          <strong
+            id="chirombe-metric-system"
+            class="chirombe-metric-value"
+          >
+            BOOT
+          </strong>
+
+        </div>
+
+
+        <div class="chirombe-metric">
+
+          <span class="chirombe-metric-label">
+            Engines
+          </span>
+
+          <strong
+            id="chirombe-metric-engines"
+            class="chirombe-metric-value"
+          >
+            0
+          </strong>
+
+        </div>
+
+
+        <div class="chirombe-metric">
+
+          <span class="chirombe-metric-label">
+            Ready
+          </span>
+
+          <strong
+            id="chirombe-metric-ready"
+            class="chirombe-metric-value"
+          >
+            0
+          </strong>
+
+        </div>
+
+
+        <div class="chirombe-metric">
+
+          <span class="chirombe-metric-label">
+            Degraded
+          </span>
+
+          <strong
+            id="chirombe-metric-degraded"
+            class="chirombe-metric-value"
+          >
+            0
+          </strong>
+
+        </div>
+
+
+        <div class="chirombe-metric">
+
+          <span class="chirombe-metric-label">
+            Failed
+          </span>
+
+          <strong
+            id="chirombe-metric-failed"
+            class="chirombe-metric-value"
+          >
+            0
+          </strong>
+
+        </div>
+
+
+        <div class="chirombe-metric">
+
+          <span class="chirombe-metric-label">
+            Audit
+          </span>
+
+          <strong
+            id="chirombe-metric-audit"
+            class="chirombe-metric-value"
+          >
+            WAITING
+          </strong>
+
+        </div>
+
+      </section>
+
+
+      <!-- ======================================================
+           ENGINE MOUNT POINT
+           ======================================================
+
+           BLOCK 2+ will populate this area.
+
+           IMPORTANT:
+           Do not remove this ID.
+
+      ====================================================== -->
+
+      <section
+        id="chirombe-engine-space"
+        aria-label="CHIROMBE engine workspace"
+      >
+
+        <div class="chirombe-placeholder">
+
+          <div class="chirombe-placeholder-inner">
+
+            <h3 class="chirombe-placeholder-title">
+              ENGINE ORCHESTRATOR
+            </h3>
+
+            <p class="chirombe-placeholder-text">
+              Awaiting engine registry, dependency graph,
+              command bus and controlled module discovery.
+              No engine is executed directly by this foundation
+              layer.
+            </p>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+      <!-- ======================================================
+           EVENT / BOOT LOG
+           ====================================================== -->
+
+      <section
+        id="chirombe-event-section"
+        aria-label="CHIROMBE event log"
+      >
+
+        <div class="chirombe-eyebrow">
+          System Events
+        </div>
+
+        <div
+          id="chirombe-event-log"
+          role="log"
+          aria-live="polite"
+          aria-relevant="additions"
+        >
+
+          <div class="chirombe-log-line">
+
+            <span class="chirombe-log-time">
+              [BOOT]
+            </span>
+
+            CHIROMBE foundation loaded.
+
+          </div>
+
+        </div>
+
+      </section>
+
+    </main>
+
+
+    <!-- ========================================================
+         FOOTER
+         ======================================================== -->
+
+    <footer class="chirombe-footer">
+
+      CHIROMBE · Unified Engine Orchestration Layer
+
+      <br>
+
+      Foundation loaded · Awaiting controlled engine discovery
+
+    </footer>
+
+  </div>
+
+
+  <!-- ==========================================================
+       BLOCK 1 FOUNDATION INITIALISATION
+       ==========================================================
+
+       This is deliberately tiny.
+
+       Later blocks will install the actual:
+         - registry
+         - loader
+         - dependency graph
+         - command bus
+         - health layer
+         - audit layer
+         - recovery layer
+         - engine adapters
+         - kernel bridge
+
+       DO NOT load the historical "chirombe engine" here.
+
+  ========================================================== -->
+
+  <script>
+    (function CHIROMBE_FOUNDATION() {
+
+      "use strict";
+
+      /*
+       * --------------------------------------------------------
+       * FOUNDATION VERSION
+       * --------------------------------------------------------
+       */
+
+      const FOUNDATION_VERSION = "1.0.0-foundation";
+
+
+      /*
+       * --------------------------------------------------------
+       * GLOBAL FOUNDATION OBJECT
+       *
+       * Later blocks extend this object instead of replacing it.
+       * --------------------------------------------------------
+       */
+
+      const existing =
+        window.CHIROMBE_UNIFIED ||
+        {};
+
+      existing.version =
+        FOUNDATION_VERSION;
+
+      existing.phase =
+        "FOUNDATION";
+
+      existing.status =
+        "BOOT";
+
+      existing.startedAt =
+        new Date().toISOString();
+
+      existing.registry =
+        existing.registry ||
+        {};
+
+      existing.engines =
+        existing.engines ||
+        {};
+
+      existing.dependencies =
+        existing.dependencies ||
+        {};
+
+      existing.events =
+        existing.events ||
+        [];
+
+      existing.errors =
+        existing.errors ||
+        [];
+
+      existing.capabilities =
+        existing.capabilities ||
+        {};
+
+      existing.runtime =
+        existing.runtime ||
+        {};
+
+      existing.runtime.foundation =
+        true;
+
+      window.CHIROMBE_UNIFIED =
+        existing;
+
+
+      /*
+       * --------------------------------------------------------
+       * DOM HELPERS
+       * --------------------------------------------------------
+       */
+
+      function byId(id) {
+        return document.getElementById(id);
+      }
+
+
+      /*
+       * --------------------------------------------------------
+       * EVENT LOGGER
+       * --------------------------------------------------------
+       */
+
+      function log(
+        message,
+        level = "info"
+      ) {
+
+        const timestamp =
+          new Date()
+            .toISOString()
+            .split("T")[1]
+            .replace("Z", "");
+
+        const entry = {
+          timestamp,
+          level,
+          message
+        };
+
+        existing.events.push(entry);
+
+        const container =
+          byId("chirombe-event-log");
+
+        if (!container) {
+          return;
+        }
+
+        const line =
+          document.createElement("div");
+
+        line.className =
+          "chirombe-log-line";
+
+        const time =
+          document.createElement("span");
+
+        time.className =
+          "chirombe-log-time";
+
+        time.textContent =
+          "[" + timestamp + "] ";
+
+        const text =
+          document.createElement("span");
+
+        if (level === "ok") {
+          text.className =
+            "chirombe-log-ok";
+        }
+
+        if (level === "warn") {
+          text.className =
+            "chirombe-log-warn";
+        }
+
+        if (level === "error") {
+          text.className =
+            "chirombe-log-error";
+        }
+
+        text.textContent =
+          message;
+
+        line.appendChild(time);
+        line.appendChild(text);
+
+        container.appendChild(line);
+
+        container.scrollTop =
+          container.scrollHeight;
+      }
+
+
+      /*
+       * --------------------------------------------------------
+       * STATUS CONTROL
+       * --------------------------------------------------------
+       */
+
+      function setStatus(status) {
+
+        existing.status =
+          status;
+
+        const text =
+          byId(
+            "chirombe-system-status-text"
+          );
+
+        const light =
+          byId(
+            "chirombe-status-light"
+          );
+
+        const metric =
+          byId(
+            "chirombe-metric-system"
+          );
+
+        if (text) {
+          text.textContent =
+            String(status);
+        }
+
+        if (metric) {
+          metric.textContent =
+            String(status);
+        }
+
+        if (light) {
+
+          light.className =
+            "chirombe-status-light";
+
+          const normalised =
+            String(status)
+              .toLowerCase();
+
+          if (
+            normalised === "ready"
+          ) {
+            light.classList.add(
+              "ready"
+            );
+          }
+          else if (
+            normalised === "degraded"
+          ) {
+            light.classList.add(
+              "degraded"
+            );
+          }
+          else if (
+            normalised === "failed"
+          ) {
+            light.classList.add(
+              "failed"
+            );
+          }
+          else {
+            light.classList.add(
+              "booting"
+            );
+          }
+        }
+      }
+
+
+      /*
+       * --------------------------------------------------------
+       * FOUNDATION API
+       *
+       * Blocks 2–7 will extend this API.
+       * --------------------------------------------------------
+       */
+
+      existing.foundation = {
+
+        version:
+          FOUNDATION_VERSION,
+
+        log,
+
+        setStatus,
+
+        getStatus() {
+          return existing.status;
+        },
+
+        getState() {
+          return existing;
+        },
+
+        registerFoundationCapability(
+          name,
+          value
+        ) {
+
+          if (
+            typeof name !== "string" ||
+            !name.trim()
+          ) {
+            return false;
+          }
+
+          existing.capabilities[
+            name
+          ] = value;
+
+          return true;
+        }
+
+      };
+
+
+      /*
+       * --------------------------------------------------------
+       * INITIAL FOUNDATION EVENTS
+       * --------------------------------------------------------
+       */
+
+      log(
+        "Foundation initialised.",
+        "ok"
+      );
+
+      log(
+        "Unified orchestration namespace created.",
+        "ok"
+      );
+
+      log(
+        "Awaiting engine registry.",
+        "info"
+      );
+
+      /*
+       * Do NOT mark the system READY here.
+       *
+       * READY belongs to the final boot sequence after:
+       *
+       * discover → connect → verify → memory
+       * → self-test → ready
+       */
+
+      setStatus(
+        "BOOT"
+      );
+
+      /*
+       * Make the foundation visible to later blocks.
+       */
+
+      window.CHIROMBE_FOUNDATION =
+        existing.foundation;
+
+    })();
+  </script>
+
+</body>
+</html>
