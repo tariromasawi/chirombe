@@ -5846,3 +5846,1704 @@
 
 })();
 </script>
+<!-- ============================================================
+     CHIROMBE UNIFIED COMMAND CORE
+     BLOCK 5 — UNIFIED COMMAND INTERFACE
+
+     PURPOSE
+     ------------------------------------------------------------
+     • Provide one control surface for the connected engines.
+     • Display actual engine/runtime state.
+     • Discover real APIs exposed by the repository.
+     • Route commands through the unified runtime where possible.
+     • Preserve existing engine APIs.
+     • Never fabricate an engine result.
+     • Never declare supernatural/physical protection as verified.
+     • Never automatically seal covenant or activate sensitive
+       subsystems merely because the interface exists.
+
+     BLOCK ORDER:
+     1 Foundation
+     2 Runtime
+     3 Registry
+     4 Verified Loader
+     5 Unified Interface
+     ============================================================ -->
+
+<style>
+  /* ==========================================================
+     CHIROMBE COMMAND INTERFACE
+     ========================================================== */
+
+  #chirombe-control-interface {
+    width: 100%;
+    margin: 24px auto 0;
+    max-width: 1500px;
+  }
+
+  .chirombe-panel {
+    background: rgba(10, 15, 25, 0.94);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 18px;
+    box-shadow: 0 10px 35px rgba(0,0,0,0.25);
+  }
+
+  .chirombe-panel h2,
+  .chirombe-panel h3 {
+    margin-top: 0;
+  }
+
+  .chirombe-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+
+  .chirombe-grid {
+    display: grid;
+    grid-template-columns:
+      repeat(auto-fit, minmax(240px, 1fr));
+    gap: 14px;
+  }
+
+  .chirombe-card {
+    background: rgba(255,255,255,0.035);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px;
+    padding: 16px;
+    min-height: 130px;
+  }
+
+  .chirombe-card-title {
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .chirombe-card-meta {
+    font-size: 12px;
+    opacity: 0.72;
+    line-height: 1.55;
+  }
+
+  .chirombe-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    border-radius: 999px;
+    padding: 5px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+
+  .chirombe-status-ready {
+    background: rgba(46, 204, 113, 0.12);
+    color: #7dffae;
+  }
+
+  .chirombe-status-failed {
+    background: rgba(231, 76, 60, 0.14);
+    color: #ff8d82;
+  }
+
+  .chirombe-status-degraded {
+    background: rgba(241, 196, 15, 0.14);
+    color: #ffe27a;
+  }
+
+  .chirombe-status-other {
+    background: rgba(255,255,255,0.08);
+    color: #d5d5d5;
+  }
+
+  .chirombe-command-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  .chirombe-command-button {
+    border: 1px solid rgba(255,255,255,0.14);
+    background: rgba(255,255,255,0.06);
+    color: inherit;
+    border-radius: 10px;
+    padding: 10px 14px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+
+  .chirombe-command-button:hover {
+    background: rgba(255,255,255,0.11);
+  }
+
+  .chirombe-command-button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  .chirombe-output {
+    background: #05080d;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 14px;
+    overflow: auto;
+    max-height: 420px;
+    font-family:
+      ui-monospace,
+      SFMono-Regular,
+      Menlo,
+      Monaco,
+      Consolas,
+      monospace;
+    font-size: 12px;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .chirombe-api-list {
+    display: grid;
+    gap: 8px;
+  }
+
+  .chirombe-api-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 9px 11px;
+    border-radius: 9px;
+    background: rgba(255,255,255,0.035);
+    font-family:
+      ui-monospace,
+      SFMono-Regular,
+      Menlo,
+      Monaco,
+      Consolas,
+      monospace;
+    font-size: 12px;
+  }
+
+  .chirombe-live-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+    display: inline-block;
+  }
+
+  .chirombe-small {
+    font-size: 12px;
+    opacity: 0.7;
+  }
+
+  @media (max-width: 700px) {
+
+    .chirombe-panel {
+      padding: 15px;
+    }
+
+    .chirombe-command-button {
+      width: 100%;
+    }
+
+  }
+</style>
+
+
+<div id="chirombe-control-interface">
+
+  <!-- ========================================================
+       SYSTEM OVERVIEW
+       ======================================================== -->
+
+  <section class="chirombe-panel">
+
+    <div class="chirombe-panel-header">
+
+      <div>
+        <h2>CHIROMBE COMMAND INTERFACE</h2>
+
+        <div class="chirombe-small">
+          Unified control surface for connected repository modules.
+        </div>
+      </div>
+
+      <div id="chirombe-ui-status"
+           class="chirombe-status chirombe-status-other">
+        <span class="chirombe-live-dot"></span>
+        INITIALISING
+      </div>
+
+    </div>
+
+
+    <div class="chirombe-grid">
+
+      <div class="chirombe-card">
+
+        <div class="chirombe-card-title">
+          Runtime
+        </div>
+
+        <div id="chirombe-ui-runtime">
+          Waiting for runtime…
+        </div>
+
+      </div>
+
+
+      <div class="chirombe-card">
+
+        <div class="chirombe-card-title">
+          Loader
+        </div>
+
+        <div id="chirombe-ui-loader">
+          Waiting for loader…
+        </div>
+
+      </div>
+
+
+      <div class="chirombe-card">
+
+        <div class="chirombe-card-title">
+          Engines
+        </div>
+
+        <div id="chirombe-ui-engines">
+          Waiting for registry…
+        </div>
+
+      </div>
+
+
+      <div class="chirombe-card">
+
+        <div class="chirombe-card-title">
+          Capabilities
+        </div>
+
+        <div id="chirombe-ui-capabilities">
+          Waiting for runtime…
+        </div>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- ========================================================
+       ENGINE MAP
+       ======================================================== -->
+
+  <section class="chirombe-panel">
+
+    <div class="chirombe-panel-header">
+
+      <div>
+        <h2>ENGINE CONNECTION MAP</h2>
+
+        <div class="chirombe-small">
+          Shows the actual registry and loader state.
+        </div>
+      </div>
+
+      <button
+        id="chirombe-refresh-engines"
+        class="chirombe-command-button">
+        Refresh
+      </button>
+
+    </div>
+
+
+    <div
+      id="chirombe-engine-cards"
+      class="chirombe-grid">
+    </div>
+
+  </section>
+
+
+  <!-- ========================================================
+       COMMAND CENTRE
+       ======================================================== -->
+
+  <section class="chirombe-panel">
+
+    <div class="chirombe-panel-header">
+
+      <div>
+        <h2>COMMAND CENTRE</h2>
+
+        <div class="chirombe-small">
+          Read-only diagnostics and explicitly registered
+          computational commands.
+        </div>
+      </div>
+
+    </div>
+
+
+    <div class="chirombe-command-row">
+
+      <button
+        id="chirombe-cmd-state"
+        class="chirombe-command-button">
+        Get State
+      </button>
+
+      <button
+        id="chirombe-cmd-status"
+        class="chirombe-command-button">
+        Get Status
+      </button>
+
+      <button
+        id="chirombe-cmd-health"
+        class="chirombe-command-button">
+        Health Check
+      </button>
+
+      <button
+        id="chirombe-cmd-apis"
+        class="chirombe-command-button">
+        Discover APIs
+      </button>
+
+      <button
+        id="chirombe-cmd-report"
+        class="chirombe-command-button">
+        Loader Report
+      </button>
+
+    </div>
+
+  </section>
+
+
+  <!-- ========================================================
+       DISCOVERED APIs
+       ======================================================== -->
+
+  <section class="chirombe-panel">
+
+    <div class="chirombe-panel-header">
+
+      <div>
+        <h2>CONNECTED API SURFACE</h2>
+
+        <div class="chirombe-small">
+          These are discovered from real browser globals.
+        </div>
+      </div>
+
+    </div>
+
+
+    <div
+      id="chirombe-api-list"
+      class="chirombe-api-list">
+    </div>
+
+  </section>
+
+
+  <!-- ========================================================
+       OUTPUT
+       ======================================================== -->
+
+  <section class="chirombe-panel">
+
+    <div class="chirombe-panel-header">
+
+      <div>
+        <h2>COMMAND OUTPUT</h2>
+
+        <div class="chirombe-small">
+          Latest computational result.
+        </div>
+      </div>
+
+      <button
+        id="chirombe-clear-output"
+        class="chirombe-command-button">
+        Clear
+      </button>
+
+    </div>
+
+
+    <div
+      id="chirombe-command-output"
+      class="chirombe-output">
+Waiting for command…
+    </div>
+
+  </section>
+
+</div>
+
+
+<script>
+(function () {
+
+  "use strict";
+
+
+  /* ==========================================================
+     FOUNDATION CHECK
+     ========================================================== */
+
+  const system =
+    window.CHIROMBE_UNIFIED;
+
+  if (!system) {
+
+    console.error(
+      "[CHIROMBE][BLOCK 5] Unified foundation unavailable."
+    );
+
+    return;
+  }
+
+
+  const runtimeAPI =
+    system.runtimeAPI;
+
+  const registry =
+    system.registry;
+
+  const loaderAPI =
+    system.loaderAPI;
+
+
+  if (!runtimeAPI) {
+
+    console.error(
+      "[CHIROMBE][BLOCK 5] Runtime API unavailable."
+    );
+
+    return;
+  }
+
+
+  /* ==========================================================
+     DOM HELPERS
+     ========================================================== */
+
+  function byId(id) {
+
+    return document.getElementById(id);
+  }
+
+
+  function safeText(value) {
+
+    if (
+      value === null ||
+      typeof value === "undefined"
+    ) {
+      return "";
+    }
+
+    return String(value);
+  }
+
+
+  function output(value) {
+
+    const target =
+      byId(
+        "chirombe-command-output"
+      );
+
+    if (!target) {
+      return;
+    }
+
+    try {
+
+      target.textContent =
+        typeof value === "string"
+          ? value
+          : JSON.stringify(
+              value,
+              null,
+              2
+            );
+
+    } catch (error) {
+
+      target.textContent =
+        String(value);
+    }
+  }
+
+
+  /* ==========================================================
+     STATUS CLASS
+     ========================================================== */
+
+  function statusClass(status) {
+
+    if (
+      status === "READY" ||
+      status === "LOADED" ||
+      status === "RECOVERED"
+    ) {
+      return "chirombe-status-ready";
+    }
+
+    if (
+      status === "FAILED" ||
+      status === "UNAVAILABLE"
+    ) {
+      return "chirombe-status-failed";
+    }
+
+    if (
+      status === "DEGRADED" ||
+      status === "DEPENDENCY_BLOCKED"
+    ) {
+      return "chirombe-status-degraded";
+    }
+
+    return "chirombe-status-other";
+  }
+
+
+  /* ==========================================================
+     RUNTIME SUMMARY
+     ========================================================== */
+
+  function renderRuntime() {
+
+    const target =
+      byId(
+        "chirombe-ui-runtime"
+      );
+
+    if (!target) {
+      return;
+    }
+
+    const runtime =
+      system.runtime;
+
+    if (!runtime) {
+
+      target.textContent =
+        "Runtime unavailable.";
+
+      return;
+    }
+
+    target.innerHTML = "";
+
+    const lines = [
+
+      "Status: " +
+        safeText(runtime.status),
+
+      "Phase: " +
+        safeText(runtime.phase),
+
+      "Active operations: " +
+        safeText(runtime.activeOperations),
+
+      "Completed: " +
+        safeText(runtime.completedOperations),
+
+      "Failed: " +
+        safeText(runtime.failedOperations),
+
+      "Events: " +
+        safeText(runtime.eventCount),
+
+      "Commands: " +
+        safeText(runtime.commandCount)
+
+    ];
+
+    lines.forEach(function (line) {
+
+      const div =
+        document.createElement("div");
+
+      div.textContent =
+        line;
+
+      target.appendChild(div);
+    });
+  }
+
+
+  /* ==========================================================
+     LOADER SUMMARY
+     ========================================================== */
+
+  function renderLoader() {
+
+    const target =
+      byId(
+        "chirombe-ui-loader"
+      );
+
+    if (!target) {
+      return;
+    }
+
+    if (!loaderAPI) {
+
+      target.textContent =
+        "Loader unavailable.";
+
+      return;
+    }
+
+    const report =
+      loaderAPI.getReport();
+
+    target.innerHTML = "";
+
+    const lines = [
+
+      "Status: " +
+        safeText(report.status),
+
+      "Verified: " +
+        safeText(
+          report.statistics.verified
+        ),
+
+      "Loaded: " +
+        safeText(
+          report.statistics.loaded
+        ),
+
+      "Ready: " +
+        safeText(
+          report.statistics.ready
+        ),
+
+      "Failed: " +
+        safeText(
+          report.statistics.failed
+        ),
+
+      "Unavailable: " +
+        safeText(
+          report.statistics.unavailable
+        ),
+
+      "Archived: " +
+        safeText(
+          report.statistics.archived
+        )
+
+    ];
+
+    lines.forEach(function (line) {
+
+      const div =
+        document.createElement("div");
+
+      div.textContent =
+        line;
+
+      target.appendChild(div);
+    });
+  }
+
+
+  /* ==========================================================
+     ENGINE SUMMARY
+     ========================================================== */
+
+  function renderEngineSummary() {
+
+    const target =
+      byId(
+        "chirombe-ui-engines"
+      );
+
+    if (!target) {
+      return;
+    }
+
+    if (!registry) {
+
+      target.textContent =
+        "Registry unavailable.";
+
+      return;
+    }
+
+    const engines =
+      Object.values(
+        registry.engines || {}
+      );
+
+    const ready =
+      engines.filter(
+        e => e.status === "READY"
+      ).length;
+
+    const failed =
+      engines.filter(
+        e =>
+          e.status === "FAILED" ||
+          e.status === "UNAVAILABLE"
+      ).length;
+
+    const archived =
+      engines.filter(
+        e =>
+          e.status === "ARCHIVED"
+      ).length;
+
+    target.innerHTML = "";
+
+    [
+      "Registered: " + engines.length,
+      "Ready: " + ready,
+      "Failed/unavailable: " + failed,
+      "Archived: " + archived
+    ].forEach(function (line) {
+
+      const div =
+        document.createElement("div");
+
+      div.textContent =
+        line;
+
+      target.appendChild(div);
+    });
+  }
+
+
+  /* ==========================================================
+     CAPABILITIES
+     ========================================================== */
+
+  function renderCapabilities() {
+
+    const target =
+      byId(
+        "chirombe-ui-capabilities"
+      );
+
+    if (!target) {
+      return;
+    }
+
+    const capabilities =
+      system.runtime &&
+      system.runtime.capabilities
+        ? Array.from(
+            system.runtime.capabilities
+          )
+        : [];
+
+    target.textContent =
+      capabilities.length
+        ? capabilities.join(", ")
+        : "None registered.";
+  }
+
+
+  /* ==========================================================
+     ENGINE CARDS
+     ========================================================== */
+
+  function renderEngines() {
+
+    const target =
+      byId(
+        "chirombe-engine-cards"
+      );
+
+    if (!target) {
+      return;
+    }
+
+    target.innerHTML = "";
+
+    if (!registry) {
+
+      target.textContent =
+        "Engine Registry unavailable.";
+
+      return;
+    }
+
+    const engines =
+      Object.values(
+        registry.engines || {}
+      ).sort(function (a, b) {
+
+        return (
+          (a.phase || 999) -
+          (b.phase || 999)
+        );
+      });
+
+
+    if (!engines.length) {
+
+      target.textContent =
+        "No registered engines.";
+
+      return;
+    }
+
+
+    engines.forEach(function (engine) {
+
+      const card =
+        document.createElement("div");
+
+      card.className =
+        "chirombe-card";
+
+
+      const title =
+        document.createElement("div");
+
+      title.className =
+        "chirombe-card-title";
+
+      title.textContent =
+        engine.name ||
+        engine.id;
+
+
+      const status =
+        document.createElement("div");
+
+      status.className =
+        "chirombe-status " +
+        statusClass(
+          engine.status
+        );
+
+      status.innerHTML =
+        '<span class="chirombe-live-dot"></span>' +
+        safeText(
+          engine.status ||
+          "UNKNOWN"
+        );
+
+
+      const meta =
+        document.createElement("div");
+
+      meta.className =
+        "chirombe-card-meta";
+
+      meta.innerHTML = "";
+
+
+      const information = [
+
+        "ID: " +
+          safeText(engine.id),
+
+        "Mode: " +
+          safeText(engine.mode),
+
+        "Phase: " +
+          safeText(engine.phase),
+
+        "Entry: " +
+          safeText(engine.entry),
+
+        "Loaded: " +
+          safeText(
+            engine.loaded
+          ),
+
+        "Initialised: " +
+          safeText(
+            engine.initialised
+          ),
+
+        "Ready: " +
+          safeText(
+            engine.ready
+          )
+
+      ];
+
+
+      information.forEach(
+        function (line) {
+
+          const div =
+            document.createElement(
+              "div"
+            );
+
+          div.textContent =
+            line;
+
+          meta.appendChild(
+            div
+          );
+        }
+      );
+
+
+      card.appendChild(title);
+
+      card.appendChild(status);
+
+      card.appendChild(
+        document.createElement("br")
+      );
+
+      card.appendChild(meta);
+
+
+      target.appendChild(card);
+    });
+  }
+
+
+  /* ==========================================================
+     GLOBAL API DISCOVERY
+     ----------------------------------------------------------
+     This deliberately checks real globals rather than
+     pretending that a missing module exists.
+     ========================================================== */
+
+  const API_CONTRACTS = {
+
+    "ChirombeSystem": [
+      "system"
+    ],
+
+    "ChirombeBus": [
+      "registerCommand",
+      "executeCommand",
+      "listCommands"
+    ],
+
+    "ChirombeState": [
+      "load",
+      "save"
+    ],
+
+    "ChirombeAudit": [
+      "head",
+      "append",
+      "verify",
+      "export"
+    ],
+
+    "ChirombeHealth": [
+      "snapshot",
+      "capabilities"
+    ],
+
+    "ChirombeWatchdog": [
+      "tick"
+    ],
+
+    "ChirombeCore": [
+      "pray",
+      "evolve"
+    ],
+
+    "ZCCA": [
+      "command",
+      "activate",
+      "protect",
+      "getFamily",
+      "status"
+    ],
+
+    "ZionProtect": [
+      "snapshot"
+    ],
+
+    "MwarindiCovenant": [
+      "status",
+      "remind",
+      "seal"
+    ],
+
+    "ChirombeResonance": [
+      "status",
+      "measure",
+      "activate"
+    ],
+
+    "CHIROMBE_AUTOSTART": [
+      "status",
+      "discover",
+      "cycle",
+      "start",
+      "stop"
+    ],
+
+    "CHIROMBE_GUARDIAN": [],
+
+    "CHIROMBE_LITURGY": [],
+
+    "CHIROMBE_PIONEER_BRAIN": [],
+
+    "ZCCA": []
+  };
+
+
+  function discoverAPIs() {
+
+    const target =
+      byId(
+        "chirombe-api-list"
+      );
+
+    if (!target) {
+      return;
+    }
+
+    target.innerHTML = "";
+
+
+    Object.keys(
+      API_CONTRACTS
+    ).forEach(function (globalName) {
+
+      const exists =
+        typeof window[globalName] !==
+        "undefined";
+
+
+      const expected =
+        API_CONTRACTS[
+          globalName
+        ] || [];
+
+
+      let methodsFound = [];
+
+      let methodsMissing = [];
+
+
+      if (exists) {
+
+        const object =
+          window[globalName];
+
+
+        expected.forEach(
+          function (method) {
+
+            if (
+              object &&
+              typeof object[method] ===
+              "function"
+            ) {
+
+              methodsFound.push(
+                method
+              );
+
+            } else {
+
+              methodsMissing.push(
+                method
+              );
+            }
+          }
+        );
+      }
+
+
+      const item =
+        document.createElement(
+          "div"
+        );
+
+      item.className =
+        "chirombe-api-item";
+
+
+      const left =
+        document.createElement(
+          "span"
+        );
+
+      left.textContent =
+        globalName;
+
+
+      const right =
+        document.createElement(
+          "span"
+        );
+
+
+      if (!exists) {
+
+        right.className =
+          "chirombe-status " +
+          "chirombe-status-other";
+
+        right.textContent =
+          "NOT PRESENT";
+
+      } else if (
+        methodsMissing.length
+      ) {
+
+        right.className =
+          "chirombe-status " +
+          "chirombe-status-degraded";
+
+        right.textContent =
+          "PARTIAL";
+
+      } else {
+
+        right.className =
+          "chirombe-status " +
+          "chirombe-status-ready";
+
+        right.textContent =
+          "CONNECTED";
+      }
+
+
+      item.appendChild(left);
+
+      item.appendChild(right);
+
+
+      target.appendChild(item);
+
+
+      /*
+       * Keep details available in the DOM for diagnostics.
+       */
+
+      if (
+        methodsFound.length ||
+        methodsMissing.length
+      ) {
+
+        const details =
+          document.createElement(
+            "div"
+          );
+
+        details.className =
+          "chirombe-small";
+
+        details.style.margin =
+          "4px 0 8px 12px";
+
+        details.textContent =
+          "Found: " +
+          (
+            methodsFound.length
+              ? methodsFound.join(", ")
+              : "none"
+          ) +
+          " | Missing: " +
+          (
+            methodsMissing.length
+              ? methodsMissing.join(", ")
+              : "none"
+          );
+
+        target.appendChild(
+          details
+        );
+      }
+    });
+  }
+
+
+  /* ==========================================================
+     COMMAND EXECUTION
+     ========================================================== */
+
+  async function runUnifiedCommand(
+    command,
+    payload
+  ) {
+
+    if (
+      typeof runtimeAPI.dispatch !==
+      "function"
+    ) {
+
+      output({
+        ok: false,
+        error:
+          "Unified command dispatcher unavailable."
+      });
+
+      return;
+    }
+
+
+    const result =
+      await runtimeAPI.dispatch(
+        command,
+        payload || {},
+        {
+          source:
+            "CHIROMBE_BLOCK_5_UI"
+        }
+      );
+
+
+    output(result);
+  }
+
+
+  /* ==========================================================
+     DIRECT HEALTH SNAPSHOT
+     ----------------------------------------------------------
+     Uses the real repository API if present.
+     ========================================================== */
+
+  function healthSnapshot() {
+
+    if (
+      typeof window.ChirombeHealth !==
+      "undefined"
+    ) {
+
+      try {
+
+        if (
+          typeof
+          window.ChirombeHealth.snapshot ===
+          "function"
+        ) {
+
+          output(
+            window.ChirombeHealth.snapshot()
+          );
+
+          return;
+        }
+      } catch (error) {
+
+        output({
+          ok: false,
+          source:
+            "ChirombeHealth.snapshot",
+          error:
+            error.message
+        });
+
+        return;
+      }
+    }
+
+
+    runUnifiedCommand(
+      "SYSTEM.HEALTH_CHECK"
+    );
+  }
+
+
+  /* ==========================================================
+     DIRECT STATE SNAPSHOT
+     ========================================================== */
+
+  function stateSnapshot() {
+
+    if (
+      typeof window.ChirombeState !==
+      "undefined"
+    ) {
+
+      try {
+
+        if (
+          typeof
+          window.ChirombeState.load ===
+          "function"
+        ) {
+
+          output(
+            window.ChirombeState.load()
+          );
+
+          return;
+        }
+
+      } catch (error) {
+
+        output({
+          ok: false,
+          source:
+            "ChirombeState.load",
+          error:
+            error.message
+        });
+
+        return;
+      }
+    }
+
+
+    runUnifiedCommand(
+      "SYSTEM.GET_STATE"
+    );
+  }
+
+
+  /* ==========================================================
+     STATUS SNAPSHOT
+     ========================================================== */
+
+  function statusSnapshot() {
+
+    runUnifiedCommand(
+      "SYSTEM.GET_STATUS"
+    );
+  }
+
+
+  /* ==========================================================
+     LOADER REPORT
+     ========================================================== */
+
+  function loaderReport() {
+
+    if (
+      loaderAPI &&
+      typeof loaderAPI.getReport ===
+      "function"
+    ) {
+
+      output(
+        loaderAPI.getReport()
+      );
+
+      return;
+    }
+
+    output({
+      ok: false,
+      error:
+        "Loader report unavailable."
+    });
+  }
+
+
+  /* ==========================================================
+     EVENT MONITORING
+     ========================================================== */
+
+  if (
+    typeof runtimeAPI.on ===
+    "function"
+  ) {
+
+    runtimeAPI.on(
+      "RUNTIME.STATUS_CHANGED",
+      function () {
+
+        refreshInterface();
+      }
+    );
+
+
+    runtimeAPI.on(
+      "ENGINE.STATE_CHANGED",
+      function () {
+
+        refreshInterface();
+      }
+    );
+
+
+    runtimeAPI.on(
+      "CAPABILITY.REGISTERED",
+      function () {
+
+        renderCapabilities();
+      }
+    );
+
+
+    runtimeAPI.on(
+      "COMMAND.COMPLETED",
+      function (event) {
+
+        if (
+          event &&
+          event.payload
+        ) {
+
+          output(
+            event.payload
+          );
+        }
+
+        refreshInterface();
+      }
+    );
+
+
+    runtimeAPI.on(
+      "COMMAND.FAILED",
+      function (event) {
+
+        output(
+          event
+        );
+
+        refreshInterface();
+      }
+    );
+  }
+
+
+  /* ==========================================================
+     REFRESH
+     ========================================================== */
+
+  function refreshInterface() {
+
+    renderRuntime();
+
+    renderLoader();
+
+    renderEngineSummary();
+
+    renderCapabilities();
+
+    renderEngines();
+
+    discoverAPIs();
+
+
+    const statusElement =
+      byId(
+        "chirombe-ui-status"
+      );
+
+    if (!statusElement) {
+      return;
+    }
+
+
+    const status =
+      system.runtime
+        ? system.runtime.status
+        : "UNKNOWN";
+
+
+    statusElement.className =
+      "chirombe-status " +
+      statusClass(status);
+
+
+    statusElement.innerHTML =
+      '<span class="chirombe-live-dot"></span>' +
+      safeText(status);
+  }
+
+
+  /* ==========================================================
+     BUTTONS
+     ========================================================== */
+
+  const refreshButton =
+    byId(
+      "chirombe-refresh-engines"
+    );
+
+  if (refreshButton) {
+
+    refreshButton.addEventListener(
+      "click",
+      refreshInterface
+    );
+  }
+
+
+  const stateButton =
+    byId(
+      "chirombe-cmd-state"
+    );
+
+  if (stateButton) {
+
+    stateButton.addEventListener(
+      "click",
+      stateSnapshot
+    );
+  }
+
+
+  const statusButton =
+    byId(
+      "chirombe-cmd-status"
+    );
+
+  if (statusButton) {
+
+    statusButton.addEventListener(
+      "click",
+      statusSnapshot
+    );
+  }
+
+
+  const healthButton =
+    byId(
+      "chirombe-cmd-health"
+    );
+
+  if (healthButton) {
+
+    healthButton.addEventListener(
+      "click",
+      healthSnapshot
+    );
+  }
+
+
+  const apiButton =
+    byId(
+      "chirombe-cmd-apis"
+    );
+
+  if (apiButton) {
+
+    apiButton.addEventListener(
+      "click",
+      function () {
+
+        discoverAPIs();
+
+        output({
+          ok: true,
+          action:
+            "API_DISCOVERY",
+          timestamp:
+            new Date().toISOString()
+        });
+
+      }
+    );
+  }
+
+
+  const reportButton =
+    byId(
+      "chirombe-cmd-report"
+    );
+
+  if (reportButton) {
+
+    reportButton.addEventListener(
+      "click",
+      loaderReport
+    );
+  }
+
+
+  const clearButton =
+    byId(
+      "chirombe-clear-output"
+    );
+
+  if (clearButton) {
+
+    clearButton.addEventListener(
+      "click",
+      function () {
+
+        output(
+          "Output cleared."
+        );
+
+      }
+    );
+  }
+
+
+  /* ==========================================================
+     REGISTER BLOCK 5 CAPABILITY
+     ========================================================== */
+
+  runtimeAPI.registerCapability(
+    "UNIFIED_COMMAND_INTERFACE",
+    {
+      source:
+        "BLOCK_5"
+    }
+  );
+
+
+  runtimeAPI.registerCapability(
+    "ENGINE_VISUALISATION",
+    {
+      source:
+        "BLOCK_5"
+    }
+  );
+
+
+  runtimeAPI.registerCapability(
+    "API_DISCOVERY",
+    {
+      source:
+        "BLOCK_5"
+    }
+  );
+
+
+  runtimeAPI.registerCapability(
+    "READ_ONLY_DIAGNOSTICS",
+    {
+      source:
+        "BLOCK_5"
+    }
+  );
+
+
+  /* ==========================================================
+     INITIAL RENDER
+     ========================================================== */
+
+  refreshInterface();
+
+
+  if (typeof system.log === "function") {
+
+    system.log(
+      "INFO",
+      "Block 5 complete: unified command interface connected."
+    );
+  }
+
+
+  console.info(
+    "[CHIROMBE][BLOCK 5] Unified interface ready."
+  );
+
+
+})();
+</script>
