@@ -1411,3 +1411,767 @@
 
 </body>
 </html>
+<!-- ============================================================
+     CHIROMBE UNIFIED COMMAND CORE
+     BLOCK 2 — RUNTIME / STATE / COMMAND FOUNDATION
+     
+     PURPOSE:
+     - Establish the unified runtime layer
+     - Create the command/event bus
+     - Establish shared system state
+     - Provide controlled APIs for later engine connection
+     - DO NOT replace existing engines
+     - DO NOT execute archived historical code
+     - DO NOT declare the system READY
+     ============================================================ -->
+
+<script>
+(function () {
+  "use strict";
+
+  const system = window.CHIROMBE_UNIFIED;
+
+  if (!system) {
+    console.error("[CHIROMBE][BLOCK 2] Foundation not found.");
+    return;
+  }
+
+  const BLOCK_VERSION = "2.0.0-runtime";
+
+  /* ------------------------------------------------------------
+     RUNTIME
+     ------------------------------------------------------------ */
+
+  const runtime = {
+    version: BLOCK_VERSION,
+
+    startedAt: new Date().toISOString(),
+
+    phase: "RUNTIME",
+
+    status: "INITIALISING",
+
+    bootStarted: false,
+    bootCompleted: false,
+
+    online: false,
+
+    currentEngine: null,
+
+    currentCommand: null,
+
+    activeOperations: 0,
+
+    completedOperations: 0,
+
+    failedOperations: 0,
+
+    loadedScripts: new Set(),
+
+    failedScripts: new Set(),
+
+    eventCount: 0,
+
+    commandCount: 0,
+
+    errorCount: 0,
+
+    capabilities: new Set(),
+
+    metadata: {
+      architecture: "CHIROMBE_UNIFIED",
+      orchestration: "CENTRAL_COMMAND_BUS",
+      execution: "CONTROLLED",
+      historicalExecution: false
+    }
+  };
+
+
+  /* ------------------------------------------------------------
+     SHARED STATE
+     ------------------------------------------------------------ */
+
+  const state = {
+
+    version: "2.0.0",
+
+    system: {
+      status: "BOOT",
+      phase: "RUNTIME",
+      ready: false,
+      degraded: false,
+      healthy: true
+    },
+
+    engines: {},
+
+    capabilities: {},
+
+    protection: {
+      status: "UNINITIALISED",
+      resilience: 0,
+      active: false
+    },
+
+    diagnostics: {
+      lastCheck: null,
+      errors: [],
+      warnings: [],
+      notices: []
+    },
+
+    audit: {
+      sequence: 0,
+      events: []
+    },
+
+    commands: {
+      received: 0,
+      completed: 0,
+      failed: 0
+    },
+
+    runtime: runtime,
+
+    timestamps: {
+      created: new Date().toISOString(),
+      updated: new Date().toISOString()
+    }
+  };
+
+
+  /* ------------------------------------------------------------
+     EVENT BUS
+     ------------------------------------------------------------ */
+
+  const listeners = new Map();
+
+  function on(eventName, handler) {
+
+    if (typeof handler !== "function") {
+      throw new TypeError(
+        "[CHIROMBE] Event handler must be a function."
+      );
+    }
+
+    if (!listeners.has(eventName)) {
+      listeners.set(eventName, new Set());
+    }
+
+    listeners.get(eventName).add(handler);
+
+    return function unsubscribe() {
+      const handlers = listeners.get(eventName);
+
+      if (handlers) {
+        handlers.delete(handler);
+
+        if (handlers.size === 0) {
+          listeners.delete(eventName);
+        }
+      }
+    };
+  }
+
+
+  function emit(eventName, payload = {}) {
+
+    runtime.eventCount++;
+
+    const event = {
+      id:
+        "evt-" +
+        Date.now().toString(36) +
+        "-" +
+        runtime.eventCount.toString(36),
+
+      name: eventName,
+
+      timestamp: new Date().toISOString(),
+
+      payload: payload
+    };
+
+    system.events.push(event);
+
+    state.audit.sequence++;
+
+    state.audit.events.push({
+      sequence: state.audit.sequence,
+      type: "EVENT",
+      name: eventName,
+      timestamp: event.timestamp
+    });
+
+    const handlers = listeners.get(eventName);
+
+    if (handlers) {
+
+      for (const handler of handlers) {
+
+        try {
+          handler(event);
+
+        } catch (error) {
+
+          runtime.errorCount++;
+
+          system.errors.push({
+            source: "EVENT_HANDLER",
+            event: eventName,
+            message: error.message,
+            timestamp: new Date().toISOString()
+          });
+
+          console.error(
+            "[CHIROMBE][EVENT ERROR]",
+            eventName,
+            error
+          );
+        }
+      }
+    }
+
+    return event;
+  }
+
+
+  /* ------------------------------------------------------------
+     COMMAND BUS
+     ------------------------------------------------------------ */
+
+  const commandHandlers = new Map();
+
+  function registerCommand(commandName, handler, options = {}) {
+
+    if (!commandName) {
+      throw new Error(
+        "[CHIROMBE] Command name is required."
+      );
+    }
+
+    if (typeof handler !== "function") {
+      throw new TypeError(
+        "[CHIROMBE] Command handler must be a function."
+      );
+    }
+
+    if (commandHandlers.has(commandName)) {
+
+      console.warn(
+        "[CHIROMBE] Command already registered:",
+        commandName
+      );
+
+      return false;
+    }
+
+    commandHandlers.set(commandName, {
+      handler: handler,
+      source: options.source || "UNKNOWN",
+      description: options.description || "",
+      registeredAt: new Date().toISOString()
+    });
+
+    emit("COMMAND.REGISTERED", {
+      command: commandName,
+      source: options.source || "UNKNOWN"
+    });
+
+    return true;
+  }
+
+
+  async function dispatch(commandName, payload = {}, options = {}) {
+
+    runtime.commandCount++;
+
+    state.commands.received++;
+
+    const commandId =
+      "cmd-" +
+      Date.now().toString(36) +
+      "-" +
+      runtime.commandCount.toString(36);
+
+    runtime.currentCommand = commandName;
+
+    const record = {
+      id: commandId,
+      command: commandName,
+      payload: payload,
+      timestamp: new Date().toISOString(),
+      status: "RECEIVED"
+    };
+
+    emit("COMMAND.RECEIVED", record);
+
+    const definition = commandHandlers.get(commandName);
+
+    if (!definition) {
+
+      runtime.failedOperations++;
+      state.commands.failed++;
+
+      record.status = "UNAVAILABLE";
+
+      emit("COMMAND.UNAVAILABLE", record);
+
+      return {
+        ok: false,
+        commandId: commandId,
+        command: commandName,
+        status: "UNAVAILABLE",
+        error: "No registered command handler."
+      };
+    }
+
+    runtime.activeOperations++;
+
+    record.status = "EXECUTING";
+
+    emit("COMMAND.EXECUTING", record);
+
+    try {
+
+      const result = await definition.handler(
+        payload,
+        {
+          commandId: commandId,
+          source: definition.source,
+          runtime: runtime,
+          state: state,
+          system: system
+        }
+      );
+
+      runtime.activeOperations--;
+
+      runtime.completedOperations++;
+
+      state.commands.completed++;
+
+      record.status = "COMPLETED";
+
+      emit("COMMAND.COMPLETED", {
+        ...record,
+        result: result
+      });
+
+      return {
+        ok: true,
+        commandId: commandId,
+        command: commandName,
+        status: "COMPLETED",
+        result: result
+      };
+
+    } catch (error) {
+
+      runtime.activeOperations--;
+
+      runtime.failedOperations++;
+
+      runtime.errorCount++;
+
+      state.commands.failed++;
+
+      record.status = "FAILED";
+
+      const failure = {
+        ...record,
+
+        error: {
+          name: error.name,
+          message: error.message,
+          stack: error.stack || null
+        }
+      };
+
+      system.errors.push({
+        source: definition.source,
+        command: commandName,
+        message: error.message,
+        timestamp: new Date().toISOString()
+      });
+
+      emit("COMMAND.FAILED", failure);
+
+      console.error(
+        "[CHIROMBE][COMMAND FAILED]",
+        commandName,
+        error
+      );
+
+      return {
+        ok: false,
+        commandId: commandId,
+        command: commandName,
+        status: "FAILED",
+        error: error.message
+      };
+    }
+  }
+
+
+  /* ------------------------------------------------------------
+     ENGINE STATE MANAGEMENT
+     ------------------------------------------------------------ */
+
+  function setEngineState(engineId, patch = {}) {
+
+    if (!engineId) {
+      return false;
+    }
+
+    if (!state.engines[engineId]) {
+      state.engines[engineId] = {};
+    }
+
+    state.engines[engineId] = {
+      ...state.engines[engineId],
+      ...patch,
+      updatedAt: new Date().toISOString()
+    };
+
+    emit("ENGINE.STATE_CHANGED", {
+      engineId: engineId,
+      state: state.engines[engineId]
+    });
+
+    return true;
+  }
+
+
+  function getEngineState(engineId) {
+
+    return state.engines[engineId] || null;
+  }
+
+
+  /* ------------------------------------------------------------
+     CAPABILITY MANAGEMENT
+     ------------------------------------------------------------ */
+
+  function registerCapability(name, metadata = {}) {
+
+    if (!name) {
+      return false;
+    }
+
+    runtime.capabilities.add(name);
+
+    state.capabilities[name] = {
+      name: name,
+      registeredAt: new Date().toISOString(),
+      ...metadata
+    };
+
+    emit("CAPABILITY.REGISTERED", {
+      name: name,
+      metadata: metadata
+    });
+
+    return true;
+  }
+
+
+  function hasCapability(name) {
+
+    return runtime.capabilities.has(name);
+  }
+
+
+  /* ------------------------------------------------------------
+     DIAGNOSTIC REPORTING
+     ------------------------------------------------------------ */
+
+  function reportDiagnostic(type, message, metadata = {}) {
+
+    const entry = {
+      type: type,
+      message: message,
+      metadata: metadata,
+      timestamp: new Date().toISOString()
+    };
+
+    if (type === "ERROR") {
+
+      state.diagnostics.errors.push(entry);
+
+    } else if (type === "WARNING") {
+
+      state.diagnostics.warnings.push(entry);
+
+    } else {
+
+      state.diagnostics.notices.push(entry);
+    }
+
+    state.diagnostics.lastCheck = entry.timestamp;
+
+    emit("DIAGNOSTIC.REPORTED", entry);
+
+    return entry;
+  }
+
+
+  /* ------------------------------------------------------------
+     RUNTIME STATUS
+     ------------------------------------------------------------ */
+
+  function setRuntimeStatus(status, metadata = {}) {
+
+    runtime.status = status;
+
+    state.system.status = status;
+
+    state.timestamps.updated = new Date().toISOString();
+
+    emit("RUNTIME.STATUS_CHANGED", {
+      status: status,
+      metadata: metadata
+    });
+
+    if (typeof system.setStatus === "function") {
+      system.setStatus(status);
+    }
+  }
+
+
+  /* ------------------------------------------------------------
+     CORE COMMANDS
+     ------------------------------------------------------------ */
+
+  registerCommand(
+    "SYSTEM.GET_STATE",
+    function () {
+      return getState();
+    },
+    {
+      source: "CHIROMBE_RUNTIME",
+      description: "Return the current unified system state."
+    }
+  );
+
+
+  registerCommand(
+    "SYSTEM.GET_STATUS",
+    function () {
+      return {
+        status: state.system.status,
+        phase: state.system.phase,
+        ready: state.system.ready,
+        degraded: state.system.degraded,
+        healthy: state.system.healthy
+      };
+    },
+    {
+      source: "CHIROMBE_RUNTIME",
+      description: "Return current system status."
+    }
+  );
+
+
+  registerCommand(
+    "SYSTEM.HEALTH_CHECK",
+    function () {
+
+      const result = {
+        healthy: true,
+        timestamp: new Date().toISOString(),
+        runtime: runtime.status,
+        enginesRegistered:
+          Object.keys(state.engines).length,
+        errors:
+          state.diagnostics.errors.length
+      };
+
+      return result;
+    },
+    {
+      source: "CHIROMBE_RUNTIME",
+      description: "Run the base runtime health check."
+    }
+  );
+
+
+  /* ------------------------------------------------------------
+     STATE API
+     ------------------------------------------------------------ */
+
+  function getState() {
+
+    return {
+      ...state,
+
+      runtime: {
+        ...runtime,
+
+        loadedScripts:
+          Array.from(runtime.loadedScripts),
+
+        failedScripts:
+          Array.from(runtime.failedScripts),
+
+        capabilities:
+          Array.from(runtime.capabilities)
+      }
+    };
+  }
+
+
+  /* ------------------------------------------------------------
+     PUBLIC RUNTIME API
+     ------------------------------------------------------------ */
+
+  const runtimeAPI = {
+
+    version: BLOCK_VERSION,
+
+    getState,
+
+    setRuntimeStatus,
+
+    getEngineState,
+
+    setEngineState,
+
+    registerCapability,
+
+    hasCapability,
+
+    reportDiagnostic,
+
+    on,
+
+    emit,
+
+    registerCommand,
+
+    dispatch,
+
+    getCommands: function () {
+      return Array.from(
+        commandHandlers.entries()
+      ).map(function ([name, definition]) {
+        return {
+          name: name,
+          source: definition.source,
+          description: definition.description,
+          registeredAt: definition.registeredAt
+        };
+      });
+    },
+
+    getRuntime: function () {
+      return {
+        ...runtime,
+
+        loadedScripts:
+          Array.from(runtime.loadedScripts),
+
+        failedScripts:
+          Array.from(runtime.failedScripts),
+
+        capabilities:
+          Array.from(runtime.capabilities)
+      };
+    }
+  };
+
+
+  /* ------------------------------------------------------------
+     CONNECT TO UNIFIED SYSTEM
+     ------------------------------------------------------------ */
+
+  system.runtime = runtime;
+
+  system.state = state;
+
+  system.bus = {
+    on,
+    emit,
+    registerCommand,
+    dispatch
+  };
+
+  system.runtimeAPI = runtimeAPI;
+
+
+  /* ------------------------------------------------------------
+     FOUNDATION CAPABILITIES
+     ------------------------------------------------------------ */
+
+  registerCapability(
+    "UNIFIED_RUNTIME",
+    {
+      source: "BLOCK_2"
+    }
+  );
+
+  registerCapability(
+    "EVENT_BUS",
+    {
+      source: "BLOCK_2"
+    }
+  );
+
+  registerCapability(
+    "COMMAND_BUS",
+    {
+      source: "BLOCK_2"
+    }
+  );
+
+  registerCapability(
+    "SHARED_STATE",
+    {
+      source: "BLOCK_2"
+    }
+  );
+
+  registerCapability(
+    "DIAGNOSTICS",
+    {
+      source: "BLOCK_2"
+    }
+  );
+
+
+  /* ------------------------------------------------------------
+     INITIALISE
+     ------------------------------------------------------------ */
+
+  setRuntimeStatus(
+    "RUNTIME_READY",
+    {
+      block: 2,
+      note:
+        "Runtime, shared state and command bus established."
+    }
+  );
+
+  system.phase = "RUNTIME";
+
+  system.status = "RUNTIME_READY";
+
+  if (typeof system.log === "function") {
+
+    system.log(
+      "INFO",
+      "Block 2 complete: runtime, state and command bus established."
+    );
+
+    system.log(
+      "INFO",
+      "Waiting for Engine Registry."
+    );
+  }
+
+  console.info(
+    "[CHIROMBE][BLOCK 2] Runtime foundation ready."
+  );
+
+})();
+</script>
