@@ -1,142 +1,81 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#02050a">
-  <meta name="description" content="CHIROMBE secondary / legacy frontend — shared live runtime">
-  <title>CHIROMBE · Legacy Frontend</title>
-  <style>
-    *,*::before,*::after{box-sizing:border-box}
-    html{width:100%;min-height:100%;background:#02050a;color-scheme:dark}
-    body{width:100%;min-height:100vh;margin:0;padding:0;background:radial-gradient(circle at 50% 0%,rgba(0,170,255,.10),transparent 42%),radial-gradient(circle at 15% 80%,rgba(130,70,255,.08),transparent 36%),#02050a;color:#d9f8ff;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow-x:hidden}
-    a{color:inherit}
-    #chirombe-app{position:relative;width:100%;min-height:100vh}
-    .chirombe-header{position:sticky;top:0;z-index:1000;border-bottom:1px solid rgba(130,220,255,.16);background:rgba(2,5,10,.88);backdrop-filter:blur(18px)}
-    .chirombe-header-inner{width:min(1500px,100%);margin:0 auto;min-height:72px;padding:12px clamp(14px,3vw,32px);display:flex;align-items:center;justify-content:space-between;gap:20px}
-    .chirombe-brand{display:flex;align-items:center;gap:14px}
-    .chirombe-brand-mark{width:42px;height:42px;border:1px solid rgba(150,230,255,.42);border-radius:12px;display:grid;place-items:center;background:radial-gradient(circle,rgba(80,210,255,.22),rgba(10,30,50,.7));color:#dffaff;font-weight:900}
-    .chirombe-brand-title{margin:0;font-size:clamp(.95rem,2vw,1.2rem);font-weight:900;letter-spacing:.16em}
-    .chirombe-brand-subtitle{margin-top:3px;color:#79a9b8;font-size:.68rem;letter-spacing:.13em;text-transform:uppercase}
-    .chirombe-system-status{display:flex;align-items:center;gap:10px}
-    .chirombe-status-light{width:9px;height:9px;border-radius:50%;background:#65717a}
-    .chirombe-status-light.booting{background:#ffd166;box-shadow:0 0 14px rgba(255,209,102,.55)}
-    .chirombe-status-light.ready{background:#46f5a4;box-shadow:0 0 16px rgba(70,245,164,.65)}
-    .chirombe-status-light.degraded{background:#ffb347}
-    .chirombe-status-light.failed{background:#ff5c70}
-    #chirombe-system-status-text{color:#a9d4df;font-size:.7rem;font-weight:800;letter-spacing:.13em}
-    .chirombe-main{width:min(1500px,100%);margin:0 auto;padding:clamp(18px,3vw,36px);display:grid;gap:20px}
-    .chirombe-boot-banner{padding:clamp(22px,4vw,42px);border:1px solid rgba(120,210,255,.18);border-radius:22px;background:linear-gradient(135deg,rgba(9,24,39,.92),rgba(4,9,17,.92))}
-    .chirombe-eyebrow{margin-bottom:10px;color:#65c9e7;font-size:.68rem;font-weight:900;letter-spacing:.22em;text-transform:uppercase}
-    .chirombe-boot-title{margin:0;font-size:clamp(1.65rem,5vw,3.25rem);line-height:1.05;font-weight:950}
-    .chirombe-boot-description{max-width:850px;margin:16px 0 0;color:#88aebb;font-size:.94rem;line-height:1.65}
-    .chirombe-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
-    .chirombe-metric{min-height:100px;padding:18px;border:1px solid rgba(130,210,240,.13);border-radius:16px;background:rgba(7,15,25,.76)}
-    .chirombe-metric-label{display:block;margin-bottom:9px;color:#6d95a3;font-size:.62rem;font-weight:900;letter-spacing:.15em;text-transform:uppercase}
-    .chirombe-metric-value{display:block;color:#dffaff;font-size:1.15rem;font-weight:900}
-    #chirombe-engine-space{min-height:280px;padding:20px;border:1px dashed rgba(120,210,255,.18);border-radius:20px;background:rgba(3,8,14,.72)}
-    #chirombe-event-log{min-height:150px;max-height:360px;overflow:auto;padding:16px;border:1px solid rgba(130,210,240,.12);border-radius:16px;background:#010407;font:0.72rem/1.65 ui-monospace,Menlo,Consolas,monospace}
-    .chirombe-log-line{padding:3px 0;color:#7193a0;border-bottom:1px solid rgba(255,255,255,.025)}
-    .chirombe-log-time{color:#41606c}
-    .chirombe-footer{width:min(1500px,100%);margin:0 auto;padding:20px 18px 36px;color:#4f6b75;font-size:.65rem;letter-spacing:.08em;text-align:center;text-transform:uppercase}
-    .legacy-diag{padding:16px 18px;border:1px solid rgba(90,180,220,.28);background:rgba(4,16,24,.72);border-radius:14px}
-    .legacy-diag h3{margin:0 0 10px;letter-spacing:.12em;font-size:13px;color:#7ee7ff}
-    .legacy-diag-grid{margin:0;font:13px/1.55 ui-monospace,Menlo,Consolas,monospace;color:#d7f6ff;white-space:pre-wrap}
-    .legacy-cmd-row{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
-    .legacy-cmd{background:#08202b;color:#d7fbff;border:1px solid #1b4a5a;border-radius:999px;padding:8px 12px;cursor:pointer;font:700 11px/1 system-ui}
-    .legacy-cmd-dead{opacity:.55}
-    #legacy-command-out{max-height:220px;overflow:auto;padding:12px;border-radius:10px;background:#05070d;color:#bfe9f4;font:12px/1.45 ui-monospace,monospace}
-    #legacy-engine-list{margin:8px 0 0;padding-left:18px;color:#c9e7f2}
-    .legacy-engine-ready{color:#50e3a4}
-    .legacy-engine-unavailable{color:#ff8aa0}
-    .legacy-engine-optional{color:#e5c46a}
-    .legacy-nav a{color:#7ee7ff;margin-right:12px}
-    @media (max-width:720px){.chirombe-metrics{grid-template-columns:1fr 1fr}.chirombe-brand-subtitle{display:none}}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#02050a">
+<title>CHIROMBE · Matrix Command Core</title>
+<style>
+:root{--bg:#02050a;--ink:#d9f8ff;--mute:#79a9b8;--line:rgba(120,210,255,.18);--cyan:#7ee7ff;--ok:#46f5a4;--warn:#ffb347;--bad:#ff5c70}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,sans-serif}
+body{background:radial-gradient(circle at 50% -10%,rgba(0,170,255,.14),transparent 42%),radial-gradient(circle at 90% 80%,rgba(120,60,255,.08),transparent 36%),#02050a}
+a{color:var(--cyan)}.wrap{width:min(1440px,100%);margin:0 auto;padding:14px 16px 40px}
+header.top{position:sticky;top:0;z-index:20;backdrop-filter:blur(16px);background:rgba(2,5,10,.82);border-bottom:1px solid var(--line)}
+.top-in{width:min(1440px,100%);margin:0 auto;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{display:flex;align-items:center;gap:12px}.mark{width:40px;height:40px;border:1px solid rgba(150,230,255,.42);border-radius:12px;display:grid;place-items:center;font-weight:900;background:radial-gradient(circle,rgba(80,210,255,.22),rgba(10,30,50,.7))}
+h1{margin:0;font-size:clamp(.9rem,2vw,1.15rem);letter-spacing:.18em}.sub{color:var(--mute);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase}
+.st{display:flex;align-items:center;gap:8px;font-size:.7rem;letter-spacing:.12em;font-weight:800}
+.chirombe-status-light{width:9px;height:9px;border-radius:50%;background:#65717a}.chirombe-status-light.ready{background:var(--ok);box-shadow:0 0 12px rgba(70,245,164,.6)}.chirombe-status-light.degraded{background:var(--warn)}.chirombe-status-light.booting{background:#ffd166}
+.hero{margin:18px 0;padding:18px;border:1px solid var(--line);border-radius:22px;background:linear-gradient(180deg,rgba(8,20,32,.9),rgba(3,8,14,.92))}
+.eyebrow{color:var(--cyan);font-size:.68rem;font-weight:900;letter-spacing:.22em;text-transform:uppercase}
+.hero h2{margin:6px 0 8px;font-size:clamp(1.6rem,5vw,3rem)}.hero p{max-width:820px;color:#88aebb;line-height:1.6}.nav a{margin-right:12px}
+#mx-stage{position:relative;height:min(68vh,640px);min-height:320px;border:1px dashed rgba(120,210,255,.2);border-radius:20px;overflow:hidden;background:#010407}
+#mx-canvas{width:100%;height:100%;display:block;touch-action:manipulation}
+.mx-legend{position:absolute;left:12px;bottom:12px;font:11px/1.4 ui-monospace,monospace;color:#8fb6c2;background:rgba(1,4,7,.55);padding:8px 10px;border-radius:10px}
+#mx-inspect{position:absolute;right:12px;top:12px;width:min(280px,70vw);padding:12px;border:1px solid var(--line);border-radius:14px;background:rgba(4,12,18,.88);font-size:12px}
+#mx-inspect h3{margin:0 0 8px;font-size:13px}#mx-inspect dl{display:grid;grid-template-columns:90px 1fr;gap:4px 8px;margin:0}#mx-inspect dt{color:var(--mute)}.mx-fine{color:#668795;font-size:11px}
+.tele{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin:14px 0}.tele b{display:block;font-size:.62rem;letter-spacing:.14em;color:var(--mute)}.tele span{font-weight:800}
+.grid{display:grid;grid-template-columns:1.1fr .9fr;gap:12px}.panel{padding:14px;border:1px solid var(--line);border-radius:16px;background:rgba(7,15,25,.76)}.panel h3{margin:0 0 10px;font-size:.78rem;letter-spacing:.16em}
+.mx-hrow{display:grid;grid-template-columns:92px 1fr 88px;gap:8px;align-items:center;margin:6px 0;font-size:11px}.mx-hrow b{display:flex;gap:2px}.mx-hrow i{display:inline-block;width:8px;height:10px;background:#14303a}.mx-hrow i.on{background:var(--ok)}.mx-hrow em{font-style:normal;color:var(--mute);text-align:right}
+#mx-audit-rail{display:flex;gap:8px;overflow:auto;padding-bottom:6px}.mx-aseq{min-width:110px;padding:8px;border:1px solid var(--line);border-radius:10px;background:#05070d}.mx-aseq strong{display:block;font-size:11px;color:var(--cyan)}
+#mx-cmd-form{display:flex;gap:8px}#mx-cmd-input{flex:1;min-width:0;background:#05070d;border:1px solid var(--line);color:var(--ink);border-radius:999px;padding:10px 14px}
+#mx-cmd-out{margin:10px 0 0;max-height:220px;overflow:auto;background:#010407;padding:10px;border-radius:10px;font:12px/1.45 ui-monospace,monospace;color:#bfe9f4}
+.legacy-cmd{background:#08202b;color:#d7fbff;border:1px solid #1b4a5a;border-radius:999px;padding:8px 12px;margin:4px 4px 0 0;cursor:pointer;font:700 11px/1 system-ui}
+#chirombe-event-log{min-height:140px;max-height:260px;overflow:auto;background:#010407;border:1px solid var(--line);border-radius:12px;padding:10px;font:12px/1.55 ui-monospace,monospace}
+.chirombe-log-line{color:#8fb6c2;border-bottom:1px solid rgba(255,255,255,.03);padding:3px 0}.chirombe-log-time,.mx-evt-src{color:#41606c}
+.res-val{font-size:clamp(1.4rem,4vw,2.4rem);font-weight:900}footer{margin-top:22px;color:#4f6b75;text-align:center;font-size:.65rem;letter-spacing:.1em;text-transform:uppercase}#legacy-command-box{display:none}
+@media(max-width:860px){.grid{grid-template-columns:1fr}#mx-stage{height:52vh;min-height:280px}#mx-inspect{position:static;width:auto;margin-top:10px}.sub{display:none}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
 </head>
 <body>
-  <div id="chirombe-app">
-    <header class="chirombe-header">
-      <div class="chirombe-header-inner">
-        <div class="chirombe-brand">
-          <div class="chirombe-brand-mark" aria-hidden="true">C</div>
-          <div>
-            <h1 class="chirombe-brand-title">CHIROMBE</h1>
-            <div class="chirombe-brand-subtitle">Secondary / Legacy Frontend · Shared Live Runtime</div>
-          </div>
-        </div>
-        <div class="chirombe-system-status" aria-live="polite">
-          <span id="chirombe-status-light" class="chirombe-status-light booting"></span>
-          <span id="chirombe-system-status-text">BOOTING</span>
-        </div>
-      </div>
-    </header>
-    <main class="chirombe-main">
-      <section class="chirombe-boot-banner">
-        <div class="chirombe-eyebrow">One runtime · two front doors</div>
-        <h2 class="chirombe-boot-title">CHIROMBE LEGACY COMMAND CORE</h2>
-        <p class="chirombe-boot-description">Additional frontend for the existing CHIROMBE system. Primary surface remains <a href="./index.html">index.html</a>. This page connects to the same engines, command bus, state, audit, health and protection layers. The historical artifact <code>chirombe engine</code> stays archived and is never executed.</p>
-        <p class="legacy-nav"><a href="./index.html">Primary frontend</a> <a href="./engine.html">Engine desk</a> <a href="./app.html">App surface</a> <a href="./inspect.html">Inspect</a></p>
-      </section>
-      <aside class="legacy-diag" id="chirombe-legacy-diag">
-        <h3>CHIROMBE LEGACY FRONTEND</h3>
-        <div class="legacy-diag-grid">Frontend: <span id="legacy-diag-frontend">…</span>
-Runtime: <span id="legacy-diag-runtime">…</span>
-Command Bus: <span id="legacy-diag-bus">…</span>
-State: <span id="legacy-diag-state">…</span>
-Audit: <span id="legacy-diag-audit">…</span>
-Health: <span id="legacy-diag-health">…</span>
-Protection: <span id="legacy-diag-protection">…</span>
-Engines: <span id="legacy-diag-engines">…</span>
-Divine Matrix: <span id="legacy-matrix-status">…</span></div>
-      </aside>
-      <section class="chirombe-metrics">
-        <div class="chirombe-metric"><span class="chirombe-metric-label">System</span><strong id="chirombe-metric-system" class="chirombe-metric-value">BOOT</strong></div>
-        <div class="chirombe-metric"><span class="chirombe-metric-label">Engines</span><strong id="chirombe-metric-engines" class="chirombe-metric-value">0</strong></div>
-        <div class="chirombe-metric"><span class="chirombe-metric-label">Ready</span><strong id="chirombe-metric-ready" class="chirombe-metric-value">0</strong></div>
-        <div class="chirombe-metric"><span class="chirombe-metric-label">Degraded</span><strong id="chirombe-metric-degraded" class="chirombe-metric-value">0</strong></div>
-        <div class="chirombe-metric"><span class="chirombe-metric-label">Failed</span><strong id="chirombe-metric-failed" class="chirombe-metric-value">0</strong></div>
-        <div class="chirombe-metric"><span class="chirombe-metric-label">Audit</span><strong id="chirombe-metric-audit" class="chirombe-metric-value">WAITING</strong></div>
-      </section>
-      <section id="chirombe-engine-space">
-        <h3 class="chirombe-metric-label">LIVE ENGINE REGISTRY</h3>
-        <p class="chirombe-boot-description">Values are read from shared runtime globals. Nothing is hard-coded READY.</p>
-        <ul id="legacy-engine-list"></ul>
-        <div class="legacy-cmd-row" id="legacy-command-box"></div>
-        <pre id="legacy-command-out">awaiting command</pre>
-      </section>
-      <section>
-        <div class="chirombe-eyebrow">System Events</div>
-        <div id="chirombe-event-log" role="log" aria-live="polite">
-          <div class="chirombe-log-line"><span class="chirombe-log-time">[BOOT]</span> Legacy frontend document loaded.</div>
-        </div>
-      </section>
-    </main>
-    <footer class="chirombe-footer">CHIROMBE · Secondary frontend · House of the Throne · 77-99-33<br>Mwari ndi Mwari. Primary remains index.html.</footer>
-  </div>
-  <script src="./js/boot.js"></script>
-  <script src="./js/command-bus.js"></script>
-  <script src="./js/state-store.js"></script>
-  <script src="./js/audit-chain.js"></script>
-  <script src="./js/health.js"></script>
-  <script src="./js/watchdog.js"></script>
-  <script src="./js/zion-protection-core.js"></script>
-  <script src="./js/mwarindimwari-covenant.js"></script>
-  <script src="./js/zcca.js"></script>
-  <script src="./js/chirombe-core.js"></script>
-  <script src="./js/resonance-engine.js"></script>
-  <script src="./js/guardian-matrix.js"></script>
-  <script src="./js/liturgy-matrix.js"></script>
-  <script src="./js/pioneer-brain.js"></script>
-  <script src="./js/chirombe-autostart.js"></script>
-  <script src="./js/engine/policy.js"></script>
-  <script src="./js/engine/ledger.js"></script>
-  <script src="./js/engine/adapters.js"></script>
-  <script src="./js/engine/chirombe-engine.js"></script>
-  <script src="./js/engine/kernel-bridge.js"></script>
-  <script src="./js/engine/activation.js"></script>
-  <script src="./js/engine/recovery.js"></script>
-  <script src="./js/frontend-legacy-adapter.js"></script>
-  <script>(function(){try{if("serviceWorker" in navigator)navigator.serviceWorker.register("./sw.js").catch(function(){});}catch(e){}})();</script>
-</body>
-</html>
+<header class="top"><div class="top-in"><div class="brand"><div class="mark">C</div><div><h1>CHIROMBE</h1><div class="sub">Matrix Command Core · secondary frontend</div></div></div><div class="st"><span id="chirombe-status-light" class="chirombe-status-light booting"></span><span id="chirombe-system-status-text">BOOTING</span><span id="mx-header-state"></span></div></div></header>
+<div class="wrap">
+<section class="hero"><div class="eyebrow">One runtime · two front doors · 77-99-33</div><h2>CHIROMBE MATRIX COMMAND CORE</h2><p>Advanced visualization of the shared live CHIROMBE runtime. Primary surface remains <a href="./index.html">index.html</a>. Canvas rings, lattice and number field are a presentation layer. Engine states, commands, health and audit records are runtime data. Historical artifact <code>chirombe engine</code> is archived and is never executed.</p><p class="nav"><a href="./index.html">Primary frontend</a> <a href="./engine.html">Engine desk</a> <a href="./app.html">App surface</a> <a href="./inspect.html">Inspect</a></p></section>
+<section id="mx-stage" aria-label="CHIROMBE matrix visualization"><canvas id="mx-canvas"></canvas><div class="mx-legend">visualization · orbital nodes = live registry<br>pulses = declared graph flow, not energy</div><aside id="mx-inspect" hidden></aside></section>
+<section class="tele" aria-label="Live telemetry">
+<div><b>SYSTEM</b><span id="mx-sys">…</span></div><div><b>RUNTIME</b><span id="mx-run">…</span></div><div><b>BUS</b><span id="mx-bus">…</span></div><div><b>STATE</b><span id="mx-state">…</span></div><div><b>AUDIT</b><span id="mx-audit">…</span></div><div><b>HEALTH</b><span id="mx-health">…</span></div><div><b>PROTECTION</b><span id="mx-prot">…</span></div><div><b>ENGINES</b><span id="mx-eng">…</span></div><div><b>MATRIX</b><span id="mx-matrix">…</span></div><div><b>UPTIME</b><span id="mx-uptime">…</span></div><div><b>HEARTBEAT</b><span id="mx-hb">…</span></div><div><b>SIGNATURE</b><span id="mx-sig">…</span></div>
+</section>
+<section class="grid"><article class="panel"><h3>COMPUTATIONAL RESONANCE</h3><div class="res-val" id="mx-res-val">—</div><p class="mx-fine" id="mx-res-src">awaiting adapter</p><p class="mx-fine" id="mx-res-note"></p></article><article class="panel"><h3>SYSTEM HEALTH</h3><div id="mx-health-rows"></div><p class="mx-fine">Bars are categorical mappings of runtime states. Not invented percentages.</p></article></section>
+<section class="panel" style="margin-top:12px"><h3>AUDIT CHAIN</h3><div id="mx-audit-rail"></div><p class="mx-fine">HEAD <span id="mx-audit-head">—</span> · VERIFY <span id="mx-verify">—</span> · LAST <span id="mx-event">—</span> · <span id="mx-seq">—</span></p></section>
+<section class="panel" style="margin-top:12px"><h3>COMMAND TERMINAL</h3><form id="mx-cmd-form"><input id="mx-cmd-input" autocomplete="off" spellcheck="false" placeholder="> status"><button class="legacy-cmd" type="submit">EXECUTE</button></form><div id="mx-cmd-chips"></div><pre id="mx-cmd-out">awaiting command · only bus-registered names are accepted</pre><div id="legacy-command-box"></div></section>
+<section class="panel" style="margin-top:12px"><h3>LIVE EVENT STREAM</h3><div id="chirombe-event-log"></div></section>
+<p class="mx-fine" style="margin-top:14px">Adapter compatibility targets: <span id="legacy-diag-frontend"></span> <span id="legacy-diag-runtime"></span> <span id="legacy-diag-bus"></span> <span id="legacy-diag-state"></span> <span id="legacy-diag-audit"></span> <span id="legacy-diag-health"></span> <span id="legacy-diag-protection"></span> <span id="legacy-diag-engines"></span> <span id="legacy-matrix-status"></span> <span id="chirombe-metric-system"></span> <span id="chirombe-metric-engines"></span> <span id="chirombe-metric-ready"></span> <span id="chirombe-metric-degraded"></span> <span id="chirombe-metric-failed"></span> <span id="chirombe-metric-audit"></span></p>
+<footer>CHIROMBE · House of the Throne · 77-99-33 · Mwari ndi Mwari<br>Primary remains index.html · this page is a second front door</footer>
+</div>
+<script src="./js/boot.js"></script>
+<script src="./js/command-bus.js"></script>
+<script src="./js/state-store.js"></script>
+<script src="./js/audit-chain.js"></script>
+<script src="./js/health.js"></script>
+<script src="./js/watchdog.js"></script>
+<script src="./js/zion-protection-core.js"></script>
+<script src="./js/mwarindimwari-covenant.js"></script>
+<script src="./js/zcca.js"></script>
+<script src="./js/chirombe-core.js"></script>
+<script src="./js/resonance-engine.js"></script>
+<script src="./js/guardian-matrix.js"></script>
+<script src="./js/liturgy-matrix.js"></script>
+<script src="./js/pioneer-brain.js"></script>
+<script src="./js/chirombe-autostart.js"></script>
+<script src="./js/engine/policy.js"></script>
+<script src="./js/engine/ledger.js"></script>
+<script src="./js/engine/adapters.js"></script>
+<script src="./js/engine/chirombe-engine.js"></script>
+<script src="./js/engine/kernel-bridge.js"></script>
+<script src="./js/engine/activation.js"></script>
+<script src="./js/engine/recovery.js"></script>
+<script src="./js/frontend-legacy-adapter.js"></script>
+<script src="./js/frontend-legacy-matrix-ui.js"></script>
+<script>(function(){try{if("serviceWorker" in navigator)navigator.serviceWorker.register("./sw.js").catch(function(){});}catch(e){}})();</script>
+</body></html>
