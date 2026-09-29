@@ -7547,3 +7547,2938 @@ Waiting for command…
 
 })();
 </script>
+<!-- ============================================================
+     CHIROMBE UNIFIED COMMAND CORE
+     BLOCK 6 — HEALTH / AUDIT / INTEGRITY / RECOVERY
+
+     PURPOSE
+     ------------------------------------------------------------
+     • Continuous computational health monitoring
+     • Engine self-test
+     • Integrity verification
+     • Append-only runtime journal
+     • Error journal
+     • Recovery journal
+     • Dependency diagnostics
+     • Global/API diagnostics
+     • Historical-artifact protection
+     • Recovery recommendations
+
+     IMPORTANT
+     ------------------------------------------------------------
+     This layer observes and records the system.
+     It does not silently repair or replace engines.
+     It does not execute the historical "chirombe engine".
+     It does not automatically activate sensitive operations.
+     ============================================================ -->
+
+<style>
+
+  /* ==========================================================
+     HEALTH PANEL
+     ========================================================== */
+
+  #chirombe-health-console {
+    width: 100%;
+    max-width: 1500px;
+    margin: 20px auto;
+  }
+
+  .chirombe-health-grid {
+    display: grid;
+    grid-template-columns:
+      repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+
+  .chirombe-health-card {
+    background: rgba(10,15,25,0.94);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 15px;
+    padding: 16px;
+  }
+
+  .chirombe-health-card h3 {
+    margin-top: 0;
+    margin-bottom: 8px;
+  }
+
+  .chirombe-health-value {
+    font-size: 25px;
+    font-weight: 800;
+    margin-bottom: 5px;
+  }
+
+  .chirombe-health-description {
+    font-size: 12px;
+    opacity: 0.68;
+    line-height: 1.5;
+  }
+
+  .chirombe-health-panel {
+    background: rgba(10,15,25,0.94);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 15px;
+    padding: 18px;
+    margin-bottom: 16px;
+  }
+
+  .chirombe-health-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+
+  .chirombe-health-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 9px;
+  }
+
+  .chirombe-health-button {
+    border: 1px solid rgba(255,255,255,0.14);
+    background: rgba(255,255,255,0.06);
+    color: inherit;
+    border-radius: 9px;
+    padding: 9px 13px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+
+  .chirombe-health-button:hover {
+    background: rgba(255,255,255,0.11);
+  }
+
+  .chirombe-health-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  .chirombe-health-table th,
+  .chirombe-health-table td {
+    text-align: left;
+    padding: 9px;
+    border-bottom:
+      1px solid rgba(255,255,255,0.07);
+    vertical-align: top;
+  }
+
+  .chirombe-health-table th {
+    opacity: 0.7;
+    font-weight: 600;
+  }
+
+  .chirombe-health-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 999px;
+    padding: 4px 9px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+  }
+
+  .chirombe-health-ok {
+    background: rgba(46,204,113,0.13);
+    color: #7dffae;
+  }
+
+  .chirombe-health-warning {
+    background: rgba(241,196,15,0.13);
+    color: #ffe27a;
+  }
+
+  .chirombe-health-error {
+    background: rgba(231,76,60,0.13);
+    color: #ff9187;
+  }
+
+  .chirombe-health-neutral {
+    background: rgba(255,255,255,0.07);
+    color: #d5d5d5;
+  }
+
+  .chirombe-health-log {
+    background: #05080d;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 11px;
+    padding: 13px;
+    max-height: 390px;
+    overflow: auto;
+    font-family:
+      ui-monospace,
+      SFMono-Regular,
+      Menlo,
+      Monaco,
+      Consolas,
+      monospace;
+    font-size: 11px;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .chirombe-health-note {
+    font-size: 12px;
+    opacity: 0.68;
+    line-height: 1.55;
+  }
+
+  @media (max-width: 700px) {
+
+    .chirombe-health-button {
+      width: 100%;
+    }
+
+    .chirombe-health-table {
+      font-size: 11px;
+    }
+
+  }
+
+</style>
+
+
+<div id="chirombe-health-console">
+
+  <!-- ========================================================
+       HEALTH SUMMARY
+       ======================================================== -->
+
+  <section class="chirombe-health-grid">
+
+    <div class="chirombe-health-card">
+
+      <h3>System Health</h3>
+
+      <div
+        id="chirombe-health-overall"
+        class="chirombe-health-value">
+        CHECKING
+      </div>
+
+      <div class="chirombe-health-description">
+        Unified runtime assessment.
+      </div>
+
+    </div>
+
+
+    <div class="chirombe-health-card">
+
+      <h3>Ready Engines</h3>
+
+      <div
+        id="chirombe-health-ready"
+        class="chirombe-health-value">
+        0
+      </div>
+
+      <div class="chirombe-health-description">
+        Engines that passed the current checks.
+      </div>
+
+    </div>
+
+
+    <div class="chirombe-health-card">
+
+      <h3>Warnings</h3>
+
+      <div
+        id="chirombe-health-warnings"
+        class="chirombe-health-value">
+        0
+      </div>
+
+      <div class="chirombe-health-description">
+        Degraded, unavailable or incomplete components.
+      </div>
+
+    </div>
+
+
+    <div class="chirombe-health-card">
+
+      <h3>Errors</h3>
+
+      <div
+        id="chirombe-health-errors"
+        class="chirombe-health-value">
+        0
+      </div>
+
+      <div class="chirombe-health-description">
+        Recorded runtime or engine errors.
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- ========================================================
+       CONTROL BAR
+       ======================================================== -->
+
+  <section class="chirombe-health-panel">
+
+    <div class="chirombe-health-header">
+
+      <div>
+
+        <h2>HEALTH & INTEGRITY CONTROL</h2>
+
+        <div class="chirombe-health-note">
+          Diagnostics observe the connected system without
+          silently replacing failed components.
+        </div>
+
+      </div>
+
+
+      <div class="chirombe-health-buttons">
+
+        <button
+          id="chirombe-run-self-test"
+          class="chirombe-health-button">
+          Run Self-Test
+        </button>
+
+        <button
+          id="chirombe-run-integrity"
+          class="chirombe-health-button">
+          Verify Integrity
+        </button>
+
+        <button
+          id="chirombe-run-health"
+          class="chirombe-health-button">
+          Refresh Health
+        </button>
+
+        <button
+          id="chirombe-run-recovery"
+          class="chirombe-health-button">
+          Recovery Check
+        </button>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- ========================================================
+       ENGINE SELF TEST
+       ======================================================== -->
+
+  <section class="chirombe-health-panel">
+
+    <div class="chirombe-health-header">
+
+      <div>
+
+        <h2>ENGINE SELF-TEST</h2>
+
+        <div class="chirombe-health-note">
+          Tests only real modules and APIs currently exposed
+          by the browser.
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <div style="overflow:auto;">
+
+      <table class="chirombe-health-table">
+
+        <thead>
+
+          <tr>
+
+            <th>Engine</th>
+            <th>Mode</th>
+            <th>Registry</th>
+            <th>Global</th>
+            <th>API</th>
+            <th>Result</th>
+
+          </tr>
+
+        </thead>
+
+        <tbody id="chirombe-self-test-table">
+
+          <tr>
+            <td colspan="6">
+              Self-test has not run.
+            </td>
+          </tr>
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+  </section>
+
+
+  <!-- ========================================================
+       INTEGRITY
+       ======================================================== -->
+
+  <section class="chirombe-health-panel">
+
+    <div class="chirombe-health-header">
+
+      <div>
+
+        <h2>INTEGRITY STATUS</h2>
+
+        <div class="chirombe-health-note">
+          Runtime integrity checks do not execute archived
+          historical code.
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <div
+      id="chirombe-integrity-output"
+      class="chirombe-health-log">
+Integrity verification has not run.
+    </div>
+
+  </section>
+
+
+  <!-- ========================================================
+       RECOVERY
+       ======================================================== -->
+
+  <section class="chirombe-health-panel">
+
+    <div class="chirombe-health-header">
+
+      <div>
+
+        <h2>RECOVERY JOURNAL</h2>
+
+        <div class="chirombe-health-note">
+          Records what failed and what should be reviewed.
+          Automatic replacement is deliberately disabled.
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <div
+      id="chirombe-recovery-output"
+      class="chirombe-health-log">
+No recovery assessment has run.
+    </div>
+
+  </section>
+
+
+  <!-- ========================================================
+       AUDIT JOURNAL
+       ======================================================== -->
+
+  <section class="chirombe-health-panel">
+
+    <div class="chirombe-health-header">
+
+      <div>
+
+        <h2>AUDIT JOURNAL</h2>
+
+        <div class="chirombe-health-note">
+          Runtime events and diagnostic records.
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <div
+      id="chirombe-audit-output"
+      class="chirombe-health-log">
+Waiting for audit records…
+    </div>
+
+  </section>
+
+</div>
+
+
+<script>
+(function () {
+
+  "use strict";
+
+
+  /* ==========================================================
+     FOUNDATION
+     ========================================================== */
+
+  const system =
+    window.CHIROMBE_UNIFIED;
+
+  if (!system) {
+
+    console.error(
+      "[CHIROMBE][BLOCK 6] Foundation unavailable."
+    );
+
+    return;
+  }
+
+
+  const runtimeAPI =
+    system.runtimeAPI;
+
+  const registry =
+    system.registry;
+
+  const loaderAPI =
+    system.loaderAPI;
+
+
+  if (!runtimeAPI) {
+
+    console.error(
+      "[CHIROMBE][BLOCK 6] Runtime API unavailable."
+    );
+
+    return;
+  }
+
+
+  /* ==========================================================
+     JOURNAL KEYS
+     ----------------------------------------------------------
+     These names follow the repository integration plan.
+     ========================================================== */
+
+  const JOURNAL_KEY =
+    "CHIROMBE_ENGINE_JOURNAL_V1";
+
+  const JOURNAL_ARCHIVE_KEY =
+    "CHIROMBE_ENGINE_JOURNAL_ARCHIVE_V1";
+
+  const ERROR_KEY =
+    "CHIROMBE_ENGINE_ERRORS_V1";
+
+  const RECOVERY_KEY =
+    "CHIROMBE_ENGINE_RECOVERY_V1";
+
+
+  /* ==========================================================
+     INTERNAL HEALTH STATE
+     ========================================================== */
+
+  const health = {
+
+    version:
+      "6.0.0-health-integrity",
+
+    startedAt:
+      new Date().toISOString(),
+
+    lastSelfTest:
+      null,
+
+    lastIntegrityCheck:
+      null,
+
+    lastHealthCheck:
+      null,
+
+    lastRecoveryCheck:
+      null,
+
+    overall:
+      "CHECKING",
+
+    selfTests:
+      [],
+
+    integrity:
+      null,
+
+    recovery:
+      [],
+
+    warnings:
+      [],
+
+    errors:
+      [],
+
+    journal:
+      [],
+
+    journalArchive:
+      []
+  };
+
+
+  /* ==========================================================
+     SAFE STORAGE
+     ========================================================== */
+
+  function storageRead(
+    key,
+    fallback
+  ) {
+
+    try {
+
+      const raw =
+        localStorage.getItem(key);
+
+      if (!raw) {
+        return fallback;
+      }
+
+      const parsed =
+        JSON.parse(raw);
+
+      return parsed;
+
+    } catch (error) {
+
+      return fallback;
+    }
+  }
+
+
+  function storageWrite(
+    key,
+    value
+  ) {
+
+    try {
+
+      localStorage.setItem(
+        key,
+        JSON.stringify(value)
+      );
+
+      return true;
+
+    } catch (error) {
+
+      console.warn(
+        "[CHIROMBE][BLOCK 6] Storage write failed:",
+        error
+      );
+
+      return false;
+    }
+  }
+
+
+  /* ==========================================================
+     LOAD EXISTING JOURNALS
+     ========================================================== */
+
+  health.journal =
+    storageRead(
+      JOURNAL_KEY,
+      []
+    );
+
+  health.journalArchive =
+    storageRead(
+      JOURNAL_ARCHIVE_KEY,
+      []
+    );
+
+
+  health.errors =
+    storageRead(
+      ERROR_KEY,
+      []
+    );
+
+  health.recovery =
+    storageRead(
+      RECOVERY_KEY,
+      []
+    );
+
+
+  /* ==========================================================
+     JOURNAL APPEND
+     ========================================================== */
+
+  function appendJournal(
+    type,
+    payload
+  ) {
+
+    const entry = {
+
+      sequence:
+        health.journal.length + 1,
+
+      type:
+        type,
+
+      timestamp:
+        new Date().toISOString(),
+
+      payload:
+        payload || {}
+    };
+
+
+    health.journal.push(
+      entry
+    );
+
+
+    /*
+     * Keep the active journal bounded.
+     * Older records move to the archive rather than
+     * being silently deleted.
+     */
+
+    if (
+      health.journal.length >
+      400
+    ) {
+
+      const overflow =
+        health.journal.splice(
+          0,
+          health.journal.length - 400
+        );
+
+      health.journalArchive =
+        health.journalArchive.concat(
+          overflow
+        );
+
+      storageWrite(
+        JOURNAL_ARCHIVE_KEY,
+        health.journalArchive
+      );
+    }
+
+
+    storageWrite(
+      JOURNAL_KEY,
+      health.journal
+    );
+
+
+    return entry;
+  }
+
+
+  /* ==========================================================
+     ERROR RECORD
+     ========================================================== */
+
+  function recordError(
+    source,
+    message,
+    metadata
+  ) {
+
+    const entry = {
+
+      source:
+        source,
+
+      message:
+        message,
+
+      metadata:
+        metadata || {},
+
+      timestamp:
+        new Date().toISOString()
+    };
+
+
+    health.errors.push(
+      entry
+    );
+
+
+    /*
+     * Keep errors bounded while preserving the latest
+     * operational history.
+     */
+
+    if (
+      health.errors.length >
+      500
+    ) {
+
+      health.errors =
+        health.errors.slice(-500);
+    }
+
+
+    storageWrite(
+      ERROR_KEY,
+      health.errors
+    );
+
+
+    appendJournal(
+      "ERROR",
+      entry
+    );
+
+
+    return entry;
+  }
+
+
+  /* ==========================================================
+     RECOVERY RECORD
+     ========================================================== */
+
+  function recordRecovery(
+    engineId,
+    status,
+    recommendation
+  ) {
+
+    const entry = {
+
+      engineId:
+        engineId,
+
+      status:
+        status,
+
+      recommendation:
+        recommendation,
+
+      timestamp:
+        new Date().toISOString(),
+
+      automaticAction:
+        "NONE"
+    };
+
+
+    health.recovery.push(
+      entry
+    );
+
+
+    if (
+      health.recovery.length >
+      500
+    ) {
+
+      health.recovery =
+        health.recovery.slice(-500);
+    }
+
+
+    storageWrite(
+      RECOVERY_KEY,
+      health.recovery
+    );
+
+
+    appendJournal(
+      "RECOVERY",
+      entry
+    );
+
+
+    return entry;
+  }
+
+
+  /* ==========================================================
+     GLOBAL CHECK
+     ========================================================== */
+
+  function globalExists(
+    globalName
+  ) {
+
+    return (
+      typeof window[globalName] !==
+      "undefined"
+    );
+  }
+
+
+  /* ==========================================================
+     API METHOD CHECK
+     ========================================================== */
+
+  function apiMethodExists(
+    globalName,
+    method
+  ) {
+
+    if (
+      !globalExists(
+        globalName
+      )
+    ) {
+      return false;
+    }
+
+    const object =
+      window[globalName];
+
+    return (
+      object &&
+      typeof object[method] ===
+      "function"
+    );
+  }
+
+
+  /* ==========================================================
+     API CONTRACTS
+     ========================================================== */
+
+  const API_CONTRACTS = {
+
+    ChirombeSystem: [
+      "system"
+    ],
+
+    ChirombeBus: [
+      "registerCommand",
+      "executeCommand",
+      "listCommands"
+    ],
+
+    ChirombeState: [
+      "load",
+      "save"
+    ],
+
+    ChirombeAudit: [
+      "head",
+      "append",
+      "verify",
+      "export"
+    ],
+
+    ChirombeHealth: [
+      "snapshot",
+      "capabilities"
+    ],
+
+    ChirombeWatchdog: [
+      "tick"
+    ],
+
+    ChirombeCore: [
+      "pray",
+      "evolve"
+    ],
+
+    ZCCA: [
+      "command",
+      "activate",
+      "protect",
+      "getFamily",
+      "status"
+    ],
+
+    ZionProtect: [
+      "snapshot"
+    ],
+
+    MwarindiCovenant: [
+      "status",
+      "remind",
+      "seal"
+    ],
+
+    ChirombeResonance: [
+      "status",
+      "measure",
+      "activate"
+    ],
+
+    CHIROMBE_AUTOSTART: [
+      "status",
+      "discover",
+      "cycle",
+      "start",
+      "stop"
+    ]
+  };
+
+
+  /* ==========================================================
+     ENGINE → GLOBAL MAP
+     ========================================================== */
+
+  const ENGINE_GLOBALS = {
+
+    CHIROMBE_BOOT:
+      ["ChirombeSystem"],
+
+    CHIROMBE_BUS:
+      ["ChirombeBus"],
+
+    CHIROMBE_STATE:
+      ["ChirombeState"],
+
+    CHIROMBE_AUDIT:
+      ["ChirombeAudit"],
+
+    CHIROMBE_HEALTH:
+      ["ChirombeHealth"],
+
+    CHIROMBE_WATCHDOG:
+      ["ChirombeWatchdog"],
+
+    CHIROMBE_CORE:
+      ["ChirombeCore"],
+
+    CHIROMBE_PROTECTION:
+      [
+        "ZionProtect",
+        "ZionProtectionCore"
+      ],
+
+    CHIROMBE_COVENANT:
+      ["MwarindiCovenant"],
+
+    CHIROMBE_RESONANCE:
+      ["ChirombeResonance"],
+
+    CHIROMBE_AUTOSTART:
+      ["CHIROMBE_AUTOSTART"],
+
+    CHIROMBE_GUARDIAN:
+      ["CHIROMBE_GUARDIAN"],
+
+    CHIROMBE_LITURGY:
+      ["CHIROMBE_LITURGY"],
+
+    CHIROMBE_PIONEER:
+      ["CHIROMBE_PIONEER_BRAIN"],
+
+    CHIROMBE_ZCCA:
+      ["ZCCA"]
+  };
+
+
+  /* ==========================================================
+     SELF TEST — SINGLE ENGINE
+     ========================================================== */
+
+  function testEngine(
+    engine
+  ) {
+
+    const result = {
+
+      engineId:
+        engine.id,
+
+      mode:
+        engine.mode,
+
+      registryStatus:
+        engine.status,
+
+      globalExpected:
+        ENGINE_GLOBALS[
+          engine.id
+        ] || [],
+
+      globalsFound:
+        [],
+
+      globalsMissing:
+        [],
+
+      apiFound:
+        [],
+
+      apiMissing:
+        [],
+
+      result:
+        "NOT_AVAILABLE",
+
+      reason:
+        null,
+
+      timestamp:
+        new Date().toISOString()
+    };
+
+
+    /*
+     * Archives are intentionally not executed.
+     */
+
+    if (
+      engine.mode ===
+      "ARCHIVE" ||
+      engine.executable === false
+    ) {
+
+      result.result =
+        "ARCHIVED";
+
+      result.reason =
+        "Historical artifact preserved; execution disabled.";
+
+      return result;
+    }
+
+
+    /*
+     * Missing registry entry.
+     */
+
+    if (!engine) {
+
+      result.result =
+        "NOT_AVAILABLE";
+
+      result.reason =
+        "Engine definition unavailable.";
+
+      return result;
+    }
+
+
+    const expectedGlobals =
+      result.globalExpected;
+
+
+    expectedGlobals.forEach(
+      function (globalName) {
+
+        if (
+          globalExists(
+            globalName
+          )
+        ) {
+
+          result.globalsFound.push(
+            globalName
+          );
+
+        } else {
+
+          result.globalsMissing.push(
+            globalName
+          );
+        }
+      }
+    );
+
+
+    /*
+     * Determine API contract from the real global.
+     */
+
+    expectedGlobals.forEach(
+      function (globalName) {
+
+        const methods =
+          API_CONTRACTS[
+            globalName
+          ] || [];
+
+
+        methods.forEach(
+          function (method) {
+
+            if (
+              apiMethodExists(
+                globalName,
+                method
+              )
+            ) {
+
+              result.apiFound.push(
+                globalName +
+                "." +
+                method
+              );
+
+            } else {
+
+              result.apiMissing.push(
+                globalName +
+                "." +
+                method
+              );
+            }
+          }
+        );
+      }
+    );
+
+
+    /*
+     * No global = NOT_AVAILABLE.
+     * Present global + missing required method = FAILURE.
+     * Present and complete = PASS.
+     */
+
+    if (
+      result.globalsFound.length === 0
+    ) {
+
+      result.result =
+        "NOT_AVAILABLE";
+
+      result.reason =
+        "Expected global is not present.";
+
+      return result;
+    }
+
+
+    if (
+      result.globalsMissing.length > 0
+    ) {
+
+      result.result =
+        "FAILURE";
+
+      result.reason =
+        "One or more expected globals are missing.";
+
+      return result;
+    }
+
+
+    if (
+      result.apiMissing.length > 0
+    ) {
+
+      result.result =
+        "FAILURE";
+
+      result.reason =
+        "One or more expected API methods are missing.";
+
+      return result;
+    }
+
+
+    /*
+     * PASS.
+     */
+
+    result.result =
+      "PASS";
+
+    result.reason =
+      "Global and declared API contract present.";
+
+    return result;
+  }
+
+
+  /* ==========================================================
+     SELF TEST — COMPLETE SYSTEM
+     ========================================================== */
+
+  function runSelfTest() {
+
+    health.selfTests =
+      [];
+
+    health.warnings =
+      [];
+
+    health.errors =
+      [];
+
+    const engines =
+      registry &&
+      registry.engines
+        ? Object.values(
+            registry.engines
+          )
+        : [];
+
+
+    engines.forEach(
+      function (engine) {
+
+        const result =
+          testEngine(
+            engine
+          );
+
+        health.selfTests.push(
+          result
+        );
+
+
+        if (
+          result.result ===
+          "FAILURE"
+        ) {
+
+          health.warnings.push(
+            result
+          );
+
+          recordError(
+            engine.id,
+            result.reason,
+            result
+          );
+
+
+          recordRecovery(
+            engine.id,
+            "REVIEW_REQUIRED",
+            "Inspect the recorded missing global/API or dependency before changing code."
+          );
+        }
+
+
+        if (
+          result.result ===
+          "NOT_AVAILABLE"
+        ) {
+
+          /*
+           * NOT_AVAILABLE is deliberately not promoted
+           * to a failure.
+           */
+
+          appendJournal(
+            "NOT_AVAILABLE",
+            result
+          );
+        }
+      }
+    );
+
+
+    health.lastSelfTest =
+      new Date().toISOString();
+
+
+    appendJournal(
+      "SELF_TEST",
+      {
+        count:
+          health.selfTests.length,
+
+        pass:
+          health.selfTests.filter(
+            x =>
+              x.result === "PASS"
+          ).length,
+
+        failure:
+          health.selfTests.filter(
+            x =>
+              x.result === "FAILURE"
+          ).length,
+
+        unavailable:
+          health.selfTests.filter(
+            x =>
+              x.result ===
+              "NOT_AVAILABLE"
+          ).length
+      }
+    );
+
+
+    renderSelfTest();
+
+    refreshHealthSummary();
+
+
+    return health.selfTests;
+  }
+
+
+  /* ==========================================================
+     INTEGRITY CHECK
+     ========================================================== */
+
+  async function verifyIntegrity() {
+
+    const result = {
+
+      timestamp:
+        new Date().toISOString(),
+
+      loader:
+        null,
+
+      registry:
+        null,
+
+      archives:
+        null,
+
+      audit:
+        null,
+
+      localStorage:
+        null,
+
+      overall:
+        "CHECKING",
+
+      findings:
+        []
+    };
+
+
+    /* --------------------------------------------------------
+       Loader integrity
+       -------------------------------------------------------- */
+
+    if (
+      loaderAPI &&
+      typeof loaderAPI.getReport ===
+      "function"
+    ) {
+
+      const report =
+        loaderAPI.getReport();
+
+      result.loader = {
+
+        status:
+          report.status,
+
+        ready:
+          report.statistics.ready,
+
+        failed:
+          report.statistics.failed,
+
+        unavailable:
+          report.statistics.unavailable,
+
+        archived:
+          report.statistics.archived
+      };
+
+
+      if (
+        report.statistics.failed > 0
+      ) {
+
+        result.findings.push(
+          "One or more engines failed loading."
+        );
+      }
+
+
+      if (
+        report.statistics.unavailable > 0
+      ) {
+
+        result.findings.push(
+          "One or more engine resources are unavailable."
+        );
+      }
+    }
+
+
+    /* --------------------------------------------------------
+       Registry integrity
+       -------------------------------------------------------- */
+
+    if (registry) {
+
+      const engines =
+        Object.values(
+          registry.engines || {}
+        );
+
+
+      const duplicatePaths = {};
+
+
+      engines.forEach(
+        function (engine) {
+
+          if (!engine.entry) {
+            return;
+          }
+
+          if (
+            !duplicatePaths[
+              engine.entry
+            ]
+          ) {
+
+            duplicatePaths[
+              engine.entry
+            ] = [];
+
+          }
+
+          duplicatePaths[
+            engine.entry
+          ].push(
+            engine.id
+          );
+        }
+      );
+
+
+      Object.keys(
+        duplicatePaths
+      ).forEach(
+        function (path) {
+
+          if (
+            duplicatePaths[path].length >
+            1
+          ) {
+
+            result.findings.push(
+              "Multiple engines reference the same entry: " +
+              path
+            );
+          }
+        }
+      );
+
+
+      result.registry = {
+
+        total:
+          engines.length,
+
+        ready:
+          engines.filter(
+            e =>
+              e.status ===
+              "READY"
+          ).length,
+
+        failed:
+          engines.filter(
+            e =>
+              e.status ===
+              "FAILED"
+          ).length,
+
+        archived:
+          engines.filter(
+            e =>
+              e.status ===
+              "ARCHIVED"
+          ).length
+      };
+    }
+
+
+    /* --------------------------------------------------------
+       Historical archive protection
+       -------------------------------------------------------- */
+
+    if (registry) {
+
+      const historical =
+        registry.engines &&
+        registry.engines
+          .CHIROMBE_HISTORICAL_ENGINE;
+
+
+      if (historical) {
+
+        result.archives = {
+
+          status:
+            historical.status,
+
+          executable:
+            historical.executable,
+
+          autostart:
+            historical.autostart
+        };
+
+
+        if (
+          historical.executable !==
+          false
+        ) {
+
+          result.findings.push(
+            "Historical artifact execution flag is not disabled."
+          );
+        }
+      }
+    }
+
+
+    /* --------------------------------------------------------
+       Existing audit API
+       -------------------------------------------------------- */
+
+    if (
+      typeof window.ChirombeAudit !==
+      "undefined"
+    ) {
+
+      result.audit = {
+
+        present:
+          true,
+
+        head:
+          typeof
+          window.ChirombeAudit.head ===
+          "function",
+
+        verify:
+          typeof
+          window.ChirombeAudit.verify ===
+          "function",
+
+        export:
+          typeof
+          window.ChirombeAudit.export ===
+          "function"
+      };
+
+
+      if (
+        typeof
+        window.ChirombeAudit.verify ===
+        "function"
+      ) {
+
+        try {
+
+          result.audit.runtimeVerification =
+            await Promise.resolve(
+              window.ChirombeAudit.verify()
+            );
+
+        } catch (error) {
+
+          result.findings.push(
+            "Existing ChirombeAudit.verify() threw an error."
+          );
+
+          result.audit.runtimeVerification =
+            {
+              ok: false,
+              error:
+                error.message
+            };
+        }
+      }
+
+    } else {
+
+      result.audit = {
+
+        present:
+          false
+      };
+
+      result.findings.push(
+        "ChirombeAudit global is not currently available."
+      );
+    }
+
+
+    /* --------------------------------------------------------
+       Local persistence
+       -------------------------------------------------------- */
+
+    try {
+
+      const storageTestKey =
+        "CHIROMBE_BLOCK6_INTEGRITY_TEST";
+
+      localStorage.setItem(
+        storageTestKey,
+        "ok"
+      );
+
+      const value =
+        localStorage.getItem(
+          storageTestKey
+        );
+
+      localStorage.removeItem(
+        storageTestKey
+      );
+
+
+      result.localStorage = {
+
+        available:
+          value === "ok"
+      };
+
+
+      if (
+        value !== "ok"
+      ) {
+
+        result.findings.push(
+          "Local persistence test failed."
+        );
+      }
+
+    } catch (error) {
+
+      result.localStorage = {
+
+        available:
+          false,
+
+        error:
+          error.message
+      };
+
+
+      result.findings.push(
+        "LocalStorage is unavailable."
+      );
+    }
+
+
+    /*
+     * Overall result.
+     */
+
+    result.overall =
+      result.findings.length === 0
+        ? "PASS"
+        : "REVIEW_REQUIRED";
+
+
+    health.integrity =
+      result;
+
+
+    health.lastIntegrityCheck =
+      result.timestamp;
+
+
+    appendJournal(
+      "INTEGRITY",
+      result
+    );
+
+
+    renderIntegrity();
+
+    refreshHealthSummary();
+
+
+    return result;
+  }
+
+
+  /* ==========================================================
+     RECOVERY CHECK
+     ========================================================== */
+
+  function runRecoveryCheck() {
+
+    const report = {
+
+      timestamp:
+        new Date().toISOString(),
+
+      actions:
+        [],
+
+      automaticChanges:
+        [],
+
+      reviewRequired:
+        []
+    };
+
+
+    /*
+     * IMPORTANT:
+     * This function diagnoses recovery needs.
+     * It does not overwrite source files.
+     */
+
+    if (
+      loaderAPI &&
+      typeof loaderAPI.getReport ===
+      "function"
+    ) {
+
+      const loaderReport =
+        loaderAPI.getReport();
+
+
+      loaderReport.failed.forEach(
+        function (engineId) {
+
+          const recommendation =
+            "Inspect source file, syntax, dependencies and expected global.";
+
+          report.reviewRequired.push({
+
+            engineId:
+              engineId,
+
+            reason:
+              "Loader failure",
+
+            recommendation:
+              recommendation
+          });
+
+
+          recordRecovery(
+            engineId,
+            "FAILED",
+            recommendation
+          );
+        }
+      );
+
+
+      loaderReport.unavailable.forEach(
+        function (engineId) {
+
+          const recommendation =
+            "Verify the repository path and GitHub Pages deployment.";
+
+          report.reviewRequired.push({
+
+            engineId:
+              engineId,
+
+            reason:
+              "Resource unavailable",
+
+            recommendation:
+              recommendation
+          });
+
+
+          recordRecovery(
+            engineId,
+            "UNAVAILABLE",
+            recommendation
+          );
+        }
+      );
+
+
+      loaderReport.dependencyBlocked.forEach(
+        function (engineId) {
+
+          const recommendation =
+            "Resolve the dependency reported by the loader before attempting recovery.";
+
+          report.reviewRequired.push({
+
+            engineId:
+              engineId,
+
+            reason:
+              "Dependency blocked",
+
+            recommendation:
+              recommendation
+          });
+
+
+          recordRecovery(
+            engineId,
+            "DEPENDENCY_BLOCKED",
+            recommendation
+          );
+        }
+      );
+    }
+
+
+    /*
+     * Historical artifact.
+     */
+
+    if (registry) {
+
+      const historical =
+        registry.engines &&
+        registry.engines
+          .CHIROMBE_HISTORICAL_ENGINE;
+
+
+      if (historical) {
+
+        report.actions.push({
+
+          engineId:
+            historical.id,
+
+          action:
+            "PRESERVE_ARCHIVE",
+
+          reason:
+            "Historical artifact remains non-executable."
+        });
+      }
+    }
+
+
+    /*
+     * No automatic source modifications.
+     */
+
+    report.automaticChanges =
+      [];
+
+
+    health.lastRecoveryCheck =
+      report.timestamp;
+
+
+    appendJournal(
+      "RECOVERY_CHECK",
+      report
+    );
+
+
+    renderRecovery(
+      report
+    );
+
+
+    return report;
+  }
+
+
+  /* ==========================================================
+     OVERALL HEALTH
+     ========================================================== */
+
+  function calculateHealth() {
+
+    const engines =
+      registry &&
+      registry.engines
+        ? Object.values(
+            registry.engines
+          )
+        : [];
+
+
+    const activeEngines =
+      engines.filter(
+        function (engine) {
+
+          return (
+            engine.mode !==
+            "ARCHIVE"
+          );
+        }
+      );
+
+
+    const ready =
+      activeEngines.filter(
+        function (engine) {
+
+          return (
+            engine.status ===
+            "READY"
+          );
+        }
+      ).length;
+
+
+    const failed =
+      activeEngines.filter(
+        function (engine) {
+
+          return (
+            engine.status ===
+            "FAILED" ||
+            engine.status ===
+            "UNAVAILABLE"
+          );
+        }
+      ).length;
+
+
+    const degraded =
+      activeEngines.filter(
+        function (engine) {
+
+          return (
+            engine.status ===
+            "DEGRADED" ||
+            engine.status ===
+            "DEPENDENCY_BLOCKED"
+          );
+        }
+      ).length;
+
+
+    /*
+     * A system with missing optional modules is not
+     * automatically declared broken.
+     */
+
+    if (
+      failed > 0
+    ) {
+
+      return {
+        status:
+          "DEGRADED",
+
+        ready:
+          ready,
+
+        failed:
+          failed,
+
+        degraded:
+          degraded
+      };
+    }
+
+
+    if (
+      degraded > 0
+    ) {
+
+      return {
+        status:
+          "DEGRADED",
+
+        ready:
+          ready,
+
+        failed:
+          failed,
+
+        degraded:
+          degraded
+      };
+    }
+
+
+    return {
+
+      status:
+        "HEALTHY",
+
+      ready:
+        ready,
+
+      failed:
+        0,
+
+      degraded:
+        0
+    };
+  }
+
+
+  /* ==========================================================
+     UI SUMMARY
+     ========================================================== */
+
+  function refreshHealthSummary() {
+
+    const summary =
+      calculateHealth();
+
+
+    health.overall =
+      summary.status;
+
+
+    const overall =
+      document.getElementById(
+        "chirombe-health-overall"
+      );
+
+    const ready =
+      document.getElementById(
+        "chirombe-health-ready"
+      );
+
+    const warnings =
+      document.getElementById(
+        "chirombe-health-warnings"
+      );
+
+    const errors =
+      document.getElementById(
+        "chirombe-health-errors"
+      );
+
+
+    if (overall) {
+
+      overall.textContent =
+        summary.status;
+    }
+
+
+    if (ready) {
+
+      ready.textContent =
+        summary.ready;
+    }
+
+
+    if (warnings) {
+
+      warnings.textContent =
+        summary.degraded;
+    }
+
+
+    if (errors) {
+
+      errors.textContent =
+        health.errors.length;
+    }
+  }
+
+
+  /* ==========================================================
+     RENDER SELF TEST
+     ========================================================== */
+
+  function renderSelfTest() {
+
+    const table =
+      document.getElementById(
+        "chirombe-self-test-table"
+      );
+
+
+    if (!table) {
+      return;
+    }
+
+
+    table.innerHTML = "";
+
+
+    if (
+      !health.selfTests.length
+    ) {
+
+      const row =
+        document.createElement(
+          "tr"
+        );
+
+      row.innerHTML =
+        '<td colspan="6">' +
+        'Self-test has not run.' +
+        '</td>';
+
+      table.appendChild(
+        row
+      );
+
+      return;
+    }
+
+
+    health.selfTests.forEach(
+      function (test) {
+
+        const row =
+          document.createElement(
+            "tr"
+          );
+
+
+        const cells = [
+
+          test.engineId,
+
+          test.mode,
+
+          test.registryStatus,
+
+          test.globalsFound.length
+            ? test.globalsFound.join(", ")
+            : (
+                test.globalsMissing.length
+                  ? "Missing"
+                  : "N/A"
+              ),
+
+          test.apiFound.length
+            ? test.apiFound.length +
+              " found"
+            : (
+                test.apiMissing.length
+                  ? "Missing"
+                  : "N/A"
+              ),
+
+          test.result
+
+        ];
+
+
+        cells.forEach(
+          function (value, index) {
+
+            const cell =
+              document.createElement(
+                "td"
+              );
+
+
+            if (
+              index === 5
+            ) {
+
+              const badge =
+                document.createElement(
+                  "span"
+                );
+
+
+              let badgeClass =
+                "chirombe-health-neutral";
+
+
+              if (
+                value === "PASS"
+              ) {
+
+                badgeClass =
+                  "chirombe-health-ok";
+
+              } else if (
+                value === "FAILURE"
+              ) {
+
+                badgeClass =
+                  "chirombe-health-error";
+
+              } else if (
+                value === "NOT_AVAILABLE"
+              ) {
+
+                badgeClass =
+                  "chirombe-health-neutral";
+
+              } else if (
+                value === "ARCHIVED"
+              ) {
+
+                badgeClass =
+                  "chirombe-health-neutral";
+              }
+
+
+              badge.className =
+                "chirombe-health-status " +
+                badgeClass;
+
+
+              badge.textContent =
+                value;
+
+
+              cell.appendChild(
+                badge
+              );
+
+            } else {
+
+              cell.textContent =
+                value;
+            }
+
+
+            row.appendChild(
+              cell
+            );
+          }
+        );
+
+
+        table.appendChild(
+          row
+        );
+      }
+    );
+  }
+
+
+  /* ==========================================================
+     RENDER INTEGRITY
+     ========================================================== */
+
+  function renderIntegrity() {
+
+    const target =
+      document.getElementById(
+        "chirombe-integrity-output"
+      );
+
+
+    if (!target) {
+      return;
+    }
+
+
+    if (!health.integrity) {
+
+      target.textContent =
+        "Integrity verification has not run.";
+
+      return;
+    }
+
+
+    target.textContent =
+      JSON.stringify(
+        health.integrity,
+        null,
+        2
+      );
+  }
+
+
+  /* ==========================================================
+     RENDER RECOVERY
+     ========================================================== */
+
+  function renderRecovery(
+    report
+  ) {
+
+    const target =
+      document.getElementById(
+        "chirombe-recovery-output"
+      );
+
+
+    if (!target) {
+      return;
+    }
+
+
+    target.textContent =
+      JSON.stringify(
+        report,
+        null,
+        2
+      );
+  }
+
+
+  /* ==========================================================
+     RENDER AUDIT
+     ========================================================== */
+
+  function renderAudit() {
+
+    const target =
+      document.getElementById(
+        "chirombe-audit-output"
+      );
+
+
+    if (!target) {
+      return;
+    }
+
+
+    const recent =
+      health.journal
+        .slice(-100);
+
+
+    target.textContent =
+      JSON.stringify(
+        recent,
+        null,
+        2
+      );
+  }
+
+
+  /* ==========================================================
+     EVENT MIRRORING
+     ========================================================== */
+
+  const eventsToMirror = [
+
+    "RUNTIME.STATUS_CHANGED",
+
+    "ENGINE.STATE_CHANGED",
+
+    "CAPABILITY.REGISTERED",
+
+    "COMMAND.RECEIVED",
+
+    "COMMAND.COMPLETED",
+
+    "COMMAND.FAILED",
+
+    "COMMAND.UNAVAILABLE",
+
+    "DIAGNOSTIC.REPORTED",
+
+    "ENGINE.REGISTERED",
+
+    "REGISTRY.CREATED"
+
+  ];
+
+
+  eventsToMirror.forEach(
+    function (eventName) {
+
+      if (
+        typeof runtimeAPI.on !==
+        "function"
+      ) {
+
+        return;
+      }
+
+
+      runtimeAPI.on(
+        eventName,
+        function (event) {
+
+          appendJournal(
+            "EVENT",
+            {
+              event:
+                eventName,
+
+              payload:
+                event
+            }
+          );
+
+
+          renderAudit();
+
+          refreshHealthSummary();
+
+        }
+      );
+    }
+  );
+
+
+  /* ==========================================================
+     GLOBAL ERROR CAPTURE
+     ----------------------------------------------------------
+     We record browser errors for diagnostics, but do not
+     intercept or suppress the browser's normal error handling.
+     ========================================================== */
+
+  window.addEventListener(
+    "error",
+    function (event) {
+
+      const source =
+        event.filename ||
+        "WINDOW_ERROR";
+
+
+      const message =
+        event.message ||
+        "Unknown browser error.";
+
+
+      recordError(
+        source,
+        message,
+        {
+          line:
+            event.lineno,
+
+          column:
+            event.colno
+        }
+      );
+
+
+      renderAudit();
+
+      refreshHealthSummary();
+    }
+  );
+
+
+  window.addEventListener(
+    "unhandledrejection",
+    function (event) {
+
+      let message =
+        "Unhandled promise rejection.";
+
+
+      if (
+        event.reason
+      ) {
+
+        message =
+          event.reason.message ||
+          String(
+            event.reason
+          );
+      }
+
+
+      recordError(
+        "UNHANDLED_REJECTION",
+        message
+      );
+
+
+      renderAudit();
+
+      refreshHealthSummary();
+    }
+  );
+
+
+  /* ==========================================================
+     BUTTONS
+     ========================================================== */
+
+  const selfTestButton =
+    document.getElementById(
+      "chirombe-run-self-test"
+    );
+
+
+  if (selfTestButton) {
+
+    selfTestButton.addEventListener(
+      "click",
+      function () {
+
+        const result =
+          runSelfTest();
+
+        renderAudit();
+
+        console.info(
+          "[CHIROMBE][SELF TEST]",
+          result
+        );
+      }
+    );
+  }
+
+
+  const integrityButton =
+    document.getElementById(
+      "chirombe-run-integrity"
+    );
+
+
+  if (integrityButton) {
+
+    integrityButton.addEventListener(
+      "click",
+      async function () {
+
+        const result =
+          await verifyIntegrity();
+
+        renderAudit();
+
+        console.info(
+          "[CHIROMBE][INTEGRITY]",
+          result
+        );
+      }
+    );
+  }
+
+
+  const healthButton =
+    document.getElementById(
+      "chirombe-run-health"
+    );
+
+
+  if (healthButton) {
+
+    healthButton.addEventListener(
+      "click",
+      function () {
+
+        health.lastHealthCheck =
+          new Date().toISOString();
+
+        refreshHealthSummary();
+
+        appendJournal(
+          "HEALTH_REFRESH",
+          calculateHealth()
+        );
+
+        renderAudit();
+      }
+    );
+  }
+
+
+  const recoveryButton =
+    document.getElementById(
+      "chirombe-run-recovery"
+    );
+
+
+  if (recoveryButton) {
+
+    recoveryButton.addEventListener(
+      "click",
+      function () {
+
+        const report =
+          runRecoveryCheck();
+
+        renderAudit();
+
+        console.info(
+          "[CHIROMBE][RECOVERY]",
+          report
+        );
+      }
+    );
+  }
+
+
+  /* ==========================================================
+     PUBLIC API
+     ========================================================== */
+
+  const healthAPI = {
+
+    version:
+      health.version,
+
+    getStatus:
+      function () {
+
+        return calculateHealth();
+
+      },
+
+    runSelfTest:
+      runSelfTest,
+
+    verifyIntegrity:
+      verifyIntegrity,
+
+    runRecoveryCheck:
+      runRecoveryCheck,
+
+    getSelfTests:
+      function () {
+
+        return [
+          ...health.selfTests
+        ];
+
+      },
+
+    getIntegrity:
+      function () {
+
+        return health.integrity;
+
+      },
+
+    getRecovery:
+      function () {
+
+        return [
+          ...health.recovery
+        ];
+
+      },
+
+    getJournal:
+      function () {
+
+        return [
+          ...health.journal
+        ];
+
+      },
+
+    getErrors:
+      function () {
+
+        return [
+          ...health.errors
+        ];
+
+      },
+
+    exportReport:
+      function () {
+
+        return {
+
+          version:
+            health.version,
+
+          status:
+            calculateHealth(),
+
+          selfTests:
+            [
+              ...health.selfTests
+            ],
+
+          integrity:
+            health.integrity,
+
+          recovery:
+            [
+              ...health.recovery
+            ],
+
+          errors:
+            [
+              ...health.errors
+            ],
+
+          journal:
+            [
+              ...health.journal
+            ],
+
+          timestamp:
+            new Date().toISOString()
+        };
+
+      }
+  };
+
+
+  /* ==========================================================
+     CONNECT HEALTH API
+     ========================================================== */
+
+  system.health =
+    health;
+
+  system.healthAPI =
+    healthAPI;
+
+
+  /* ==========================================================
+     REGISTER CAPABILITIES
+     ========================================================== */
+
+  runtimeAPI.registerCapability(
+    "HEALTH_MONITORING",
+    {
+      source:
+        "BLOCK_6"
+    }
+  );
+
+
+  runtimeAPI.registerCapability(
+    "SELF_TEST",
+    {
+      source:
+        "BLOCK_6"
+    }
+  );
+
+
+  runtimeAPI.registerCapability(
+    "INTEGRITY_CHECKING",
+    {
+      source:
+        "BLOCK_6"
+    }
+  );
+
+
+  runtimeAPI.registerCapability(
+    "RECOVERY_JOURNAL",
+    {
+      source:
+        "BLOCK_6"
+    }
+  );
+
+
+  runtimeAPI.registerCapability(
+    "APPEND_ONLY_ENGINE_JOURNAL",
+    {
+      source:
+        "BLOCK_6"
+    }
+  );
+
+
+  /* ==========================================================
+     REGISTER NON-DESTRUCTIVE COMMANDS
+     ========================================================== */
+
+  runtimeAPI.registerCommand(
+    "SYSTEM.SELF_TEST",
+    function () {
+
+      return runSelfTest();
+
+    },
+    {
+      source:
+        "CHIROMBE_BLOCK_6",
+
+      description:
+        "Run computational engine self-test."
+    }
+  );
+
+
+  runtimeAPI.registerCommand(
+    "SYSTEM.INTEGRITY",
+    async function () {
+
+      return await verifyIntegrity();
+
+    },
+    {
+      source:
+        "CHIROMBE_BLOCK_6",
+
+      description:
+        "Verify runtime and registry integrity."
+    }
+  );
+
+
+  runtimeAPI.registerCommand(
+    "SYSTEM.RECOVERY_CHECK",
+    function () {
+
+      return runRecoveryCheck();
+
+    },
+    {
+      source:
+        "CHIROMBE_BLOCK_6",
+
+      description:
+        "Identify components requiring review."
+    }
+  );
+
+
+  runtimeAPI.registerCommand(
+    "SYSTEM.HEALTH",
+    function () {
+
+      return healthAPI.getStatus();
+
+    },
+    {
+      source:
+        "CHIROMBE_BLOCK_6",
+
+      description:
+        "Return current computational health."
+    }
+  );
+
+
+  /* ==========================================================
+     INITIAL JOURNAL ENTRY
+     ========================================================== */
+
+  appendJournal(
+    "BLOCK_6_INITIALISED",
+    {
+      version:
+        health.version,
+
+      historicalExecution:
+        false,
+
+      automaticSourceModification:
+        false
+    }
+  );
+
+
+  refreshHealthSummary();
+
+  renderSelfTest();
+
+  renderIntegrity();
+
+  renderAudit();
+
+
+  if (typeof system.log === "function") {
+
+    system.log(
+      "INFO",
+      "Block 6 complete: health, audit, integrity and recovery layer established."
+    );
+  }
+
+
+  console.info(
+    "[CHIROMBE][BLOCK 6] Health / Audit / Integrity layer ready."
+  );
+
+
+})();
+</script>
