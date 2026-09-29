@@ -4067,3 +4067,1782 @@
 
 })();
 </script>
+<!-- ============================================================
+     CHIROMBE UNIFIED COMMAND CORE
+     BLOCK 4 — VERIFIED DETERMINISTIC ENGINE LOADER
+
+     PURPOSE
+     ------------------------------------------------------------
+     1. Correct registry paths against the ACTUAL repository.
+     2. Verify files exist before attempting execution.
+     3. Respect dependency order.
+     4. Load real repository files — never replacement mocks.
+     5. Verify expected globals after loading.
+     6. Prevent duplicate script execution.
+     7. Preserve failed modules as FAILED rather than hiding them.
+     8. Keep the historical "chirombe engine" artifact ARCHIVED.
+     9. Provide a detailed loader report for later health/audit blocks.
+
+     IMPORTANT
+     ------------------------------------------------------------
+     This loader does NOT claim supernatural or physical protection.
+     It connects and verifies computational software components.
+     ============================================================ -->
+
+<script>
+(function () {
+
+  "use strict";
+
+  const system = window.CHIROMBE_UNIFIED;
+
+  if (!system) {
+    console.error(
+      "[CHIROMBE][BLOCK 4] Unified foundation unavailable."
+    );
+    return;
+  }
+
+  if (!system.runtimeAPI) {
+    console.error(
+      "[CHIROMBE][BLOCK 4] Runtime API unavailable. " +
+      "Block 2 must be loaded before Block 4."
+    );
+    return;
+  }
+
+  if (!system.registry) {
+    console.error(
+      "[CHIROMBE][BLOCK 4] Engine Registry unavailable. " +
+      "Block 3 must be loaded before Block 4."
+    );
+    return;
+  }
+
+
+  /* ==========================================================
+     VERSION
+     ========================================================== */
+
+  const LOADER_VERSION = "4.0.0-verified";
+
+  const registry = system.registry;
+
+  const runtime = system.runtime;
+
+  const state = system.state;
+
+  const runtimeAPI = system.runtimeAPI;
+
+
+  /* ==========================================================
+     LOADER STATE
+     ========================================================== */
+
+  const loader = {
+
+    version: LOADER_VERSION,
+
+    phase: "VALIDATION",
+
+    status: "INITIALISING",
+
+    startedAt: new Date().toISOString(),
+
+    completedAt: null,
+
+    currentEngine: null,
+
+    attempted: [],
+
+    verified: [],
+
+    loaded: [],
+
+    initialised: [],
+
+    ready: [],
+
+    failed: [],
+
+    unavailable: [],
+
+    skipped: [],
+
+    archived: [],
+
+    dependencyBlocked: [],
+
+    pathCorrections: [],
+
+    globalChecks: [],
+
+    errors: [],
+
+    warnings: [],
+
+    statistics: {
+      total: 0,
+      verified: 0,
+      loaded: 0,
+      ready: 0,
+      failed: 0,
+      unavailable: 0,
+      archived: 0,
+      skipped: 0,
+      dependencyBlocked: 0
+    }
+  };
+
+
+  /* ==========================================================
+     LOGGING
+     ========================================================== */
+
+  function log(level, message, metadata) {
+
+    const entry = {
+      level: level,
+      message: message,
+      metadata: metadata || {},
+      timestamp: new Date().toISOString()
+    };
+
+    if (level === "ERROR") {
+      loader.errors.push(entry);
+    }
+
+    if (level === "WARNING") {
+      loader.warnings.push(entry);
+    }
+
+    if (typeof system.log === "function") {
+      system.log(
+        level,
+        "[BLOCK 4] " + message
+      );
+    } else {
+      console.log(
+        "[CHIROMBE][BLOCK 4]",
+        level,
+        message,
+        metadata || ""
+      );
+    }
+
+    return entry;
+  }
+
+
+  /* ==========================================================
+     ACTUAL REPOSITORY PATH MANIFEST
+     ----------------------------------------------------------
+     These paths are based on the repository's documented live
+     modules rather than names from the historical artifact.
+     ========================================================== */
+
+  const VERIFIED_PATHS = {
+
+    CHIROMBE_BOOT:
+      "js/boot.js",
+
+    CHIROMBE_BUS:
+      "js/command-bus.js",
+
+    CHIROMBE_STATE:
+      "js/state-store.js",
+
+    CHIROMBE_AUDIT:
+      "js/audit-chain.js",
+
+    CHIROMBE_HEALTH:
+      "js/health.js",
+
+    CHIROMBE_WATCHDOG:
+      "js/watchdog.js",
+
+    CHIROMBE_CORE:
+      "js/chirombe-core.js",
+
+    CHIROMBE_PROTECTION:
+      "js/zion-protection-core.js",
+
+    CHIROMBE_COVENANT:
+      "js/mwarindimwari-covenant.js",
+
+    CHIROMBE_RESONANCE:
+      "js/resonance-engine.js",
+
+    CHIROMBE_AUTOSTART:
+      "js/chirombe-autostart.js",
+
+    CHIROMBE_GUARDIAN:
+      "js/guardian-matrix.js",
+
+    CHIROMBE_LITURGY:
+      "js/liturgy-matrix.js",
+
+    CHIROMBE_PIONEER:
+      "js/pioneer-brain.js",
+
+    CHIROMBE_ZCCA:
+      "js/zcca.js"
+  };
+
+
+  /* ==========================================================
+     EXISTING GLOBAL CONTRACTS
+     ========================================================== */
+
+  const VERIFIED_GLOBALS = {
+
+    CHIROMBE_BOOT: [
+      "ChirombeSystem"
+    ],
+
+    CHIROMBE_BUS: [
+      "ChirombeBus"
+    ],
+
+    CHIROMBE_STATE: [
+      "ChirombeState"
+    ],
+
+    CHIROMBE_AUDIT: [
+      "ChirombeAudit"
+    ],
+
+    CHIROMBE_HEALTH: [
+      "ChirombeHealth"
+    ],
+
+    CHIROMBE_WATCHDOG: [
+      "ChirombeWatchdog"
+    ],
+
+    CHIROMBE_CORE: [
+      "ChirombeCore"
+    ],
+
+    CHIROMBE_PROTECTION: [
+      "ZionProtect",
+      "ZionProtectionCore"
+    ],
+
+    CHIROMBE_COVENANT: [
+      "MwarindiCovenant"
+    ],
+
+    CHIROMBE_RESONANCE: [
+      "ChirombeResonance"
+    ],
+
+    CHIROMBE_AUTOSTART: [
+      "CHIROMBE_AUTOSTART"
+    ],
+
+    CHIROMBE_GUARDIAN: [
+      "CHIROMBE_GUARDIAN"
+    ],
+
+    CHIROMBE_LITURGY: [
+      "CHIROMBE_LITURGY"
+    ],
+
+    CHIROMBE_PIONEER: [
+      "CHIROMBE_PIONEER_BRAIN"
+    ],
+
+    CHIROMBE_ZCCA: [
+      "ZCCA"
+    ]
+  };
+
+
+  /* ==========================================================
+     CORRECT BLOCK 3 PATHS
+     ----------------------------------------------------------
+     We repair registry metadata here rather than creating
+     fake replacement files.
+     ========================================================== */
+
+  function correctRegistryPaths() {
+
+    Object.keys(VERIFIED_PATHS).forEach(function (engineId) {
+
+      const engine = registry.engines[engineId];
+
+      if (!engine) {
+        return;
+      }
+
+      const oldPath = engine.entry;
+
+      const newPath = VERIFIED_PATHS[engineId];
+
+      if (!newPath) {
+        return;
+      }
+
+      if (oldPath !== newPath) {
+
+        loader.pathCorrections.push({
+          engineId: engineId,
+          oldPath: oldPath,
+          newPath: newPath,
+          timestamp: new Date().toISOString()
+        });
+
+        engine.entry = newPath;
+        engine.files = [newPath];
+
+        log(
+          "WARNING",
+          "Corrected registry path for " +
+          engineId +
+          ": " +
+          oldPath +
+          " → " +
+          newPath
+        );
+      }
+    });
+
+
+    /*
+     * The original Block 3 treated chirombe.js as the core.
+     * It is actually a loader/bridge and already loads many
+     * modules itself. Therefore this block prevents the
+     * bridge from being mistaken for ChirombeCore.
+     */
+
+    if (registry.engines.CHIROMBE_CORE) {
+
+      registry.engines.CHIROMBE_CORE.entry =
+        VERIFIED_PATHS.CHIROMBE_CORE;
+
+      registry.engines.CHIROMBE_CORE.files =
+        [VERIFIED_PATHS.CHIROMBE_CORE];
+
+      registry.engines.CHIROMBE_CORE.globals =
+        VERIFIED_GLOBALS.CHIROMBE_CORE;
+    }
+
+
+    /*
+     * Historical artifact is NEVER converted into a live entry.
+     */
+
+    if (registry.engines.CHIROMBE_HISTORICAL_ENGINE) {
+
+      const historical =
+        registry.engines.CHIROMBE_HISTORICAL_ENGINE;
+
+      historical.mode = "ARCHIVE";
+
+      historical.executable = false;
+
+      historical.autostart = false;
+
+      historical.loaded = false;
+
+      historical.initialised = false;
+
+      historical.ready = false;
+
+      historical.status = "ARCHIVED";
+
+      historical.integrity =
+        "REQUIRES_VALIDATION";
+
+      historical.error = null;
+    }
+
+
+    log(
+      "INFO",
+      "Repository path verification manifest applied."
+    );
+  }
+
+
+  /* ==========================================================
+     ADD THE REAL BOOT MODULE
+     ========================================================== */
+
+  function ensureBootDefinition() {
+
+    if (registry.engines.CHIROMBE_BOOT) {
+      return;
+    }
+
+    /*
+     * Block 3 did not contain the actual boot.js module.
+     * The repository audit identifies boot.js as the source
+     * of ChirombeSystem.
+     */
+
+    registry.engines.CHIROMBE_BOOT = {
+
+      id: "CHIROMBE_BOOT",
+
+      name: "Chirombe Boot",
+
+      description:
+        "Primary browser runtime bootstrap module.",
+
+      version: "2.0.0",
+
+      mode: "LIVE",
+
+      required: true,
+
+      optional: false,
+
+      entry: VERIFIED_PATHS.CHIROMBE_BOOT,
+
+      files: [
+        VERIFIED_PATHS.CHIROMBE_BOOT
+      ],
+
+      dependencies: [],
+
+      optionalDependencies: [],
+
+      provides: [
+        "SYSTEM",
+        "BOOT"
+      ],
+
+      globals:
+        VERIFIED_GLOBALS.CHIROMBE_BOOT,
+
+      interfaces: [],
+
+      group: "CORE",
+
+      phase: 1,
+
+      status: "DISCOVERED",
+
+      source: "REPOSITORY",
+
+      integrity: "PENDING",
+
+      executable: true,
+
+      autostart: false,
+
+      loaded: false,
+
+      initialised: false,
+
+      ready: false,
+
+      error: null,
+
+      lastChecked: null,
+
+      metadata: {
+        discoveredBy: "BLOCK_4"
+      }
+    };
+
+    log(
+      "INFO",
+      "Added verified repository boot module to runtime registry."
+    );
+  }
+
+
+  /* ==========================================================
+     MODULE LOAD ORDER
+     ----------------------------------------------------------
+     This follows the repository's documented architecture.
+     ========================================================== */
+
+  const LOAD_ORDER = [
+
+    "CHIROMBE_BOOT",
+
+    "CHIROMBE_BUS",
+
+    "CHIROMBE_STATE",
+
+    "CHIROMBE_AUDIT",
+
+    "CHIROMBE_HEALTH",
+
+    "CHIROMBE_WATCHDOG",
+
+    "CHIROMBE_PROTECTION",
+
+    "CHIROMBE_COVENANT",
+
+    "CHIROMBE_CORE",
+
+    "CHIROMBE_RESONANCE",
+
+    "CHIROMBE_ZCCA",
+
+    "CHIROMBE_GUARDIAN",
+
+    "CHIROMBE_LITURGY",
+
+    "CHIROMBE_PIONEER",
+
+    "CHIROMBE_AUTOSTART"
+  ];
+
+
+  /* ==========================================================
+     SCRIPT REGISTRY
+     ========================================================== */
+
+  const scriptRegistry =
+    new Map();
+
+
+  /* ==========================================================
+     URL RESOLUTION
+     ========================================================== */
+
+  function resolvePath(path) {
+
+    return new URL(
+      path,
+      document.baseURI
+    ).href;
+  }
+
+
+  /* ==========================================================
+     FILE EXISTENCE VERIFICATION
+     ========================================================== */
+
+  async function verifyFile(path) {
+
+    const url = resolvePath(path);
+
+    try {
+
+      const response = await fetch(
+        url,
+        {
+          method: "GET",
+          cache: "no-store"
+        }
+      );
+
+      if (!response.ok) {
+
+        return {
+          ok: false,
+          url: url,
+          status: response.status,
+          statusText: response.statusText
+        };
+      }
+
+      /*
+       * Read the response completely.
+       * This confirms the resource can actually be retrieved.
+       */
+
+      const source =
+        await response.text();
+
+      if (!source || !source.trim()) {
+
+        return {
+          ok: false,
+          url: url,
+          status: response.status,
+          statusText: "EMPTY_FILE"
+        };
+      }
+
+      return {
+        ok: true,
+        url: url,
+        status: response.status,
+        bytes: source.length
+      };
+
+    } catch (error) {
+
+      return {
+        ok: false,
+        url: url,
+        status: 0,
+        statusText: error.message
+      };
+    }
+  }
+
+
+  /* ==========================================================
+     GLOBAL VERIFICATION
+     ========================================================== */
+
+  function verifyGlobals(engine) {
+
+    const expected =
+      engine.globals ||
+      VERIFIED_GLOBALS[engine.id] ||
+      [];
+
+    if (!expected.length) {
+
+      return {
+        ok: true,
+        expected: [],
+        found: [],
+        missing: []
+      };
+    }
+
+    const found = [];
+
+    const missing = [];
+
+    expected.forEach(function (name) {
+
+      if (
+        typeof window[name] !== "undefined"
+      ) {
+        found.push(name);
+      } else {
+        missing.push(name);
+      }
+
+    });
+
+    const result = {
+
+      engineId: engine.id,
+
+      expected: expected,
+
+      found: found,
+
+      missing: missing,
+
+      ok: missing.length === 0,
+
+      timestamp: new Date().toISOString()
+    };
+
+    loader.globalChecks.push(result);
+
+    return result;
+  }
+
+
+  /* ==========================================================
+     DEPENDENCY CHECK
+     ========================================================== */
+
+  function dependenciesReady(engine) {
+
+    const dependencies =
+      Array.isArray(engine.dependencies)
+        ? engine.dependencies
+        : [];
+
+    for (const dependencyId of dependencies) {
+
+      const dependency =
+        registry.engines[dependencyId];
+
+      if (!dependency) {
+
+        return {
+          ok: false,
+          reason:
+            "MISSING_DEPENDENCY_DEFINITION",
+          dependency:
+            dependencyId
+        };
+      }
+
+      if (
+        dependency.status !== "READY" &&
+        dependency.status !== "LOADED" &&
+        dependency.status !== "INITIALISED" &&
+        dependency.status !== "RECOVERED"
+      ) {
+
+        return {
+          ok: false,
+          reason:
+            "DEPENDENCY_NOT_READY",
+          dependency:
+            dependencyId,
+          status:
+            dependency.status
+        };
+      }
+    }
+
+    return {
+      ok: true
+    };
+  }
+
+
+  /* ==========================================================
+     DUPLICATE PROTECTION
+     ========================================================== */
+
+  function isAlreadyLoaded(path) {
+
+    return scriptRegistry.has(
+      resolvePath(path)
+    );
+  }
+
+
+  /* ==========================================================
+     SCRIPT EXECUTION
+     ========================================================== */
+
+  function executeScript(engine) {
+
+    return new Promise(function (resolve) {
+
+      const path = engine.entry;
+
+      const url = resolvePath(path);
+
+      if (scriptRegistry.has(url)) {
+
+        const existing =
+          scriptRegistry.get(url);
+
+        resolve({
+          ok: existing.ok,
+          alreadyLoaded: true,
+          url: url,
+          error: existing.error || null
+        });
+
+        return;
+      }
+
+
+      const script =
+        document.createElement("script");
+
+      script.src = url;
+
+      script.async = false;
+
+      script.defer = false;
+
+      script.dataset.chirombeEngine =
+        engine.id;
+
+      script.dataset.chirombeLoader =
+        LOADER_VERSION;
+
+
+      let settled = false;
+
+
+      function finish(result) {
+
+        if (settled) {
+          return;
+        }
+
+        settled = true;
+
+        script.onload = null;
+
+        script.onerror = null;
+
+        resolve(result);
+      }
+
+
+      script.onload = function () {
+
+        scriptRegistry.set(
+          url,
+          {
+            engineId: engine.id,
+            url: url,
+            ok: true,
+            loadedAt: new Date().toISOString()
+          }
+        );
+
+        finish({
+          ok: true,
+          url: url
+        });
+      };
+
+
+      script.onerror = function () {
+
+        const error =
+          "Browser failed to load script.";
+
+        scriptRegistry.set(
+          url,
+          {
+            engineId: engine.id,
+            url: url,
+            ok: false,
+            error: error,
+            failedAt: new Date().toISOString()
+          }
+        );
+
+        finish({
+          ok: false,
+          url: url,
+          error: error
+        });
+      };
+
+
+      document.head.appendChild(script);
+    });
+  }
+
+
+  /* ==========================================================
+     ENGINE STATUS
+     ========================================================== */
+
+  function updateEngine(
+    engineId,
+    status,
+    extra
+  ) {
+
+    const engine =
+      registry.engines[engineId];
+
+    if (!engine) {
+      return;
+    }
+
+    engine.status = status;
+
+    engine.lastChecked =
+      new Date().toISOString();
+
+    if (extra) {
+
+      Object.keys(extra).forEach(
+        function (key) {
+
+          engine[key] =
+            extra[key];
+
+        }
+      );
+    }
+
+
+    if (runtimeAPI.setEngineState) {
+
+      runtimeAPI.setEngineState(
+        engineId,
+        {
+          status: status,
+          ...(extra || {})
+        }
+      );
+    }
+
+
+    if (
+      typeof system.registryAPI !== "undefined" &&
+      system.registryAPI
+    ) {
+
+      /*
+       * Block 3's public registry statistics
+       * are refreshed when available.
+       */
+
+      try {
+
+        if (
+          typeof system.registry.refreshStatistics ===
+          "function"
+        ) {
+          system.registry.refreshStatistics();
+        }
+
+      } catch (e) {}
+    }
+
+
+    if (typeof system.log === "function") {
+
+      system.log(
+        status === "FAILED"
+          ? "ERROR"
+          : status === "DEGRADED"
+            ? "WARNING"
+            : "INFO",
+
+        engineId +
+        " → " +
+        status
+      );
+    }
+  }
+
+
+  /* ==========================================================
+     ARCHIVE HANDLING
+     ========================================================== */
+
+  function archiveEngine(engine) {
+
+    engine.status = "ARCHIVED";
+
+    engine.executable = false;
+
+    engine.autostart = false;
+
+    engine.loaded = false;
+
+    engine.initialised = false;
+
+    engine.ready = false;
+
+    loader.archived.push(
+      engine.id
+    );
+
+    loader.statistics.archived++;
+
+    log(
+      "INFO",
+      engine.id +
+      " preserved as ARCHIVE; execution blocked."
+    );
+  }
+
+
+  /* ==========================================================
+     SINGLE ENGINE LOAD
+     ========================================================== */
+
+  async function loadEngine(engine) {
+
+    loader.currentEngine =
+      engine.id;
+
+    runtime.currentEngine =
+      engine.id;
+
+    loader.attempted.push(
+      engine.id
+    );
+
+
+    if (
+      engine.mode === "ARCHIVE" ||
+      engine.executable === false
+    ) {
+
+      archiveEngine(engine);
+
+      return {
+        ok: true,
+        status: "ARCHIVED"
+      };
+    }
+
+
+    if (!engine.entry) {
+
+      updateEngine(
+        engine.id,
+        "UNAVAILABLE",
+        {
+          error:
+            "No executable entry path."
+        }
+      );
+
+      loader.unavailable.push(
+        engine.id
+      );
+
+      loader.statistics.unavailable++;
+
+      return {
+        ok: false,
+        status: "UNAVAILABLE"
+      };
+    }
+
+
+    /*
+     * Dependencies must be ready before execution.
+     */
+
+    const dependencyCheck =
+      dependenciesReady(engine);
+
+    if (!dependencyCheck.ok) {
+
+      const reason =
+        dependencyCheck.reason +
+        ": " +
+        (
+          dependencyCheck.dependency ||
+          ""
+        );
+
+      updateEngine(
+        engine.id,
+        "DEGRADED",
+        {
+          error: reason
+        }
+      );
+
+      loader.dependencyBlocked.push(
+        engine.id
+      );
+
+      loader.statistics.dependencyBlocked++;
+
+      log(
+        "WARNING",
+        engine.id +
+        " blocked by dependency: " +
+        reason
+      );
+
+      return {
+        ok: false,
+        status: "DEPENDENCY_BLOCKED",
+        reason: reason
+      };
+    }
+
+
+    /*
+     * Verify resource BEFORE execution.
+     */
+
+    updateEngine(
+      engine.id,
+      "DISCOVERED"
+    );
+
+
+    const verification =
+      await verifyFile(
+        engine.entry
+      );
+
+
+    engine.lastChecked =
+      new Date().toISOString();
+
+
+    if (!verification.ok) {
+
+      updateEngine(
+        engine.id,
+        "UNAVAILABLE",
+        {
+          error:
+            "Resource verification failed: " +
+            verification.statusText
+        }
+      );
+
+      loader.unavailable.push(
+        engine.id
+      );
+
+      loader.statistics.unavailable++;
+
+      log(
+        "ERROR",
+        engine.id +
+        " could not be verified.",
+        verification
+      );
+
+      return {
+        ok: false,
+        status: "UNAVAILABLE",
+        verification: verification
+      };
+    }
+
+
+    engine.integrity =
+      "RESOURCE_VERIFIED";
+
+    loader.verified.push(
+      engine.id
+    );
+
+    loader.statistics.verified++;
+
+    updateEngine(
+      engine.id,
+      "LOADING",
+      {
+        loadedBytes:
+          verification.bytes
+      }
+    );
+
+
+    /*
+     * Execute the real repository script.
+     */
+
+    const execution =
+      await executeScript(
+        engine
+      );
+
+
+    if (!execution.ok) {
+
+      updateEngine(
+        engine.id,
+        "FAILED",
+        {
+          error:
+            execution.error ||
+            "Script execution failed."
+        }
+      );
+
+      loader.failed.push(
+        engine.id
+      );
+
+      loader.statistics.failed++;
+
+      log(
+        "ERROR",
+        engine.id +
+        " failed to load.",
+        execution
+      );
+
+      return {
+        ok: false,
+        status: "FAILED",
+        execution: execution
+      };
+    }
+
+
+    engine.loaded = true;
+
+    loader.loaded.push(
+      engine.id
+    );
+
+    loader.statistics.loaded++;
+
+
+    updateEngine(
+      engine.id,
+      "LOADED",
+      {
+        loaded: true
+      }
+    );
+
+
+    /*
+     * Verify the public global contract.
+     */
+
+    const globalCheck =
+      verifyGlobals(
+        engine
+      );
+
+
+    if (!globalCheck.ok) {
+
+      /*
+       * A resource may have loaded successfully while its
+       * expected global is absent. That is NOT silently
+       * promoted to READY.
+       */
+
+      updateEngine(
+        engine.id,
+        "DEGRADED",
+        {
+          error:
+            "Expected global missing.",
+          missingGlobals:
+            globalCheck.missing
+        }
+      );
+
+      loader.failed.push(
+        engine.id
+      );
+
+      loader.statistics.failed++;
+
+      log(
+        "WARNING",
+        engine.id +
+        " loaded but failed its global contract.",
+        globalCheck
+      );
+
+      return {
+        ok: false,
+        status: "DEGRADED",
+        globalCheck: globalCheck
+      };
+    }
+
+
+    engine.initialised = true;
+
+    engine.ready = true;
+
+    engine.integrity =
+      "LOADED_AND_VERIFIED";
+
+
+    updateEngine(
+      engine.id,
+      "READY",
+      {
+        loaded: true,
+        initialised: true,
+        ready: true
+      }
+    );
+
+
+    loader.initialised.push(
+      engine.id
+    );
+
+    loader.ready.push(
+      engine.id
+    );
+
+    loader.statistics.ready++;
+
+
+    runtime.loadedScripts.add(
+      engine.entry
+    );
+
+
+    log(
+      "INFO",
+      engine.id +
+      " loaded and verified."
+    );
+
+
+    return {
+      ok: true,
+      status: "READY",
+      globalCheck: globalCheck
+    };
+  }
+
+
+  /* ==========================================================
+     SAFE ENGINE ORDER
+     ========================================================== */
+
+  function getEngine(id) {
+
+    return registry.engines[id] || null;
+  }
+
+
+  /* ==========================================================
+     BOOT SEQUENCE
+     ========================================================== */
+
+  async function boot() {
+
+    loader.status =
+      "VALIDATING";
+
+    loader.phase =
+      "VALIDATION";
+
+    runtime.bootStarted =
+      true;
+
+
+    log(
+      "INFO",
+      "Block 4 validation started."
+    );
+
+
+    /*
+     * First repair registry metadata using actual
+     * repository paths.
+     */
+
+    correctRegistryPaths();
+
+    ensureBootDefinition();
+
+
+    /*
+     * Historical material is explicitly preserved.
+     */
+
+    Object.keys(registry.engines)
+      .forEach(function (engineId) {
+
+        const engine =
+          registry.engines[engineId];
+
+        if (
+          engine.mode === "ARCHIVE" ||
+          engine.executable === false
+        ) {
+          archiveEngine(engine);
+        }
+      });
+
+
+    /*
+     * Count only the engines that will be evaluated
+     * in this controlled boot.
+     */
+
+    loader.statistics.total =
+      LOAD_ORDER.length;
+
+
+    loader.phase =
+      "LOADING";
+
+    loader.status =
+      "LOADING";
+
+
+    /*
+     * Sequential loading is deliberate.
+     *
+     * Do NOT use Promise.all here.
+     * Several Chirombe modules depend on globals
+     * created by earlier modules.
+     */
+
+    for (
+      const engineId of LOAD_ORDER
+    ) {
+
+      const engine =
+        getEngine(engineId);
+
+      if (!engine) {
+
+        loader.failed.push(
+          engineId
+        );
+
+        loader.statistics.failed++;
+
+        log(
+          "ERROR",
+          "Registry definition missing: " +
+          engineId
+        );
+
+        continue;
+      }
+
+
+      /*
+       * Required engines must be treated differently
+       * from optional modules.
+       */
+
+      const result =
+        await loadEngine(
+          engine
+        );
+
+
+      /*
+       * Give the browser event loop a small opportunity
+       * to process globals created by the newly loaded
+       * script before the next dependency.
+       */
+
+      await new Promise(
+        function (resolve) {
+          setTimeout(
+            resolve,
+            0
+          );
+        }
+      );
+
+
+      /*
+       * A failed required engine blocks its dependents
+       * naturally through dependenciesReady().
+       */
+
+      if (
+        !result.ok &&
+        engine.required
+      ) {
+
+        log(
+          "WARNING",
+          "Required engine " +
+          engine.id +
+          " did not reach READY. " +
+          "Dependent modules will be blocked rather than replaced."
+        );
+      }
+    }
+
+
+    /* --------------------------------------------------------
+       FINAL LOADER STATE
+       -------------------------------------------------------- */
+
+    loader.completedAt =
+      new Date().toISOString();
+
+    loader.currentEngine =
+      null;
+
+    runtime.currentEngine =
+      null;
+
+    loader.phase =
+      "LOADER_COMPLETE";
+
+
+    if (
+      loader.statistics.failed > 0 ||
+      loader.statistics.dependencyBlocked > 0
+    ) {
+
+      loader.status =
+        "DEGRADED";
+
+    } else {
+
+      loader.status =
+        "LOADED";
+    }
+
+
+    runtime.status =
+      loader.status;
+
+
+    state.system.phase =
+      "LOADER";
+
+
+    state.system.degraded =
+      loader.status === "DEGRADED";
+
+
+    state.system.healthy =
+      loader.statistics.failed === 0;
+
+
+    runtime.bootCompleted =
+      true;
+
+
+    /*
+     * IMPORTANT:
+     *
+     * We deliberately do NOT set:
+     *
+     * state.system.ready = true
+     *
+     * yet.
+     *
+     * Block 5/6/7 still have to establish the UI,
+     * audit, health and final orchestration layers.
+     */
+
+
+    if (typeof system.log === "function") {
+
+      system.log(
+        loader.status === "DEGRADED"
+          ? "WARNING"
+          : "INFO",
+
+        "Block 4 complete: " +
+        loader.statistics.ready +
+        " engines ready, " +
+        loader.statistics.failed +
+        " failed, " +
+        loader.statistics.unavailable +
+        " unavailable, " +
+        loader.statistics.archived +
+        " archived."
+      );
+    }
+
+
+    return getReport();
+  }
+
+
+  /* ==========================================================
+     REPORT
+     ========================================================== */
+
+  function getReport() {
+
+    return {
+
+      version:
+        LOADER_VERSION,
+
+      status:
+        loader.status,
+
+      phase:
+        loader.phase,
+
+      startedAt:
+        loader.startedAt,
+
+      completedAt:
+        loader.completedAt,
+
+      statistics:
+        {
+          ...loader.statistics
+        },
+
+      attempted:
+        [...loader.attempted],
+
+      verified:
+        [...loader.verified],
+
+      loaded:
+        [...loader.loaded],
+
+      ready:
+        [...loader.ready],
+
+      failed:
+        [...loader.failed],
+
+      unavailable:
+        [...loader.unavailable],
+
+      archived:
+        [...loader.archived],
+
+      dependencyBlocked:
+        [...loader.dependencyBlocked],
+
+      pathCorrections:
+        [...loader.pathCorrections],
+
+      globalChecks:
+        [...loader.globalChecks],
+
+      errors:
+        [...loader.errors],
+
+      warnings:
+        [...loader.warnings]
+    };
+  }
+
+
+  /* ==========================================================
+     PUBLIC LOADER API
+     ========================================================== */
+
+  const loaderAPI = {
+
+    version:
+      LOADER_VERSION,
+
+    boot:
+      boot,
+
+    getReport:
+      getReport,
+
+    getStatus:
+      function () {
+        return loader.status;
+      },
+
+    getCurrentEngine:
+      function () {
+        return loader.currentEngine;
+      },
+
+    verifyFile:
+      verifyFile,
+
+    verifyGlobals:
+      verifyGlobals,
+
+    isAlreadyLoaded:
+      isAlreadyLoaded,
+
+    getRegistry:
+      function () {
+        return registry;
+      }
+  };
+
+
+  system.loader =
+    loader;
+
+  system.loaderAPI =
+    loaderAPI;
+
+
+  runtimeAPI.registerCapability(
+    "DETERMINISTIC_LOADER",
+    {
+      source: "BLOCK_4"
+    }
+  );
+
+
+  runtimeAPI.registerCapability(
+    "RESOURCE_VERIFICATION",
+    {
+      source: "BLOCK_4"
+    }
+  );
+
+
+  runtimeAPI.registerCapability(
+    "GLOBAL_CONTRACT_VERIFICATION",
+    {
+      source: "BLOCK_4"
+    }
+  );
+
+
+  runtimeAPI.registerCapability(
+    "DEPENDENCY_ORDERING",
+    {
+      source: "BLOCK_4"
+    }
+  );
+
+
+  runtimeAPI.registerCapability(
+    "DUPLICATE_LOAD_PROTECTION",
+    {
+      source: "BLOCK_4"
+    }
+  );
+
+
+  /* ==========================================================
+     DO NOT AUTO-BOOT TWICE
+     ========================================================== */
+
+  if (
+    window.__CHIROMBE_BLOCK4_STARTED
+  ) {
+
+    log(
+      "WARNING",
+      "Block 4 already started; duplicate boot prevented."
+    );
+
+    return;
+  }
+
+
+  window.__CHIROMBE_BLOCK4_STARTED =
+    true;
+
+
+  /*
+   * Start the controlled loader.
+   */
+
+  boot()
+    .catch(function (error) {
+
+      loader.status =
+        "FAILED";
+
+      runtime.status =
+        "FAILED";
+
+      runtime.errorCount++;
+
+      state.system.status =
+        "FAILED";
+
+      state.system.healthy =
+        false;
+
+      loader.errors.push({
+
+        level:
+          "ERROR",
+
+        message:
+          error.message,
+
+        stack:
+          error.stack || null,
+
+        timestamp:
+          new Date().toISOString()
+      });
+
+
+      if (typeof system.log === "function") {
+
+        system.log(
+          "ERROR",
+          "Block 4 loader failed: " +
+          error.message
+        );
+      }
+
+      console.error(
+        "[CHIROMBE][BLOCK 4] Fatal loader error",
+        error
+      );
+    });
+
+
+})();
+</script>
