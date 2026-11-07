@@ -1,9 +1,9 @@
 {
-  "generatedAt": "2026-11-07T12:02:03.137Z",
+  "generatedAt": "2026-11-07T21:11:20.524Z",
   "protocol": "CHIROMBE-2.0",
   "schemaVersion": 2,
   "status": "ok",
-  "tickId": 1794052923143,
+  "tickId": 1794085880529,
   "source": "headless",
   "familyCount": 18,
   "cycle": "OBSERVE-ANALYSE-MODEL-SIMULATE-PROTECT-VERIFY-LEARN-IMPROVE"
